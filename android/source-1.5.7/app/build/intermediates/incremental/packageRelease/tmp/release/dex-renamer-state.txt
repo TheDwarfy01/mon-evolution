@@ -1,0 +1,4 @@
+#Sat Oct 31 18:28:40 UTC 2026
+base.0=/tmp/mon-evolution-src/app/build/intermediates/dex/release/mergeDexRelease/classes.dex
+renamed.0=classes.dex
+path.0=classes.dex
