@@ -130,7 +130,7 @@ jobs:
           )
           html = html.replace(
             'La version 1.5.1 est temporairement retirée du téléchargement : installation non confirmée sur Android. La version 1.4 reste la version de secours. La connexion Google par e-mail est toujours en développement.',
-            'Version 1.5.3 : correction de l’affichage sous la barre de notifications. IMPORTANT : cette version utilise une nouvelle clé de signature et ne peut pas être installée par-dessus la 1.5.1. Sauvegardez vos données avant de désinstaller l’ancienne version. La connexion Google par e-mail reste en développement.'
+            'Version 1.5.3 : icône restaurée et première installation sans profil prérempli. La mise à jour depuis 1.5.2 utilise la même signature GitHub. La connexion Google par e-mail reste en développement.'
           )
           p.write_text(html, encoding='utf-8')
           PY
