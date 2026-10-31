@@ -97,9 +97,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          gh release create v1.5.6 downloads/Mon_Evolution_IMC_v1.5.6.apk \
-            --title "Mon Évolution IMC v1.5.6" \
-            --notes "Corrige le partage en lecture seule : création et mise à jour d'un fichier sur Drive, consultation d'un profil partagé. Les téléchargements GitHub restent disponibles depuis l'application."
+          if gh release view v1.5.6 >/dev/null 2>&1; then
+            gh release upload v1.5.6 downloads/Mon_Evolution_IMC_v1.5.6.apk --clobber
+          else
+            gh release create v1.5.6 downloads/Mon_Evolution_IMC_v1.5.6.apk \
+              --title "Mon Évolution IMC v1.5.6" \
+              --notes "Corrige le partage en lecture seule : création et mise à jour d'un fichier sur Drive, consultation d'un profil partagé. Les téléchargements GitHub restent disponibles depuis l'application."
       - name: Mettre à jour le site et les métadonnées
         run: |
           set -euo pipefail
