@@ -1,0 +1,1 @@
+1.6.1: sélecteur de tous les profils personnels et reçus (plusieurs proches), stockage distinct des sources Drive, affichage lecture seule et retrait local.
