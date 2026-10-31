@@ -1,0 +1,46 @@
+name: Archiver sources de la 1.6.1
+
+on:
+  push:
+    paths:
+      - 'android/source-snapshot-trigger-v1.6.1.txt'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Préparer les sources et vérifier les profils multiples
+        run: |
+          set -euo pipefail
+          mkdir -p android/source-1.6.1
+          cp -R android/source-1.6.0/. android/source-1.6.1/
+          python3 - <<'PY'
+          from pathlib import Path
+          root=Path('android/source-1.6.1/app')
+          for path in (root/'build.gradle',root/'src/main/AndroidManifest.xml'):
+              content=path.read_text(encoding='utf-8')
+              assert '1.6.0' in content
+              content=content.replace('1.6.0','1.6.1')
+              content=content.replace('versionCode 16','versionCode 17')
+              content=content.replace('android:versionCode="16"','android:versionCode="17"')
+              path.write_text(content,encoding='utf-8')
+          PY
+          python3 android/patches/patch-received-native-v1.6.1.py
+          python3 android/patches/patch-received-ui-v1.6.1.py
+          python3 android/tests/validate-1.6.1.py
+      - name: Enregistrer le code source 1.6.1
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add android/source-1.6.1
+          if ! git diff --cached --quiet; then
+            git commit -m "Archiver le code Android 1.6.1 multi-profils"
+            git pull --rebase
+            git push
+          fi
