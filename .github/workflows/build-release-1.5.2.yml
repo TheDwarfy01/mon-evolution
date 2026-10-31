@@ -15,12 +15,17 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - name: Vérifier le SDK Android installé sur le runner
+      - name: Configurer le chemin des outils Android
         run: |
           set -euo pipefail
-          echo "ANDROID_HOME=$ANDROID_HOME"
-          test -x "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" || test -x "$(command -v sdkmanager)"
-          sdkmanager --version
+          sdkmanager_bin="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager -print -quit)"
+          if [ -z "$sdkmanager_bin" ]; then
+            echo "::error::sdkmanager introuvable dans le SDK Android"
+            exit 1
+          fi
+          sdkmanager_dir="$(dirname "$sdkmanager_bin")"
+          echo "$sdkmanager_dir" >> "$GITHUB_PATH"
+          "$sdkmanager_bin" --version
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
