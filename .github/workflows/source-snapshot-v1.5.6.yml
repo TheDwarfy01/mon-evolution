@@ -1,0 +1,30 @@
+name: Archiver les sources signées 1.5.6
+on:
+  push:
+    paths:
+      - 'android/source-snapshot-trigger-v1.5.6.txt'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reconstruire le dossier des sources de 1.5.6
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/mon-evolution-src android/source-1.5.6
+          cp -R android/source-1.5.3/. /tmp/mon-evolution-src/
+          python3 android/patches/share-implementation-v1.5.6.py
+          cp -R /tmp/mon-evolution-src/. android/source-1.5.6/
+          grep -q "versionCode 12" android/source-1.5.6/app/build.gradle
+          grep -q "createShare" android/source-1.5.6/app/src/main/java/fr/monevolution/app/MainActivity.java
+          grep -q "refreshShared" android/source-1.5.6/app/src/main/java/fr/monevolution/app/MainActivity.java
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add android/source-1.5.6
+          if ! git diff --cached --quiet; then
+            git commit -m "Archiver sources Android v1.5.6 avec partage Google Drive"
+            git push
+          fi
