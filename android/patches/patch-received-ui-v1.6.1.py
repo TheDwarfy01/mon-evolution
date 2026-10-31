@@ -33,8 +33,8 @@ rep(''' <button class="secondary" style="width:100%;margin-top:10px" id="shared-
   <button class="secondary" style="width:100%;margin-top:12px" id="forget-received">Retirer ce profil partagé de ma liste</button>
   <p class="notice">Cette action retire uniquement le raccourci de ton application, jamais le fichier Drive appartenant à ton proche.</p></div>''')
 rep('function sharedLoaded(base64){','function sharedLoaded(base64,receivedKey){')
-rep("   message('Profil partagé actualisé ✓');",
-    "   window.onReceivedProfileLoaded?.(receivedKey,p.name);\n   message('Profil partagé actualisé ✓');")
+rep("  message('Profil partagé actualisé ✓');",
+    "  window.onReceivedProfileLoaded?.(receivedKey,p.name);\n  message('Profil partagé actualisé ✓');")
 rep('''function updateFirstLaunch(){const empty=!data||!Array.isArray(data.profiles)||data.profiles.length===0;document.body.classList.toggle('needs-setup',empty);}''',
 '''function updateFirstLaunch(){
  const empty=!data||!Array.isArray(data.profiles)||data.profiles.length===0;
