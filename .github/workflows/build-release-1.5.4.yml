@@ -113,7 +113,7 @@ jobs:
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging downloads/Mon_Evolution_IMC_v1.5.4.apk | grep -E "package:|application-icon"
       - name: Publier l'APK via GitHub Releases
         env:
-          GH_TOKEN: \${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           gh release create v1.5.4 downloads/Mon_Evolution_IMC_v1.5.4.apk \
