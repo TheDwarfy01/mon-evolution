@@ -1,0 +1,70 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="fr.monevolution.app"
+4    android:versionCode="11"
+5    android:versionName="1.5.5" >
+6
+7    <uses-sdk
+7-->/tmp/mon-evolution-src/app/src/main/AndroidManifest.xml:5:3-71
+8        android:minSdkVersion="24"
+8-->/tmp/mon-evolution-src/app/src/main/AndroidManifest.xml:5:13-39
+9        android:targetSdkVersion="35" />
+9-->/tmp/mon-evolution-src/app/src/main/AndroidManifest.xml:5:40-69
+10
+11    <uses-permission android:name="android.permission.INTERNET" />
+11-->/tmp/mon-evolution-src/app/src/main/AndroidManifest.xml:2:3-64
+11-->/tmp/mon-evolution-src/app/src/main/AndroidManifest.xml:2:20-62
+12    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+12-->/tmp/mon-evolution-src/app/src/main/AndroidManifest.xml:3:3-74
+12-->/tmp/mon-evolution-src/app/src/main/AndroidManifest.xml:3:20-72
+13    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+13-->/tmp/mon-evolution-src/app/src/main/AndroidManifest.xml:4:3-78
+13-->/tmp/mon-evolution-src/app/src/main/AndroidManifest.xml:4:20-76
+14
+15    <application
+15-->/tmp/mon-evolution-src/app/src/main/AndroidManifest.xml:6:3-16:17
+16        android:allowBackup="false"
+16-->/tmp/mon-evolution-src/app/src/main/AndroidManifest.xml:6:188-215
+17        android:extractNativeLibs="false"
+18        android:icon="@drawable/ic_launcher"
+18-->/tmp/mon-evolution-src/app/src/main/AndroidManifest.xml:6:50-86
+19        android:label="Mon Évolution IMC"
+19-->/tmp/mon-evolution-src/app/src/main/AndroidManifest.xml:6:16-49
+20        android:theme="@android:style/Theme.Material.Light.NoActionBar"
+20-->/tmp/mon-evolution-src/app/src/main/AndroidManifest.xml:6:87-150
+21        android:usesCleartextTraffic="false" >
+21-->/tmp/mon-evolution-src/app/src/main/AndroidManifest.xml:6:151-187
+22        <activity
+22-->/tmp/mon-evolution-src/app/src/main/AndroidManifest.xml:7:5-12:16
+23            android:name="fr.monevolution.app.MainActivity"
+23-->/tmp/mon-evolution-src/app/src/main/AndroidManifest.xml:7:15-43
+24            android:exported="true" >
+24-->/tmp/mon-evolution-src/app/src/main/AndroidManifest.xml:7:44-67
+25            <intent-filter>
+25-->/tmp/mon-evolution-src/app/src/main/AndroidManifest.xml:8:7-11:23
+26                <action android:name="android.intent.action.MAIN" />
+26-->/tmp/mon-evolution-src/app/src/main/AndroidManifest.xml:9:9-60
+26-->/tmp/mon-evolution-src/app/src/main/AndroidManifest.xml:9:17-58
+27
+28                <category android:name="android.intent.category.LAUNCHER" />
+28-->/tmp/mon-evolution-src/app/src/main/AndroidManifest.xml:10:9-68
+28-->/tmp/mon-evolution-src/app/src/main/AndroidManifest.xml:10:19-66
+29            </intent-filter>
+30        </activity>
+31
+32        <receiver
+32-->/tmp/mon-evolution-src/app/src/main/AndroidManifest.xml:13:5-15:16
+33            android:name="fr.monevolution.app.ReminderReceiver"
+33-->/tmp/mon-evolution-src/app/src/main/AndroidManifest.xml:13:15-47
+34            android:exported="false" >
+34-->/tmp/mon-evolution-src/app/src/main/AndroidManifest.xml:13:48-72
+35            <intent-filter>
+35-->/tmp/mon-evolution-src/app/src/main/AndroidManifest.xml:14:7-99
+36                <action android:name="android.intent.action.BOOT_COMPLETED" />
+36-->/tmp/mon-evolution-src/app/src/main/AndroidManifest.xml:14:22-83
+36-->/tmp/mon-evolution-src/app/src/main/AndroidManifest.xml:14:30-81
+37            </intent-filter>
+38        </receiver>
+39    </application>
+40
+41</manifest>

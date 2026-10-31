@@ -1,0 +1,13 @@
+plugins { id 'com.android.application' }
+
+android {
+    namespace 'fr.monevolution.app'
+    compileSdk 35
+    defaultConfig {
+        applicationId 'fr.monevolution.app'
+        minSdk 24
+        targetSdk 35
+        versionCode 11
+        versionName '1.5.5'
+    }
+}

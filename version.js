@@ -1,15 +1,17 @@
-// Mon Évolution IMC — dernière version téléchargeable.
+// Mon Évolution IMC — dernière version sur GitHub Releases.
 window.__monEvolutionVersionCallback?.({
-  version: "1.5.4",
+  version: "1.5.5",
   published: true,
-  url: "https://thedwarfy01.github.io/mon-evolution/downloads/Mon_Evolution_IMC_v1.5.4.apk"
+  url: "https://github.com/TheDwarfy01/mon-evolution/releases/download/v1.5.5/Mon_Evolution_IMC_v1.5.5.apk"
 });
+// Les anciennes versions utilisent un champ de lien unique : prioriser la
+// page GitHub (Assets), qui fonctionne sur Samsung.
 (function(){
   var input=document.getElementById('update-url');
   var offer=document.getElementById('update-offer');
   if(input && offer && offer.style.display==='block'){
-    input.value="https://github.com/TheDwarfy01/mon-evolution/releases/download/v1.5.4/Mon_Evolution_IMC_v1.5.4.apk";
+    input.value="https://github.com/TheDwarfy01/mon-evolution/releases/tag/v1.5.5";
     var status=document.getElementById('update-status');
-    if(status) status.textContent="Version 1.5.4 disponible. Copiez le lien GitHub Releases et ouvrez-le dans Chrome.";
+    if(status)status.textContent="Version 1.5.5 disponible : ouvre la page GitHub puis Assets.";
   }
 })();
