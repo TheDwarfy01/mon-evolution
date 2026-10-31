@@ -1,1 +1,3 @@
 Publier 1.6.4: résoudre chargement de profil JSON Drive public, chemins de téléchargement alternatifs, resourcekey et diagnostics. Préserver toutes données locales et profils reçus.
+
+Relance pour archiver les sources et finaliser les métadonnées après correction de la publication.
