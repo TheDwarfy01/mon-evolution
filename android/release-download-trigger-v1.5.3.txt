@@ -1,0 +1,1 @@
+Déclenchement de la distribution alternative de l'APK signé 1.5.3 via GitHub Releases.
