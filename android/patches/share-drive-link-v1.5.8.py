@@ -28,7 +28,7 @@ rep(html,'Version installée : 1.5.7. Vérifie sur GitHub','Version installée :
 
 # Add a strict, profile-scoped link to the SAF-backed share. Never auto-share
 # the full private backup or guess a URL from Android's content:// provider URI.
-bridge=String.raw if False else r'''        @JavascriptInterface public String getShareLink(String id) {
+bridge=r'''        @JavascriptInterface public String getShareLink(String id) {
             if (id==null || !id.matches("[a-zA-Z0-9_-]{1,75}")) return "";
             if (!getPreferences(MODE_PRIVATE).contains("share_uri_"+id)) return "";
             return getPreferences(MODE_PRIVATE).getString("share_link_"+id,"");
@@ -168,9 +168,6 @@ $('share-link-copy').onclick=()=>window.AndroidBackup?.copyShareLink?.(profile()
 $('share-link-send').onclick=()=>window.AndroidBackup?.sendShareLink?.(profile().id);
 $('share-photos').onchange=()=>{""")
 # A text field is cleared if the user reselects a different file; valid and safe.
-rep(html,
-"""function shareCreated(persistent){shareStatus();alert(persistent?""",
-"""function shareCreated(persistent){shareStatus();alert(persistent?""")  # existing hook, no behavior change
 
 content=html.read_text(encoding='utf-8')
 assert 'id="share-link-send"' in content and 'id="share-link-copy"' in content
