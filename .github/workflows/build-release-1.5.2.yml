@@ -1,0 +1,79 @@
+name: Construire et publier APK 1.5.2
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Vérifier les secrets de signature
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          test -n "$KEYSTORE_B64" && test -n "$KEYSTORE_PASS" && test -n "$KEY_PASS" && test -n "$KEY_ALIAS" || {
+            echo "Signature absente : configurer les 4 secrets GitHub Actions."
+            exit 1
+          }
+      - name: Préparer les sources et Android SDK
+        run: |
+          mkdir -p /tmp/mon-evolution-src
+          unzip -q android/releases/Mon_Evolution_IMC_v1.5.2_correctif_sources.zip -d /tmp/mon-evolution-src
+          yes | sdkmanager "platforms;android-35" "build-tools;35.0.0" || true
+      - name: Compiler le correctif
+        working-directory: /tmp/mon-evolution-src
+        run: gradle --no-daemon :app:assembleRelease
+      - name: Aligner, signer, vérifier APK
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$KEYSTORE_B64" | base64 -d > /tmp/mon-evolution-keystore.jks
+          mkdir -p downloads
+          "$ANDROID_HOME/build-tools/35.0.0/zipalign" -p -f 4 \
+            /tmp/mon-evolution-src/app/build/outputs/apk/release/app-release-unsigned.apk \
+            /tmp/mon-evolution-aligned.apk
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign \
+            --ks /tmp/mon-evolution-keystore.jks \
+            --ks-key-alias "$KEY_ALIAS" \
+            --ks-pass env:KEYSTORE_PASS \
+            --key-pass env:KEY_PASS \
+            --out downloads/Mon_Evolution_IMC_v1.5.2.apk \
+            /tmp/mon-evolution-aligned.apk
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose downloads/Mon_Evolution_IMC_v1.5.2.apk
+          rm -f /tmp/mon-evolution-keystore.jks
+      - name: Publier la version pour le contrôle des mises à jour
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          Path('version.js').write_text("""// Mon Évolution IMC — dernière version Android publiée.
+          window.__monEvolutionVersionCallback?.({
+            version: "1.5.2",
+            published: true,
+            url: "https://thedwarfy01.github.io/mon-evolution/downloads/Mon_Evolution_IMC_v1.5.2.apk"
+          });
+          """, encoding='utf-8')
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add downloads/Mon_Evolution_IMC_v1.5.2.apk version.js
+          git commit -m "Publier APK signée 1.5.2 et activer sa détection" 
+          git push
