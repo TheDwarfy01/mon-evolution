@@ -56,6 +56,18 @@ function driveProfileRemoveFailed(){alert('Suppression Drive refusée (fichier m
  for(const remote of incoming.profiles){
   let local=merged.profiles.find(p=>p.id===remote.id);
   if(!local){merged.profiles.push(copy(remote));addedProfiles++;continue;}
+  if(local.name!==remote.name){
+   // Profiles sharing an ID but not a name are kept separate to avoid mixing sensitive data.
+   const separate=copy(remote);
+   let suffix=1;
+   let newId='import_'+String(remote.id).replace(/[^A-Za-z0-9_-]/g,'')+'_'+suffix;
+   while(merged.profiles.some(p=>p.id===newId)){
+    suffix++;newId='import_'+String(remote.id).replace(/[^A-Za-z0-9_-]/g,'')+'_'+suffix;
+   }
+   separate.id=newId;
+   merged.profiles.push(separate);
+   addedProfiles++;conflicts++;continue;
+  }
   const ids=new Map(local.entries.map(x=>[String(x.id),x]));
   for(const entry of remote.entries){
    const old=ids.get(String(entry.id));
@@ -289,8 +301,18 @@ renderMeals();
 let editingWeightId=null;
 const summary=document.createElement('div');
 summary.className='card';
-summary.innerHTML='<h3>Statistiques avancées</h3><div class="two"><div class="tile"><span>Moyenne sur 7 jours</span><strong id="average-seven">—</strong></div><div class="tile"><span>Évolution du mois</span><strong id="month-change">—</strong></div><div class="tile"><span>Poids le plus bas</span><strong id="lowest-weight">—</strong></div><div class="tile"><span>Pesées sur 30 jours</span><strong id="weighings-month">0</strong></div></div>';
+summary.innerHTML='<h3>Statistiques avancées</h3><div class="two"><div class="tile"><span>Moyenne sur 7 jours</span><strong id="average-seven">—</strong></div><div class="tile"><span>Évolution du mois</span><strong id="month-change">—</strong></div><div class="tile"><span>Poids le plus bas</span><strong id="lowest-weight">—</strong></div><div class="tile"><span>Pesées sur 30 jours</span><strong id="weighings-month">0</strong></div></div><button id="export-progress-pdf" class="secondary" style="width:100%;margin-top:12px">Télécharger le bilan PDF global</button>';
 $('home').append(summary);
+$('export-progress-pdf').onclick=()=>{
+ if(!window.AndroidBackup?.exportProgressPdf)return message('Bilan global indisponible sur Android');
+ const p=profile();
+ const rows=entries();
+ if(rows.length>12000)return alert('Trop de pesées pour cet export PDF. Utilise plutôt le CSV.');
+ AndroidBackup.exportProgressPdf(JSON.stringify({
+  name:p.name,height:p.height,goal:p.goal,
+  weights:rows.map(e=>({date:e.date,weight:e.weight,note:e.note||''}))
+ }));
+};
 function enhanceWeights(){
   const list=entries(),lastDate=new Date(),start7=new Date(lastDate),start30=new Date(lastDate);
   start7.setDate(start7.getDate()-6);start30.setDate(start30.getDate()-29);
