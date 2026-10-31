@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="referrer" content="no-referrer">
   <meta name="theme-color" content="#0b1c2d">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'">
   <title>Invitation à un profil — Mon Évolution IMC</title>
@@ -36,14 +37,17 @@
   <script>
     (function(){
       const id=new URLSearchParams(location.search).get('file')||'';
+      const keyParam=new URLSearchParams(location.search).get('resourcekey')||'';
+      const resourcekey=/^[A-Za-z0-9_-]{3,200}$/.test(keyParam)?keyParam:'';
       const valid=/^[A-Za-z0-9_-]{10,200}$/.test(id);
       document.getElementById('valid-invite').classList.toggle('hidden',!valid);
       document.getElementById('invalid-invite').classList.toggle('hidden',valid);
       if(!valid)return;
-      const deep='intent://share?file='+encodeURIComponent(id)
+      const suffix=resourcekey?'&resourcekey='+encodeURIComponent(resourcekey):'';
+      const deep='intent://share?file='+encodeURIComponent(id)+suffix
           +'#Intent;scheme=monevolution;package=fr.monevolution.app;end';
       document.getElementById('open-app').href=deep;
-      document.getElementById('drive-link').href='https://drive.google.com/file/d/'+encodeURIComponent(id)+'/view';
+      document.getElementById('drive-link').href='https://drive.google.com/file/d/'+encodeURIComponent(id)+'/view'+(resourcekey?'?resourcekey='+encodeURIComponent(resourcekey):'');
     })();
   </script>
 </body>
