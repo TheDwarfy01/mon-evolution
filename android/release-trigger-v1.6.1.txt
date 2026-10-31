@@ -3,3 +3,5 @@
 Relance après ajustement de la balise HTML du sélecteur de partages.
 
 Nouvelle relance du correctif : appel de sélection avec indentation corrigée.
+
+Relance contrôle du sélecteur multiple après correction de l'appel de rafraîchissement.
