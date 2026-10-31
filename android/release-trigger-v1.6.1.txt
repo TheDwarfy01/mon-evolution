@@ -1,3 +1,5 @@
 1.6.1: sélecteur de tous les profils personnels et reçus (plusieurs proches), stockage distinct des sources Drive, affichage lecture seule et retrait local.
 
 Relance après ajustement de la balise HTML du sélecteur de partages.
+
+Nouvelle relance du correctif : appel de sélection avec indentation corrigée.
