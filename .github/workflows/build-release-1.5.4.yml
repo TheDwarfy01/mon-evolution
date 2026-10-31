@@ -66,7 +66,7 @@ jobs:
           replace(html,"const installed='1.5.3';","const installed='1.5.4';")
           replace(html,'Version installée : <strong>1.5.3</strong>','Version installée : <strong>1.5.4</strong>')
           replace(html,'Version installée : 1.5.2. Vérifie sur GitHub','Version installée : 1.5.4. Vérifie sur GitHub')
-          old=r'/^https:\/\/thedwarfy01\.github\.io\/mon-evolution\/downloads\/Mon_Evolution_IMC_v[0-9.]+\.apk$/.test(info.url||'')'
+          old=r"""/^https:\/\/thedwarfy01\.github\.io\/mon-evolution\/downloads\/Mon_Evolution_IMC_v[0-9.]+\.apk$/.test(info.url||'')"""
           new=r'(/^https:\/\/github\.com\/TheDwarfy01\/mon-evolution\/releases\/download\/v[0-9.]+\/Mon_Evolution_IMC_v[0-9.]+\.apk$/.test(info.url||"") || '+old+')'
           replace(html,old,new)
           txt=html.read_text(encoding='utf-8')
