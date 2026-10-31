@@ -1,0 +1,64 @@
+        @JavascriptInterface public String listReceivedProfiles() {
+            return getPreferences(MODE_PRIVATE).getString("received_profiles","[]");
+        }
+        @JavascriptInterface public String receivedSelected() {
+            return getPreferences(MODE_PRIVATE).getString("received_selected","");
+        }
+        @JavascriptInterface public boolean forgetReceivedProfile(String key) {
+            if(key==null || !key.matches("[a-f0-9-]{36}"))return false;
+            synchronized(MainActivity.this) {
+                try {
+                    android.content.SharedPreferences prefs=getPreferences(MODE_PRIVATE);
+                    JSONArray old=new JSONArray(prefs.getString("received_profiles","[]"));
+                    JSONArray remaining=new JSONArray();
+                    boolean removed=false;
+                    for(int i=0;i<old.length();i++){
+                        JSONObject item=old.getJSONObject(i);
+                        if(key.equals(item.optString("key")))removed=true;
+                        else remaining.put(item);
+                    }
+                    if(!removed)return false;
+                    android.content.SharedPreferences.Editor edit=prefs.edit()
+                        .putString("received_profiles",remaining.toString());
+                    if(key.equals(prefs.getString("received_selected","")))
+                        edit.remove("received_selected");
+                    edit.apply();
+                    // Never delete the source document or revoke the owner's sharing.
+                    return true;
+                } catch(Exception ignored){return false;}
+            }
+        }
+        @JavascriptInterface public void selectReceivedProfile(String key) {
+            if(key==null || !key.matches("[a-f0-9-]{36}")){
+                js("sharedReadFailed()");return;
+            }
+            io.execute(() -> {
+                try {
+                    JSONArray saved=new JSONArray(getPreferences(MODE_PRIVATE)
+                        .getString("received_profiles","[]"));
+                    JSONObject item=null;
+                    for(int i=0;i<saved.length();i++){
+                        JSONObject current=saved.getJSONObject(i);
+                        if(key.equals(current.optString("key"))){item=current;break;}
+                    }
+                    if(item==null)throw new Exception("Profil reçu inconnu");
+                    String kind=item.getString("kind");
+                    String source=item.getString("source");
+                    byte[] body;
+                    if("public".equals(kind)){
+                        String fileId=driveFileId(source);
+                        if(fileId==null)throw new Exception("Lien non valide");
+                        body=fetchPublicProfile(fileId);
+                    }else if("private".equals(kind)){
+                        String raw=readSafJson(Uri.parse(source),40_000_000);
+                        body=raw.getBytes(StandardCharsets.UTF_8);
+                    }else throw new Exception("Type de profil inconnu");
+                    JSONObject doc=new JSONObject(new String(body,StandardCharsets.UTF_8));
+                    validateReceived(doc);
+                    registerReceived(kind,source,doc);
+                    getPreferences(MODE_PRIVATE).edit().putString("received_selected",key).apply();
+                    String base64=android.util.Base64.encodeToString(body,android.util.Base64.NO_WRAP);
+                    js("sharedLoaded("+JSONObject.quote(base64)+","+JSONObject.quote(key)+")");
+                }catch(Exception e){js("sharedReadFailed()");}
+            });
+        }
