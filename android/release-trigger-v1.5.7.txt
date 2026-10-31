@@ -1,0 +1,1 @@
+Déclencher compilation APK v1.5.7. Réutilisation des fichiers de sauvegarde et partage Drive existants, liaison des documents anciens, aucun effacement automatique.
