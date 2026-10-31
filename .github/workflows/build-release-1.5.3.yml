@@ -55,27 +55,14 @@ jobs:
             echo "::error::Données personnelles initiales détectées"
             exit 1
           fi
-      - name: Contrôler la présence de l'icône de lancement
+      - name: Contrôler l'icône de lancement
         run: |
           set -euo pipefail
           SRC=/tmp/mon-evolution-src/app/src/main
-          MANIFEST="$SRC/AndroidManifest.xml"
-          if [ ! -f "$MANIFEST" ]; then
-            echo "::error::AndroidManifest.xml introuvable"
-            exit 1
-          fi
-          ICON=$(sed -n 's/.*android:icon="@\\(mipmap\\|drawable\\)\\/\\([^"]*\\)".*/\\1 \\2/p' "$MANIFEST" | head -n 1)
-          if [ -z "$ICON" ]; then
-            echo "::error::Icône de l'application non déclarée dans AndroidManifest.xml"
-            exit 1
-          fi
-          KIND=$(echo "$ICON" | cut -d' ' -f1)
-          NAME=$(echo "$ICON" | cut -d' ' -f2)
-          if ! find "$SRC/res" -type f \\( -path "*/${KIND}*/${NAME}.png" -o -path "*/${KIND}*/${NAME}.webp" -o -path "*/${KIND}*/${NAME}.xml" \\) | grep -q .; then
-            echo "::error::Ressource de l'icône @${KIND}/${NAME} absente"
-            exit 1
-          fi
-          echo "Icône déclarée et ressource trouvée : @${KIND}/${NAME}"
+          test -f "$SRC/AndroidManifest.xml"
+          grep -Fq 'android:icon="@drawable/ic_launcher"' "$SRC/AndroidManifest.xml"
+          test -s "$SRC/res/drawable/ic_launcher.xml"
+          echo "Icône Android déclarée et présente"
       - name: Compiler le correctif
         working-directory: /tmp/mon-evolution-src
         run: gradle --no-daemon :app:assembleRelease
