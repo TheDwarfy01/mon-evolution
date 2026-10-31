@@ -1,0 +1,1 @@
+Compile 1.5.8: buttons Copy link and Share link for Reader-authorized Drive profile. User obtains Drive link once from Google Drive sharing UI. No automatic public access.
