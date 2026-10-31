@@ -1,0 +1,1 @@
+Build signed 1.5.6: fix Android share creation/update/receipt with Android Storage Access Framework, keep GitHub Releases updater.
