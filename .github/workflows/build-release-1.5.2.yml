@@ -74,6 +74,21 @@ jobs:
           PY
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add downloads/Mon_Evolution_IMC_v1.5.2.apk version.js
+          # Activer également le téléchargement sur la page publique après succès.
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          html = p.read_text(encoding='utf-8')
+          html = html.replace(
+            '<a class="button" href="#">Téléchargement temporairement suspendu</a>',
+            '<a class="button" href="downloads/Mon_Evolution_IMC_v1.5.2.apk" download>Télécharger Mon Évolution IMC v1.5.2</a>'
+          )
+          html = html.replace(
+            'La version 1.5.1 est temporairement retirée du téléchargement : installation non confirmée sur Android. La version 1.4 reste la version de secours. La connexion Google par e-mail est toujours en développement.',
+            'Version 1.5.2 : correction de l’affichage sous la barre de notifications. IMPORTANT : cette version utilise une nouvelle clé de signature et ne peut pas être installée par-dessus la 1.5.1. Sauvegardez vos données avant de désinstaller l’ancienne version. La connexion Google par e-mail reste en développement.'
+          )
+          p.write_text(html, encoding='utf-8')
+          PY
+          git add downloads/Mon_Evolution_IMC_v1.5.2.apk version.js index.html
           git commit -m "Publier APK signée 1.5.2 et activer sa détection" 
           git push
