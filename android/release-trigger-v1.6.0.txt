@@ -1,3 +1,5 @@
 Build and test 1.6.0. Stability improvements: safe updates, independent data deletion, public URL reader, manual backup merge, food journal fix, exports, calendar reminders.
 
 Relance après correction du conflit de nom Java dans ReminderReceiver.
+
+Relance complète après ajout du bilan PDF global, test de collision de profils et correction de la publication Releases.
