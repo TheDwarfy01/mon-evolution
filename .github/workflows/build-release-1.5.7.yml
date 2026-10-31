@@ -1,0 +1,136 @@
+name: Construire et publier APK 1.5.7
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'android/release-trigger-v1.5.7.txt'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Configurer le chemin des outils Android
+        run: |
+          set -euo pipefail
+          sdkmanager_bin="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager -print -quit)"
+          if [ -z "$sdkmanager_bin" ]; then
+            echo "::error::sdkmanager introuvable dans le SDK Android"
+            exit 1
+          fi
+          sdkmanager_dir="$(dirname "$sdkmanager_bin")"
+          echo "$sdkmanager_dir" >> "$GITHUB_PATH"
+          "$sdkmanager_bin" --version
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Vérifier les secrets de signature
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          test -n "$KEYSTORE_B64" && test -n "$KEYSTORE_PASS" && test -n "$KEY_PASS" && test -n "$KEY_ALIAS" || {
+            echo "Signature absente : configurer les 4 secrets GitHub Actions."
+            exit 1
+          }
+      - name: Préparer et vérifier les sources 1.5.7
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/mon-evolution-src
+          cp -R android/source-1.5.3/. /tmp/mon-evolution-src/
+          sdkmanager --install "platforms;android-35" "build-tools;35.0.0"
+          python3 android/patches/deduplicate-drive-v1.5.7.py
+          grep -q 'versionName="1.5.7"' /tmp/mon-evolution-src/app/src/main/AndroidManifest.xml
+          grep -q 'versionCode 13' /tmp/mon-evolution-src/app/build.gradle
+          grep -q 'linkExistingShare' /tmp/mon-evolution-src/app/src/main/java/fr/monevolution/app/MainActivity.java
+          grep -q 'linkExistingBackup' /tmp/mon-evolution-src/app/src/main/java/fr/monevolution/app/MainActivity.java
+          grep -q 'share-relink' /tmp/mon-evolution-src/app/src/main/assets/index.html
+          grep -q 'backup-relink' /tmp/mon-evolution-src/app/src/main/assets/index.html
+          grep -q 'update-page-open' /tmp/mon-evolution-src/app/src/main/assets/index.html
+          grep -q 'update-direct-open' /tmp/mon-evolution-src/app/src/main/assets/index.html
+      - name: Contrôler l'icône de lancement
+        run: |
+          set -euo pipefail
+          SRC=/tmp/mon-evolution-src/app/src/main
+          test -f "$SRC/AndroidManifest.xml"
+          grep -Fq 'android:icon="@drawable/ic_launcher"' "$SRC/AndroidManifest.xml"
+          test -s "$SRC/res/drawable/ic_launcher.xml"
+          echo "Icône Android déclarée et présente"
+      - name: Compiler le correctif
+        working-directory: /tmp/mon-evolution-src
+        run: gradle --no-daemon :app:assembleRelease
+      - name: Aligner, signer, vérifier APK
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$KEYSTORE_B64" | base64 -d > /tmp/mon-evolution-keystore.jks
+          mkdir -p downloads
+          "$ANDROID_HOME/build-tools/35.0.0/zipalign" -p -f 4 \
+            /tmp/mon-evolution-src/app/build/outputs/apk/release/app-release-unsigned.apk \
+            /tmp/mon-evolution-aligned.apk
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign \
+            --ks /tmp/mon-evolution-keystore.jks \
+            --ks-key-alias "$KEY_ALIAS" \
+            --ks-pass env:KEYSTORE_PASS \
+            --key-pass env:KEY_PASS \
+            --out downloads/Mon_Evolution_IMC_v1.5.7.apk \
+            /tmp/mon-evolution-aligned.apk
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose downloads/Mon_Evolution_IMC_v1.5.7.apk
+          rm -f /tmp/mon-evolution-keystore.jks
+      - name: Vérifier le manifeste de l'APK signée
+        run: |
+          set -euo pipefail
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging downloads/Mon_Evolution_IMC_v1.5.7.apk | grep -E "package:|application-icon"
+      - name: Publier l'APK via GitHub Releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if gh release view v1.5.7 >/dev/null 2>&1; then
+            gh release upload v1.5.7 downloads/Mon_Evolution_IMC_v1.5.7.apk --clobber
+          else
+            gh release create v1.5.7 downloads/Mon_Evolution_IMC_v1.5.7.apk \
+              --title "Mon Évolution IMC v1.5.7" \
+              --notes "Évite les fichiers Drive en double : met à jour la sauvegarde et le partage existants, permet de relier les anciens fichiers Drive. Installation par-dessus la version précédente."
+          fi
+      - name: Activer la 1.5.7 sur le site et pour les mises à jour
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          version=Path("version.js")
+          site=Path("index.html")
+          for path in (version,site):
+              text=path.read_text(encoding="utf-8")
+              assert "1.5.6" in text, f"Base v1.5.6 introuvable dans {path}"
+              path.write_text(text.replace("1.5.6","1.5.7"),encoding="utf-8")
+          content=site.read_text(encoding="utf-8")
+          content=content.replace(
+              "Version 1.5.7 : création de profils partagés en lecture seule sur Google Drive, consultation et mise à jour automatique du fichier. Téléchargement par la page GitHub Releases (conseillée sur Samsung) ou APK direct.",
+              "Version 1.5.7 : un seul fichier de sauvegarde et un seul partage par profil, mis à jour sans doublon. Liaison aux fichiers Drive existants. Téléchargement par GitHub Releases (conseillé sur Samsung) ou APK direct."
+          )
+          site.write_text(content,encoding="utf-8")
+          assert 'releases/tag/v1.5.7' in content
+          assert 'releases/download/v1.5.7' in version.read_text(encoding="utf-8")
+          PY
+          mkdir -p android/source-1.5.7
+          cp -R /tmp/mon-evolution-src/. android/source-1.5.7/
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add version.js index.html android/source-1.5.7
+          git commit -m "Publier Mon Évolution IMC 1.5.7 : sauvegardes sans doublons"
+          git push
