@@ -45,10 +45,10 @@ public class ReminderReceiver extends BroadcastReceiver {
         alarm.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP,when.getTimeInMillis(),pending);
     }
     @Override public void onReceive(Context context, Intent intent) {
-        String action=intent.getAction();
-        if(Intent.ACTION_BOOT_COMPLETED.equals(action)
-            ||Intent.ACTION_TIMEZONE_CHANGED.equals(action)
-            ||Intent.ACTION_TIME_CHANGED.equals(action)){
+        String eventAction=intent.getAction();
+        if(Intent.ACTION_BOOT_COMPLETED.equals(eventAction)
+            ||Intent.ACTION_TIMEZONE_CHANGED.equals(eventAction)
+            ||Intent.ACTION_TIME_CHANGED.equals(eventAction)){
             schedule(context,"weight");schedule(context,"meals");return;
         }
         String type=intent.getStringExtra("type");
