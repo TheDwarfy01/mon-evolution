@@ -51,20 +51,20 @@ function driveProfileRemoved(){
 }
 function driveProfileRemoveFailed(){alert('Suppression Drive refusée (fichier modifié, absent ou accès insuffisant). Aucune donnée locale supprimée.');}$('backup').onclick=()=>{if(window.AndroidBackup)AndroidBackup.save(JSON.stringify({format:'mon-evolution',version:1,exportedAt:new Date().toISOString(),data}));else message('Sauvegarde Android indisponible')};$('restore').onclick=()=>{if(window.AndroidBackup)AndroidBackup.load();else message('Chargement Android indisponible')};function backupCompleted(){message('Sauvegarde enregistrée ✓')}function mergeRestore(incoming){
  const byId=new Map(data.profiles.map(p=>[p.id,p]));
- const merged=structuredClone(data);
+ const copy=x=>JSON.parse(JSON.stringify(x)),merged=copy(data);
  let addedProfiles=0,addedWeights=0,conflicts=0,addedDays=0;
  for(const remote of incoming.profiles){
   let local=merged.profiles.find(p=>p.id===remote.id);
-  if(!local){merged.profiles.push(structuredClone(remote));addedProfiles++;continue;}
+  if(!local){merged.profiles.push(copy(remote));addedProfiles++;continue;}
   const ids=new Map(local.entries.map(x=>[String(x.id),x]));
   for(const entry of remote.entries){
    const old=ids.get(String(entry.id));
-   if(!old){local.entries.push(structuredClone(entry));addedWeights++;ids.set(String(entry.id),entry);}
+   if(!old){local.entries.push(copy(entry));addedWeights++;ids.set(String(entry.id),entry);}
    else if(JSON.stringify(old)!==JSON.stringify(entry))conflicts++;
   }
   local.meals||={};
   for(const [date,meal] of Object.entries(remote.meals||{})){
-   if(!local.meals[date]){local.meals[date]=structuredClone(meal);addedDays++;}
+   if(!local.meals[date]){local.meals[date]=copy(meal);addedDays++;}
    else if(JSON.stringify(local.meals[date])!==JSON.stringify(meal))conflicts++;
   }
   if(remote.height!==local.height||remote.goal!==local.goal||remote.name!==local.name)conflicts++;
