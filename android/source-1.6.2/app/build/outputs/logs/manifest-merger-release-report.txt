@@ -1,0 +1,112 @@
+-- Merging decision tree log ---
+manifest
+ADDED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml:1:1-25:12
+INJECTED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml:1:1-25:12
+INJECTED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml:1:1-25:12
+INJECTED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml:1:1-25:12
+	package
+		ADDED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml:1:70-99
+		INJECTED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml
+	android:versionName
+		ADDED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml:1:125-152
+		INJECTED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml
+	xmlns:android
+		ADDED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml:1:11-69
+	android:versionCode
+		ADDED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml:1:100-124
+		INJECTED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml
+uses-permission#android.permission.INTERNET
+ADDED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml:2:3-64
+	android:name
+		ADDED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml:2:20-62
+uses-permission#android.permission.POST_NOTIFICATIONS
+ADDED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml:3:3-74
+	android:name
+		ADDED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml:3:20-72
+uses-permission#android.permission.RECEIVE_BOOT_COMPLETED
+ADDED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml:4:3-78
+	android:name
+		ADDED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml:4:20-76
+uses-sdk
+ADDED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml:5:3-71
+INJECTED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml:5:3-71
+INJECTED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml:5:3-71
+	android:targetSdkVersion
+		ADDED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml:5:40-69
+		INJECTED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml
+	android:minSdkVersion
+		ADDED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml:5:13-39
+		INJECTED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml
+application
+ADDED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml:6:3-24:17
+INJECTED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml:6:3-24:17
+	android:extractNativeLibs
+		INJECTED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml
+	android:label
+		ADDED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml:6:16-49
+	android:icon
+		ADDED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml:6:50-86
+	android:allowBackup
+		ADDED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml:6:188-215
+	android:theme
+		ADDED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml:6:87-150
+	android:usesCleartextTraffic
+		ADDED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml:6:151-187
+activity#fr.monevolution.app.MainActivity
+ADDED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml:7:5-20:16
+	android:launchMode
+		ADDED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml:7:68-98
+	android:exported
+		ADDED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml:7:44-67
+	android:name
+		ADDED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml:7:15-43
+intent-filter#action:name:android.intent.action.MAIN+category:name:android.intent.category.LAUNCHER
+ADDED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml:8:7-11:23
+action#android.intent.action.MAIN
+ADDED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml:9:9-60
+	android:name
+		ADDED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml:9:17-58
+category#android.intent.category.LAUNCHER
+ADDED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml:10:9-68
+	android:name
+		ADDED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml:10:19-66
+intent-filter#action:name:android.intent.action.VIEW+category:name:android.intent.category.BROWSABLE+category:name:android.intent.category.DEFAULT+data:host:share+data:scheme:monevolution
+ADDED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml:14:7-19:23
+action#android.intent.action.VIEW
+ADDED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml:15:9-60
+	android:name
+		ADDED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml:15:17-58
+category#android.intent.category.DEFAULT
+ADDED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml:16:9-67
+	android:name
+		ADDED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml:16:19-65
+category#android.intent.category.BROWSABLE
+ADDED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml:17:9-69
+	android:name
+		ADDED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml:17:19-67
+data
+ADDED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml:18:9-67
+	android:host
+		ADDED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml:18:45-65
+	android:scheme
+		ADDED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml:18:15-44
+receiver#fr.monevolution.app.ReminderReceiver
+ADDED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml:21:5-23:16
+	android:exported
+		ADDED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml:21:48-72
+	android:name
+		ADDED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml:21:15-47
+intent-filter#action:name:android.intent.action.BOOT_COMPLETED+action:name:android.intent.action.TIMEZONE_CHANGED+action:name:android.intent.action.TIME_SET
+ADDED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml:22:7-217
+action#android.intent.action.BOOT_COMPLETED
+ADDED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml:22:22-83
+	android:name
+		ADDED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml:22:30-81
+action#android.intent.action.TIMEZONE_CHANGED
+ADDED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml:22:83-146
+	android:name
+		ADDED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml:22:91-144
+action#android.intent.action.TIME_SET
+ADDED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml:22:146-201
+	android:name
+		ADDED from /home/runner/work/mon-evolution/mon-evolution/android/source-1.6.2/app/src/main/AndroidManifest.xml:22:154-199
