@@ -106,7 +106,7 @@ jobs:
                    "via les liens Google Drive publics, prise en charge des clés de partage "
                    "et messages d'erreur détaillés. Les invitations et téléchargements "
                    "Firefox ou DuckDuckGo sont conservés.")
-          html,n=re.subn(r'<p class="note">Version 1\.6\.3 :.*?</p>',
+          html,n=re.subn(r'<p class="note">Version 1\.6\.4 :.*?</p>',
                          '<p class="note">'+newnote+'</p>',html)
           assert n==1, f"Note du site absente (matches={n})"
           assert "releases/tag/v1.6.4" in html
