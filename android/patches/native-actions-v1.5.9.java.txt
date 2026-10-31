@@ -1,0 +1,102 @@
+        @JavascriptInterface public void deleteActiveShare(String id) {
+            if(id==null || !id.matches("[a-zA-Z0-9_-]{1,75}"))return;
+            String value=getPreferences(MODE_PRIVATE).getString("share_uri_"+id,null);
+            if(value==null) {
+                runOnUiThread(() -> web.evaluateJavascript("shareDeleteFailed()",null));
+                return;
+            }
+            io.execute(() -> {
+                try {
+                    boolean success=android.provider.DocumentsContract.deleteDocument(
+                        getContentResolver(),Uri.parse(value));
+                    if(!success)throw new Exception("Suppression refusée par le fournisseur");
+                    getPreferences(MODE_PRIVATE).edit()
+                        .remove("share_uri_"+id).remove("share_link_"+id).apply();
+                    runOnUiThread(() -> web.evaluateJavascript("shareDeleted()",null));
+                } catch(Exception e) {
+                    runOnUiThread(() -> web.evaluateJavascript("shareDeleteFailed()",null));
+                }
+            });
+        }
+        @JavascriptInterface public void deleteProfileOnDrive(String profileId) {
+            if(profileId==null || !profileId.matches("[a-zA-Z0-9_-]{1,75}"))return;
+            String value=getPreferences(MODE_PRIVATE).getString(BACKUP_URI,null);
+            String knownHash=getPreferences(MODE_PRIVATE).getString(BACKUP_HASH,null);
+            if(value==null || knownHash==null) {
+                runOnUiThread(() -> web.evaluateJavascript("driveProfileRemoveFailed()",null));
+                return;
+            }
+            io.execute(() -> {
+                try {
+                    Uri uri=Uri.parse(value);
+                    if(!knownHash.equals(fileHash(uri)))
+                        throw new Exception("Conflit: Drive a changé depuis la dernière sauvegarde");
+                    JSONObject document=new JSONObject(readSafJson(uri,40_000_000));
+                    if(!"mon-evolution".equals(document.optString("format"))
+                        || document.optInt("version")!=1)
+                        throw new Exception("Format de sauvegarde invalide");
+                    JSONObject data=document.getJSONObject("data");
+                    JSONArray profiles=data.getJSONArray("profiles");
+                    JSONArray remaining=new JSONArray();
+                    boolean found=false;
+                    for(int i=0;i<profiles.length();i++){
+                        JSONObject p=profiles.getJSONObject(i);
+                        if(profileId.equals(p.optString("id")))found=true;
+                        else remaining.put(p);
+                    }
+                    if(!found)throw new Exception("Profil absent de la sauvegarde");
+                    if(remaining.length()==0){
+                        if(!android.provider.DocumentsContract.deleteDocument(getContentResolver(),uri))
+                            throw new Exception("Le fournisseur refuse de supprimer le fichier");
+                    }else{
+                        data.put("profiles",remaining);
+                        if(profileId.equals(data.optString("active")))
+                            data.put("active",remaining.getJSONObject(0).getString("id"));
+                        document.put("data",data);
+                        document.put("exportedAt",new java.text.SimpleDateFormat(
+                            "yyyy-MM-dd'T'HH:mm:ss'Z'",java.util.Locale.US)
+                            .format(new java.util.Date()));
+                        String updated=document.toString();
+                        try(OutputStream out=getContentResolver().openOutputStream(uri,"wt")){
+                            if(out==null)throw new Exception("Sauvegarde Drive inaccessible");
+                            out.write(updated.getBytes(StandardCharsets.UTF_8));
+                        }
+                    }
+                    // The profile is intentionally still local: disconnect backup
+                    // so the next local save cannot re-upload it to Drive.
+                    getPreferences(MODE_PRIVATE).edit().remove(BACKUP_URI)
+                        .remove(BACKUP_HASH).remove(BACKUP_TIME).apply();
+                    runOnUiThread(() -> web.evaluateJavascript("driveProfileRemoved()",null));
+                }catch(Exception e){
+                    runOnUiThread(() -> web.evaluateJavascript("driveProfileRemoveFailed()",null));
+                }
+            });
+        }
+        @JavascriptInterface public void loadSharedPublic(String link) {
+            final String id=driveFileId(link);
+            if(id==null){
+                runOnUiThread(() -> web.evaluateJavascript("sharedPublicFailed()",null));
+                return;
+            }
+            io.execute(() -> {
+                try {
+                    byte[] content=fetchDrivePublicFile(id);
+                    JSONObject document=new JSONObject(new String(content,StandardCharsets.UTF_8));
+                    if(!"mon-evolution-lecture-seule".equals(document.optString("format"))
+                        || document.optInt("version")!=1
+                        || !document.has("profile"))
+                        throw new Exception("Profil partagé invalide");
+                    document.getJSONObject("profile").getJSONArray("entries");
+                    String encoded=android.util.Base64.encodeToString(
+                        content,android.util.Base64.NO_WRAP);
+                    getPreferences(MODE_PRIVATE).edit()
+                        .putString("received_public_url",
+                            "https://drive.google.com/file/d/"+id+"/view")
+                        .remove("received_share_uri").apply();
+                    runOnUiThread(() -> web.evaluateJavascript(
+                        "sharedLoaded('"+encoded+"')",null));
+                }catch(Exception e){
+                    runOnUiThread(() -> web.evaluateJavascript("sharedPublicFailed()",null));
+                }
+            });
+        }
