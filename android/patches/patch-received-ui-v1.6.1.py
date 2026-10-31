@@ -28,7 +28,7 @@ rep('id="setup-restore" type="button">☁ Restaurer une sauvegarde Google Drive<
 '''id="setup-restore" type="button">☁ Restaurer une sauvegarde Google Drive</button>
 <button class="secondary" id="setup-received" type="button">♧ Consulter un profil partagé</button>''')
 rep("sharedNav.textContent='♧ Proche';","sharedNav.textContent='♧ Partagés';")
-rep('''  <button class="secondary" style="width:100%;margin-top:10px" id="shared-open">Ou choisir un fichier Drive privé</button></div>''',
+rep(''' <button class="secondary" style="width:100%;margin-top:10px" id="shared-open">Ou choisir un fichier Drive privé</button></div>''',
 '''  <button class="secondary" style="width:100%;margin-top:10px" id="shared-open">Ou choisir un fichier Drive privé</button>
   <button class="secondary" style="width:100%;margin-top:12px" id="forget-received">Retirer ce profil partagé de ma liste</button>
   <p class="notice">Cette action retire uniquement le raccourci de ton application, jamais le fichier Drive appartenant à ton proche.</p></div>''')
