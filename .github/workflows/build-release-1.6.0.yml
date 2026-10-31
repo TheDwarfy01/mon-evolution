@@ -1,0 +1,115 @@
+name: Vérifier et publier Mon Évolution IMC 1.6.0
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'android/release-trigger-v1.6.0.txt'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Installer Node et Gradle pour les tests
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Tests JavaScript, partage, données et sécurité
+        run: |
+          set -euo pipefail
+          node --version
+          python3 android/tests/validate-1.6.0.py
+      - name: Installer SDK Android
+        run: |
+          set -euo pipefail
+          sdkmanager_bin="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager -print -quit)"
+          test -n "$sdkmanager_bin"
+          echo "$(dirname "$sdkmanager_bin")" >> "$GITHUB_PATH"
+          "$sdkmanager_bin" --install "platforms;android-35" "build-tools;35.0.0"
+      - name: Vérifier la configuration et l'icône
+        run: |
+          set -euo pipefail
+          grep -q 'versionCode 16' android/source-1.6.0/app/build.gradle
+          grep -q 'versionName="1.6.0"' android/source-1.6.0/app/src/main/AndroidManifest.xml
+          test -s android/source-1.6.0/app/src/main/res/drawable/ic_launcher.xml
+      - name: Compiler 1.6.0
+        working-directory: android/source-1.6.0
+        run: gradle --no-daemon :app:assembleRelease
+      - name: Signer et vérifier l'APK
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          test -n "$KEYSTORE_B64" && test -n "$KEYSTORE_PASS" && test -n "$KEY_PASS" && test -n "$KEY_ALIAS"
+          printf '%s' "$KEYSTORE_B64" | base64 -d > /tmp/mon-evolution-1.6.0.jks
+          mkdir -p downloads
+          "$ANDROID_HOME/build-tools/35.0.0/zipalign" -p -f 4 \
+            android/source-1.6.0/app/build/outputs/apk/release/app-release-unsigned.apk \
+            /tmp/mon-evolution-1.6.0-aligned.apk
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign \
+            --ks /tmp/mon-evolution-1.6.0.jks \
+            --ks-key-alias "$KEY_ALIAS" \
+            --ks-pass env:KEYSTORE_PASS \
+            --key-pass env:KEY_PASS \
+            --out downloads/Mon_Evolution_IMC_v1.6.0.apk \
+            /tmp/mon-evolution-1.6.0-aligned.apk
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose downloads/Mon_Evolution_IMC_v1.6.0.apk
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging downloads/Mon_Evolution_IMC_v1.6.0.apk | grep -E 'package:|application-icon'
+          rm -f /tmp/mon-evolution-1.6.0.jks
+      - name: Publier dans GitHub Releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if gh release view v1.6.0 >/dev/null 2>&1; then
+            gh release upload v1.6.0 downloads/Mon_Evolution_IMC_v1.6.0.apk --clobber
+          else
+            gh release create v1.6.0 downloads/Mon_Evolution_IMC_v1.6.0.apk \
+              --title "Mon Évolution IMC 1.6.0 — stabilisation" \
+              --notes "Correctifs : sauvegardes/suppressions locales et Drive distinctes, fichier partagé public par URL avec lecteur privé alternatif, fusion manuelle de sauvegardes, correction effacement de repas, export CSV/JSON, PDF plus volumineux, rappels calendaires et mises à jour sans script distant. Les accès privés Google Drive restent gérés directement dans Drive. Ne pas désinstaller avant mise à jour."
+      - name: Actualiser page GitHub et métadonnées pour les anciennes versions
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          version=Path("version.js")
+          site=Path("index.html")
+          expected="1.5.8"
+          new="1.6.0"
+          for path in (version,site):
+              old=path.read_text(encoding="utf-8")
+              if new not in old:
+                  assert expected in old, f"Version incompatible dans {path}"
+                  path.write_text(old.replace(expected,new),encoding="utf-8")
+          html=site.read_text(encoding="utf-8")
+          newnote=("Version 1.6.0 : fiabilité des sauvegardes et des suppressions, "
+                   "partage par URL ou fichier privé, importation/fusion de profils, "
+                   "exports CSV/JSON, correction du journal et mise à jour sécurisée. "
+                   "Téléchargement conseillé : page GitHub Releases.")
+          html,n=re.subn(r'<p class="note">Version 1\.6\.0 :.*?</p>',
+                         '<p class="note">'+newnote+'</p>',html)
+          assert n==1, f"Note du site absente (matches={n})"
+          assert "releases/tag/v1.6.0" in html
+          site.write_text(html,encoding="utf-8")
+          assert "releases/download/v1.6.0" in version.read_text(encoding="utf-8")
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add version.js index.html
+          if ! git diff --cached --quiet; then
+            git commit -m "Publier informations de la version 1.6.0"
+            git pull --rebase
+            git push
+          fi
