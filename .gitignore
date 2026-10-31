@@ -1,0 +1,17 @@
+# Secrets Android / Google : ne jamais publier
+*.keystore
+*.jks
+*.p12
+*.pem
+*.key
+**/local.properties
+**/secrets.properties
+**/google-services.json
+**/client_secret*.json
+*.apk
+*.aab
+.gradle/
+**/build/
+.idea/
+*.iml
+.DS_Store
