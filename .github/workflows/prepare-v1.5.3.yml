@@ -1,0 +1,28 @@
+name: Préparer les sources Android v1.5.3
+
+on:
+  push:
+    paths:
+      - .github/workflows/prepare-v1.5.3.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extraire les sources 1.5.2 pour les correctifs 1.5.3
+        run: |
+          set -euo pipefail
+          mkdir -p android/source-1.5.3
+          unzip -q -o android/releases/Mon_Evolution_IMC_v1.5.2_correctif_sources.zip -d android/source-1.5.3
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add android/source-1.5.3
+          if ! git diff --cached --quiet; then
+            git commit -m "Extraire les sources v1.5.2 pour préparer v1.5.3"
+            git push
+          fi
