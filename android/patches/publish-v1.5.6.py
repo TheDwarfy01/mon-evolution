@@ -29,7 +29,8 @@ window.__monEvolutionVersionCallback?.({
 site=Path('index.html')
 html=site.read_text(encoding='utf-8')
 # Replace the sole download CTA, retaining both paths.
-pattern=r'<p><a class="button" href="[^"]+"(?: download)?>Télécharger Mon Évolution IMC v[0-9.]+</a></p>'
+html=re.sub(r'<p><a href="https://github\\.com/TheDwarfy01/mon-evolution/releases/download/v[0-9.]+/Mon_Evolution_IMC_v[0-9.]+\\.apk">Téléchargement APK direct \\(alternative\\)</a></p>','',html)
+pattern=r'<p><a class="button" href="[^"]+"(?: download)?>Télécharger Mon Évolution IMC v[0-9.]+(?: \\(page GitHub\\))?</a></p>'
 replacement='<p><a class="button" href="'+page+'">Télécharger Mon Évolution IMC v1.5.6 (page GitHub)</a></p><p><a href="'+apk+'">Téléchargement APK direct (alternative)</a></p>'
 html,count=re.subn(pattern,lambda _:replacement,html)
 assert count==1, f'Expected exactly one site download CTA, got {count}'
