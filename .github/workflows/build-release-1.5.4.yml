@@ -1,0 +1,161 @@
+name: Construire et publier APK 1.5.4
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'android/release-trigger-v1.5.4.txt'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Configurer le chemin des outils Android
+        run: |
+          set -euo pipefail
+          sdkmanager_bin="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager -print -quit)"
+          if [ -z "$sdkmanager_bin" ]; then
+            echo "::error::sdkmanager introuvable dans le SDK Android"
+            exit 1
+          fi
+          sdkmanager_dir="$(dirname "$sdkmanager_bin")"
+          echo "$sdkmanager_dir" >> "$GITHUB_PATH"
+          "$sdkmanager_bin" --version
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Vérifier les secrets de signature
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          test -n "$KEYSTORE_B64" && test -n "$KEYSTORE_PASS" && test -n "$KEY_PASS" && test -n "$KEY_ALIAS" || {
+            echo "Signature absente : configurer les 4 secrets GitHub Actions."
+            exit 1
+          }
+      - name: Préparer les sources 1.5.4
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/mon-evolution-src
+          cp -R android/source-1.5.3/. /tmp/mon-evolution-src/
+          sdkmanager --install "platforms;android-35" "build-tools;35.0.0"
+          python3 - <<'PY'
+          from pathlib import Path
+          base=Path('/tmp/mon-evolution-src/app')
+          def replace(path,old,new):
+              s=path.read_text(encoding='utf-8')
+              assert s.count(old)==1, f'Expected one occurrence of {old[:40]} in {path}'
+              path.write_text(s.replace(old,new),encoding='utf-8')
+          manifest=base/'src/main/AndroidManifest.xml'
+          gradle=base/'build.gradle'
+          html=base/'src/main/assets/index.html'
+          replace(manifest,'android:versionCode="9" android:versionName="1.5.3"',
+                           'android:versionCode="10" android:versionName="1.5.4"')
+          replace(gradle,'versionCode 9','versionCode 10')
+          replace(gradle,"versionName '1.5.3'","versionName '1.5.4'")
+          replace(html,"const installed='1.5.3';","const installed='1.5.4';")
+          replace(html,'Version installée : <strong>1.5.3</strong>','Version installée : <strong>1.5.4</strong>')
+          replace(html,'Version installée : 1.5.2. Vérifie sur GitHub','Version installée : 1.5.4. Vérifie sur GitHub')
+          old=r'/^https:\/\/thedwarfy01\.github\.io\/mon-evolution\/downloads\/Mon_Evolution_IMC_v[0-9.]+\.apk$/.test(info.url||'')'
+          new=r'(/^https:\/\/github\.com\/TheDwarfy01\/mon-evolution\/releases\/download\/v[0-9.]+\/Mon_Evolution_IMC_v[0-9.]+\.apk$/.test(info.url||"") || '+old+')'
+          replace(html,old,new)
+          txt=html.read_text(encoding='utf-8')
+          assert 'id="setup-screen"' in txt
+          assert "name:'Mario',height:181" not in txt and '119,9' not in txt
+          assert 'android:icon="@drawable/ic_launcher"' in manifest.read_text()
+          PY
+      - name: Contrôler l'icône de lancement
+        run: |
+          set -euo pipefail
+          SRC=/tmp/mon-evolution-src/app/src/main
+          test -f "$SRC/AndroidManifest.xml"
+          grep -Fq 'android:icon="@drawable/ic_launcher"' "$SRC/AndroidManifest.xml"
+          test -s "$SRC/res/drawable/ic_launcher.xml"
+          echo "Icône Android déclarée et présente"
+      - name: Compiler le correctif
+        working-directory: /tmp/mon-evolution-src
+        run: gradle --no-daemon :app:assembleRelease
+      - name: Aligner, signer, vérifier APK
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$KEYSTORE_B64" | base64 -d > /tmp/mon-evolution-keystore.jks
+          mkdir -p downloads
+          "$ANDROID_HOME/build-tools/35.0.0/zipalign" -p -f 4 \
+            /tmp/mon-evolution-src/app/build/outputs/apk/release/app-release-unsigned.apk \
+            /tmp/mon-evolution-aligned.apk
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign \
+            --ks /tmp/mon-evolution-keystore.jks \
+            --ks-key-alias "$KEY_ALIAS" \
+            --ks-pass env:KEYSTORE_PASS \
+            --key-pass env:KEY_PASS \
+            --out downloads/Mon_Evolution_IMC_v1.5.4.apk \
+            /tmp/mon-evolution-aligned.apk
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose downloads/Mon_Evolution_IMC_v1.5.4.apk
+          rm -f /tmp/mon-evolution-keystore.jks
+      - name: Vérifier le manifeste de l'APK signée
+        run: |
+          set -euo pipefail
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging downloads/Mon_Evolution_IMC_v1.5.4.apk | grep -E "package:|application-icon"
+      - name: Publier l'APK via GitHub Releases
+        env:
+          GH_TOKEN: \${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release create v1.5.4 downloads/Mon_Evolution_IMC_v1.5.4.apk \
+            --title "Mon Évolution IMC v1.5.4" \
+            --notes "Téléchargement des mises à jour via GitHub Releases. Icône, premier lancement neutre et données existantes conservés."
+      - name: Actualiser le contrôle des mises à jour
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          release="https://github.com/TheDwarfy01/mon-evolution/releases/download/v1.5.4/Mon_Evolution_IMC_v1.5.4.apk"
+          legacy="https://thedwarfy01.github.io/mon-evolution/downloads/Mon_Evolution_IMC_v1.5.4.apk"
+          # Compatibilité 1.5.3 : le champ de téléchargement est remplacé par Releases.
+          script='''// Mon Évolution IMC — dernière version téléchargeable.
+window.__monEvolutionVersionCallback?.({
+  version: "1.5.4",
+  published: true,
+  url: "''' + legacy + '''"
+});
+(function(){
+  var input=document.getElementById('update-url');
+  var offer=document.getElementById('update-offer');
+  if(input && offer && offer.style.display==='block'){
+    input.value="''' + release + '''";
+    var status=document.getElementById('update-status');
+    if(status) status.textContent="Version 1.5.4 disponible. Copiez le lien GitHub Releases et ouvrez-le dans Chrome.";
+  }
+})();
+'''
+          Path('version.js').write_text(script,encoding='utf-8')
+          p=Path('index.html')
+          html=p.read_text(encoding='utf-8')
+          import re
+          html,n=re.subn(r'href="downloads/Mon_Evolution_IMC_v[0-9.]+\.apk" download', 'href="'+release+'"',html)
+          assert n==1, 'Download link not found'
+          html=re.sub(r'Télécharger Mon Évolution IMC v[0-9.]+','Télécharger Mon Évolution IMC v1.5.4',html)
+          html=re.sub(r'<p class="note">Version 1\.5\.[0-9]+ :.*?</p>',
+                       '<p class="note">Version 1.5.4 : téléchargements via GitHub Releases, icône et premier lancement neutre conservés. Mise à jour sans désinstallation recommandée.</p>',html)
+          p.write_text(html,encoding='utf-8')
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add version.js index.html
+          git commit -m "Diffuser la v1.5.4 via GitHub Releases et contrôle intégré"
+          git push
