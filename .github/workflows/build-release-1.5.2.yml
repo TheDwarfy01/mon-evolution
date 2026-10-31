@@ -15,7 +15,12 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - uses: android-actions/setup-android@v3
+      - name: Vérifier le SDK Android installé sur le runner
+        run: |
+          set -euo pipefail
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          test -x "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" || test -x "$(command -v sdkmanager)"
+          sdkmanager --version
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
@@ -34,7 +39,7 @@ jobs:
         run: |
           mkdir -p /tmp/mon-evolution-src
           unzip -q android/releases/Mon_Evolution_IMC_v1.5.2_correctif_sources.zip -d /tmp/mon-evolution-src
-          yes | sdkmanager "platforms;android-35" "build-tools;35.0.0" || true
+          sdkmanager --install "platforms;android-35" "build-tools;35.0.0"
       - name: Compiler le correctif
         working-directory: /tmp/mon-evolution-src
         run: gradle --no-daemon :app:assembleRelease
