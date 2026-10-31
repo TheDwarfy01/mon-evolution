@@ -1,0 +1,1 @@
+Release 1.6.3: recommander Firefox et DuckDuckGo pour APK GitHub Releases sur Samsung lorsque Chrome bloque le téléchargement. Conserver page Releases et APK direct.
