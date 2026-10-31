@@ -33,7 +33,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class MainActivity extends Activity {
-    private static final int SAVE = 41, LOAD = 42, PDF = 43, PHOTO = 44, SHARE_CREATE = 45, SHARE_OPEN = 46, SHARE_RELINK = 47, BACKUP_RELINK = 48, EXPORT_CSV = 49, EXPORT_PROFILE = 50;
+    private static final int SAVE = 41, LOAD = 42, PDF = 43, PHOTO = 44, SHARE_CREATE = 45, SHARE_OPEN = 46, SHARE_RELINK = 47, BACKUP_RELINK = 48, EXPORT_CSV = 49, EXPORT_PROFILE = 50, PROGRESS_PDF = 51;
     private WebView web;
     private String pendingJson;
     private String pendingPdfJson;
@@ -42,6 +42,7 @@ public class MainActivity extends Activity {
     private String pendingShareName;
     private String pendingShareJson;
     private String pendingExport;
+    private String pendingProgressJson;
     private final ExecutorService io = Executors.newSingleThreadExecutor();
     private static final String PREFS = "drive_backup";
     private static final String BACKUP_URI = "backup_uri";
@@ -346,6 +347,21 @@ public class MainActivity extends Activity {
                 }catch(Exception e){js("sharedPublicFailed()");}
             });
         }
+        @JavascriptInterface public void exportProgressPdf(String content) {
+            if(content==null || content.length()>4_000_000){js("exportFailed()");return;}
+            runOnUiThread(() -> {
+                try {
+                    JSONObject doc=new JSONObject(content);
+                    if(doc.getJSONArray("weights").length()<1)throw new Exception("No weights");
+                    pendingProgressJson=content;
+                    Intent i=new Intent(Intent.ACTION_CREATE_DOCUMENT);
+                    i.addCategory(Intent.CATEGORY_OPENABLE);
+                    i.setType("application/pdf");
+                    i.putExtra(Intent.EXTRA_TITLE,"mon-evolution-bilan-global.pdf");
+                    startActivityForResult(i,PROGRESS_PDF);
+                }catch(Exception e){js("exportFailed()");}
+            });
+        }
         @JavascriptInterface public void exportCsv(String content) {
             if(content==null || content.length()>15_000_000){js("exportFailed()");return;}
             runOnUiThread(() -> {
@@ -553,6 +569,12 @@ public class MainActivity extends Activity {
                     try{createMealsPdf(uri,report);js("pdfCompleted()");}
                     catch(Exception e){js("exportFailed()");}
                 });
+            } else if (request == PROGRESS_PDF) {
+                String report=pendingProgressJson;
+                io.execute(() -> {
+                    try{createProgressPdf(uri,report);js("exportCompleted()");}
+                    catch(Exception e){js("exportFailed()");}
+                });
             } else if (request == EXPORT_CSV || request == EXPORT_PROFILE) {
                 String content=pendingExport;
                 io.execute(() -> {
@@ -663,6 +685,7 @@ public class MainActivity extends Activity {
             pendingPdfJson = null;
             pendingPhotoToken = null;
             pendingExport = null;
+            pendingProgressJson = null;
         }
     }
     private boolean validDriveShareLink(String url) {
@@ -937,6 +960,71 @@ public class MainActivity extends Activity {
         if (output.size() > 180_000) throw new Exception("Photo trop volumineuse");
         return "data:image/jpeg;base64," + android.util.Base64.encodeToString(output.toByteArray(), android.util.Base64.NO_WRAP);
     }
+
+    private void createProgressPdf(Uri uri,String reportJson) throws Exception {
+        JSONObject report=new JSONObject(reportJson);
+        JSONArray weights=report.getJSONArray("weights");
+        if(weights.length()==0 || weights.length()>12000)throw new Exception("Invalid number of weights");
+        String name=report.optString("name","Profil");
+        if(name.length()>100)name=name.substring(0,100);
+        double goal=report.getDouble("goal");
+        double height=report.optDouble("height",170);
+        double first=weights.getJSONObject(0).getDouble("weight");
+        double last=weights.getJSONObject(weights.length()-1).getDouble("weight");
+        PdfDocument pdf=new PdfDocument();
+        Paint p=new Paint(Paint.ANTI_ALIAS_FLAG);
+        p.setColor(Color.rgb(24,44,63));
+        p.setTextSize(12f);
+        try {
+            int number=1;
+            PdfDocument.Page page=pdf.startPage(
+                new PdfDocument.PageInfo.Builder(595,842,number).create());
+            Canvas canvas=page.getCanvas();
+            canvas.drawColor(Color.WHITE);
+            p.setTypeface(Typeface.create(Typeface.DEFAULT,Typeface.BOLD));
+            p.setTextSize(20f);
+            canvas.drawText("Mon Évolution IMC - Bilan global",38f,56f,p);
+            p.setTypeface(Typeface.DEFAULT);p.setTextSize(12f);
+            canvas.drawText("Profil : "+name,38f,85f,p);
+            canvas.drawText("Départ : "+String.format(java.util.Locale.FRANCE,"%.1f kg",first)
+                +"  Actuel : "+String.format(java.util.Locale.FRANCE,"%.1f kg",last),
+                38f,110f,p);
+            canvas.drawText("Évolution : "+String.format(java.util.Locale.FRANCE,"%+.1f kg",last-first)
+                +"  Objectif : "+String.format(java.util.Locale.FRANCE,"%.1f kg",goal),38f,132f,p);
+            if(height>0)canvas.drawText("IMC actuel : "+String.format(java.util.Locale.FRANCE,
+                "%.1f",last/Math.pow(height/100d,2)),38f,152f,p);
+            drawWeightChart(canvas,weights,goal,178f);
+            p.setColor(Color.rgb(37,69,89));
+            p.setTypeface(Typeface.create(Typeface.DEFAULT,Typeface.BOLD));p.setTextSize(14f);
+            canvas.drawText("Historique des pesées",38f,378f,p);
+            p.setTypeface(Typeface.DEFAULT);p.setTextSize(11f);
+            int y=407;
+            for(int i=0;i<weights.length();i++){
+                if(y>778){
+                    pdf.finishPage(page);
+                    page=pdf.startPage(new PdfDocument.PageInfo.Builder(595,842,++number).create());
+                    canvas=page.getCanvas();canvas.drawColor(Color.WHITE);
+                    p.setTextSize(13f);p.setTypeface(Typeface.create(Typeface.DEFAULT,Typeface.BOLD));
+                    canvas.drawText("Bilan global - "+name+" (suite)",38f,45f,p);
+                    p.setTypeface(Typeface.DEFAULT);p.setTextSize(11f);
+                    y=75;
+                }
+                JSONObject w=weights.getJSONObject(i);
+                String row=w.optString("date","")+"  "
+                    +String.format(java.util.Locale.FRANCE,"%.1f kg",w.getDouble("weight"));
+                String note=w.optString("note","");
+                if(!note.isEmpty())row+="  "+note.substring(0,Math.min(note.length(),75));
+                canvas.drawText(row,38f,(float)y,p);
+                y+=17;
+            }
+            pdf.finishPage(page);
+            try(OutputStream out=getContentResolver().openOutputStream(uri,"wt")){
+                if(out==null)throw new Exception("PDF destination unavailable");
+                pdf.writeTo(out);
+            }
+        }finally{pdf.close();}
+    }
+
     private void createMealsPdf(Uri uri, String reportJson) throws Exception {
         JSONObject report = new JSONObject(reportJson);
         String name = report.optString("name", "Profil");
