@@ -1,0 +1,1 @@
+Publication APK 1.5.5 avec deux options dans l'application : page GitHub Releases et téléchargement APK direct, dans navigateur externe. Source 1.5.3 corrigée à la compilation.
