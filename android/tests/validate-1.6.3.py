@@ -78,6 +78,9 @@ assert 'getInvitationLink(String profileId)' in java
 assert 'https://thedwarfy01.github.io/mon-evolution/share.html?file=' in java
 assert 'final String url=getInvitationLink(id);' in java
 assert 'id="share-invite-preview"' in html
+assert "Firefox ou DuckDuckGo" in html
+assert "Chrome peut bloquer le téléchargement" in html
+assert "ouvre-le dans Firefox ou DuckDuckGo" in html
 assert 'window.receiveShareInvitation=function(fileId)' in html
 assert "invite-accept" in html and "invite-private" in html and "invite-cancel" in html
 assert "window.AndroidBackup?.loadSharedPublic?." in html
