@@ -1,0 +1,1 @@
+Release 1.6.2: page d'invitation Mon Évolution -> schéma Android monevolution://share -> proposition d'ajouter le profil, lien privé via sélection Drive, profils locaux préservés.
