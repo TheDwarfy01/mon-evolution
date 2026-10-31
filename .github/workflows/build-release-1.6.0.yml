@@ -78,6 +78,7 @@ jobs:
             gh release create v1.6.0 downloads/Mon_Evolution_IMC_v1.6.0.apk \
               --title "Mon Évolution IMC 1.6.0 — stabilisation" \
               --notes "Correctifs : sauvegardes/suppressions locales et Drive distinctes, fichier partagé public par URL avec lecteur privé alternatif, fusion manuelle de sauvegardes, correction effacement de repas, export CSV/JSON, PDF plus volumineux, rappels calendaires et mises à jour sans script distant. Les accès privés Google Drive restent gérés directement dans Drive. Ne pas désinstaller avant mise à jour."
+          fi
       - name: Actualiser page GitHub et métadonnées pour les anciennes versions
         run: |
           set -euo pipefail
