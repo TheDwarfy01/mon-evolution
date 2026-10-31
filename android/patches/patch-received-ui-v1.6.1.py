@@ -192,9 +192,8 @@ assert s.endswith("</body></html>")
 s=s.replace("</body></html>",appender+"</body></html>")
 # Existing button opens received management. It should not override a selected
 # personal profile unless a received document was actually loaded successfully.
-rep("window.AndroidBackup?.refreshShared?.();\n};\ndocument.querySelectorAll('[data-tab]:not([data-tab=\"shared\"])']",'''if(window.AndroidBackup?.receivedSelected?.())window.AndroidBackup.refreshShared();
-};
-document.querySelectorAll('[data-tab]:not([data-tab="shared"])']''')
+rep(" window.AndroidBackup?.refreshShared?.();\n};",
+    " if(typeof unifiedCurrent!=='undefined' && unifiedCurrent.startsWith('received:'))window.AndroidBackup?.refreshShared?.();\n};")
 # Same identifier may appear in multiple scripts but use only one.
 assert "id=\"unified-profile-picker\"" in s
 assert "forgetReceivedProfile" in s
