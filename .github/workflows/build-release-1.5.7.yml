@@ -47,7 +47,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p /tmp/mon-evolution-src
-          cp -R android/source-1.5.3/. /tmp/mon-evolution-src/
+          cp -R android/source-1.5.6/. /tmp/mon-evolution-src/
           sdkmanager --install "platforms;android-35" "build-tools;35.0.0"
           python3 android/patches/deduplicate-drive-v1.5.7.py
           grep -q 'versionName="1.5.7"' /tmp/mon-evolution-src/app/src/main/AndroidManifest.xml
