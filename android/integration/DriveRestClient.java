@@ -33,6 +33,7 @@ public final class DriveRestClient {
     }
 
     private static byte[] read(InputStream in, int maxBytes) throws IOException {
+        if (in == null) return new byte[0];
         try (InputStream input = in; ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             byte[] buffer = new byte[8192];
             int count;
@@ -48,7 +49,13 @@ public final class DriveRestClient {
         HttpURLConnection conn = (HttpURLConnection) new URL(path).openConnection();
         conn.setConnectTimeout(15000);
         conn.setReadTimeout(30000);
-        conn.setRequestMethod(method);
+        if ("PATCH".equals(method)) {
+            // Android HttpURLConnection does not implement PATCH; Google Drive supports this override.
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("X-HTTP-Method-Override", "PATCH");
+        } else {
+            conn.setRequestMethod(method);
+        }
         conn.setRequestProperty("Authorization", "Bearer " + token);
         conn.setRequestProperty("Accept", "application/json");
         if (body != null) {
