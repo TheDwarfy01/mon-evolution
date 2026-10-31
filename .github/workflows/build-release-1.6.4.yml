@@ -1,0 +1,125 @@
+name: Vérifier et publier Mon Évolution IMC 1.6.4
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'android/release-trigger-v1.6.4.txt'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Installer Node et Gradle pour les tests
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Préparer les sources 1.6.4 (liens publics Drive)
+        run: |
+          set -euo pipefail
+          mkdir -p android/source-1.6.4
+          cp -R android/source-1.6.3/. android/source-1.6.4/
+          python3 android/patches/drive-download-v1.6.4.py
+          grep -q 'versionCode 20' android/source-1.6.4/app/build.gradle
+          grep -q 'drive.usercontent.google.com/download?id=' android/source-1.6.4/app/src/main/java/fr/monevolution/app/MainActivity.java
+          grep -q 'sharedPublicFailed(reason)' android/source-1.6.4/app/src/main/assets/index.html
+      - name: Tests JavaScript, partage, données et sécurité
+        run: |
+          set -euo pipefail
+          node --version
+          python3 android/tests/validate-1.6.4.py
+      - name: Installer SDK Android
+        run: |
+          set -euo pipefail
+          sdkmanager_bin="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager -print -quit)"
+          test -n "$sdkmanager_bin"
+          echo "$(dirname "$sdkmanager_bin")" >> "$GITHUB_PATH"
+          "$sdkmanager_bin" --install "platforms;android-35" "build-tools;35.0.0"
+      - name: Vérifier la configuration et l'icône
+        run: |
+          set -euo pipefail
+          grep -q 'versionCode 20' android/source-1.6.4/app/build.gradle
+          grep -q 'versionName="1.6.4"' android/source-1.6.4/app/src/main/AndroidManifest.xml
+          test -s android/source-1.6.4/app/src/main/res/drawable/ic_launcher.xml
+      - name: Compiler 1.6.4
+        working-directory: android/source-1.6.4
+        run: gradle --no-daemon :app:assembleRelease
+      - name: Signer et vérifier l'APK
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          test -n "$KEYSTORE_B64" && test -n "$KEYSTORE_PASS" && test -n "$KEY_PASS" && test -n "$KEY_ALIAS"
+          printf '%s' "$KEYSTORE_B64" | base64 -d > /tmp/mon-evolution-1.6.4.jks
+          mkdir -p downloads
+          "$ANDROID_HOME/build-tools/35.0.0/zipalign" -p -f 4 \
+            android/source-1.6.4/app/build/outputs/apk/release/app-release-unsigned.apk \
+            /tmp/mon-evolution-1.6.4-aligned.apk
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign \
+            --ks /tmp/mon-evolution-1.6.4.jks \
+            --ks-key-alias "$KEY_ALIAS" \
+            --ks-pass env:KEYSTORE_PASS \
+            --key-pass env:KEY_PASS \
+            --out downloads/Mon_Evolution_IMC_v1.6.4.apk \
+            /tmp/mon-evolution-1.6.4-aligned.apk
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose downloads/Mon_Evolution_IMC_v1.6.4.apk
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging downloads/Mon_Evolution_IMC_v1.6.4.apk | grep -E 'package:|application-icon'
+          rm -f /tmp/mon-evolution-1.6.4.jks
+      - name: Publier dans GitHub Releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if gh release view v1.6.4 >/dev/null 2>&1; then
+            gh release upload v1.6.4 downloads/Mon_Evolution_IMC_v1.6.4.apk --clobber
+          else
+            gh release create v1.6.4 downloads/Mon_Evolution_IMC_v1.6.4.apk \
+              --title "Mon Évolution IMC 1.6.4 — stabilisation" \
+              --notes "Correction du chargement de profils Google Drive publics : plusieurs points de téléchargement sécurisés, prise en charge des clés de ressources et messages d'échec précis. Invitations vers l'application et sélecteur multi-profils conservés. Installer par-dessus la version précédente."
+          fi
+      - name: Actualiser les liens, le site et archiver les sources
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          version=Path("version.js")
+          site=Path("index.html")
+          for path in (version,site):
+              original=path.read_text(encoding="utf-8")
+              if "1.6.4" not in original:
+                  assert "1.6.3" in original, f"Version précédente introuvable dans {path}"
+                  path.write_text(original.replace("1.6.3","1.6.4"),encoding="utf-8")
+          html=site.read_text(encoding="utf-8")
+          newnote=("Version 1.6.4 : correction du chargement des profils partagés "
+                   "via les liens Google Drive publics, prise en charge des clés de partage "
+                   "et messages d'erreur détaillés. Les invitations et téléchargements "
+                   "Firefox ou DuckDuckGo sont conservés.")
+          html,n=re.subn(r'<p class="note">Version 1\.6\.3 :.*?</p>',
+                         '<p class="note">'+newnote+'</p>',html)
+          assert n==1, f"Note du site absente (matches={n})"
+          assert "releases/tag/v1.6.4" in html
+          site.write_text(html,encoding="utf-8")
+          assert "releases/download/v1.6.4" in version.read_text(encoding="utf-8")
+          landing=Path("share.html").read_text(encoding="utf-8")
+          assert 'scheme=monevolution;package=fr.monevolution.app' in landing
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add version.js index.html android/source-1.6.4
+          if ! git diff --cached --quiet; then
+            git commit -m "Publier Mon Évolution 1.6.4 : corriger import des profils publics Drive"
+            git pull --rebase
+            git push
+          fi
