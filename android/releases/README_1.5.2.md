@@ -19,3 +19,10 @@ Ces valeurs sont privées, ne doivent jamais être ajoutées aux fichiers GitHub
 Après le succès du workflow, tester dans la version 1.5.1 : **À propos → Rechercher une mise à jour**. La mise à jour doit être installée par-dessus la version existante, sans désinstallation. En cas de refus du gestionnaire de paquets Samsung, utiliser ADB pour relever l'erreur précise ; ne pas supprimer les données.
 
 La mise à jour est un téléchargement proposé à l'utilisateur, **pas une installation automatique**. Un test sur téléphone est nécessaire pour confirmer le correctif d'affichage.
+
+
+## Nouveau prérequis (31 octobre 2026) : premier lancement neutre
+
+Avant de signer et publier la 1.5.2, intégrer et valider l'écran de premier lancement décrit dans [`PREMIER_LANCEMENT_1.5.2.md`](./PREMIER_LANCEMENT_1.5.2.md). Une nouvelle installation doit demander de créer un profil ou de restaurer une sauvegarde, sans afficher le nom, le poids ou les objectifs d'un ancien utilisateur. La mise à jour 1.5.1 → 1.5.2 doit préserver les profils réels.
+
+**Attention : ceci n'est pas encore intégré dans l'archive ZIP des sources. Le workflow de publication ne doit pas être lancé avant la modification et les tests.**
