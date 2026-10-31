@@ -1,0 +1,28 @@
+name: Distribuer APK 1.5.3 via GitHub Releases
+on:
+  push:
+    paths:
+      - 'android/release-download-trigger-v1.5.3.txt'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  distribute:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Vérifier le fichier avant diffusion
+        run: |
+          set -euo pipefail
+          test -s downloads/Mon_Evolution_IMC_v1.5.3.apk
+          unzip -t downloads/Mon_Evolution_IMC_v1.5.3.apk >/dev/null
+      - name: Créer la version téléchargeable
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if gh release view "v1.5.3" >/dev/null 2>&1; then
+            gh release upload "v1.5.3" downloads/Mon_Evolution_IMC_v1.5.3.apk --clobber
+          else
+            gh release create "v1.5.3" downloads/Mon_Evolution_IMC_v1.5.3.apk --title "Mon Évolution IMC 1.5.3" --notes "Android 7+ : icône restaurée et première installation sans profil prérempli. Mise à jour signée avec la même clé que la 1.5.2. Sauvegardez vos données avant toute désinstallation."
+          fi
