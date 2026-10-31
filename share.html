@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="theme-color" content="#0b1c2d">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'">
+  <title>Invitation à un profil — Mon Évolution IMC</title>
+  <style>
+    :root{color-scheme:dark;font-family:system-ui,-apple-system,sans-serif}
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;background:#081a2a;color:#f2faff;display:flex;align-items:center;justify-content:center;padding:20px}
+    main{width:min(100%,520px);background:#132c40;border:1px solid #345970;padding:28px;border-radius:20px;box-shadow:0 18px 60px #0004}
+    h1{font-size:25px;margin:0 0 12px}p{line-height:1.6;color:#c2d5e0}small{color:#a8bdcc;line-height:1.5}
+    .button{display:block;text-align:center;background:#7de3cf;color:#06383d;border-radius:12px;padding:16px;margin-top:15px;font-weight:800;text-decoration:none}
+    .secondary{background:#284a63;color:#fff;border:1px solid #466b81}
+    .hidden{display:none}
+    .mark{font-size:14px;letter-spacing:.06em;color:#7de3cf;font-weight:700;margin-bottom:15px}
+  </style>
+</head>
+<body>
+  <main>
+    <div class="mark">MON ÉVOLUTION IMC</div>
+    <h1>Un proche partage son évolution avec toi</h1>
+    <p>Tu peux ajouter son profil à l'application en <strong>lecture seule</strong>. Tes propres profils ne seront pas remplacés.</p>
+    <div id="valid-invite" class="hidden">
+      <a id="open-app" class="button" href="#">Ouvrir dans Mon Évolution</a>
+      <p>Une fois l'application ouverte, confirme l'ajout du profil. Si l'accès Google Drive est privé, tu devras utiliser ton compte autorisé et sélectionner le document partagé.</p>
+      <a id="drive-link" class="button secondary" href="#" rel="noopener noreferrer">Voir le fichier dans Google Drive</a>
+    </div>
+    <p id="invalid-invite" class="hidden">Ce lien d'invitation est incomplet ou invalide. Demande à ton proche de renvoyer le lien depuis Mon Évolution.</p>
+    <a class="button secondary" href="https://github.com/TheDwarfy01/mon-evolution/releases/latest" rel="noopener noreferrer">Installer ou mettre à jour Mon Évolution</a>
+    <p><small>Le fichier reste hébergé dans Google Drive, avec les autorisations choisies par son propriétaire. Cette page ne récupère ni ne stocke tes données personnelles. L'ouverture depuis Chrome sur Android nécessite parfois d'appuyer sur le bouton ci-dessus.</small></p>
+  </main>
+  <script>
+    (function(){
+      const id=new URLSearchParams(location.search).get('file')||'';
+      const valid=/^[A-Za-z0-9_-]{10,200}$/.test(id);
+      document.getElementById('valid-invite').classList.toggle('hidden',!valid);
+      document.getElementById('invalid-invite').classList.toggle('hidden',valid);
+      if(!valid)return;
+      const deep='intent://share?file='+encodeURIComponent(id)
+          +'#Intent;scheme=monevolution;package=fr.monevolution.app;end';
+      document.getElementById('open-app').href=deep;
+      document.getElementById('drive-link').href='https://drive.google.com/file/d/'+encodeURIComponent(id)+'/view';
+    })();
+  </script>
+</body>
+</html>
