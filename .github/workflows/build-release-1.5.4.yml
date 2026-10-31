@@ -128,21 +128,21 @@ jobs:
           legacy="https://thedwarfy01.github.io/mon-evolution/downloads/Mon_Evolution_IMC_v1.5.4.apk"
           # Compatibilité 1.5.3 : le champ de téléchargement est remplacé par Releases.
           script='''// Mon Évolution IMC — dernière version téléchargeable.
-window.__monEvolutionVersionCallback?.({
-  version: "1.5.4",
-  published: true,
-  url: "''' + legacy + '''"
-});
-(function(){
-  var input=document.getElementById('update-url');
-  var offer=document.getElementById('update-offer');
-  if(input && offer && offer.style.display==='block'){
-    input.value="''' + release + '''";
-    var status=document.getElementById('update-status');
-    if(status) status.textContent="Version 1.5.4 disponible. Copiez le lien GitHub Releases et ouvrez-le dans Chrome.";
-  }
-})();
-'''
+          window.__monEvolutionVersionCallback?.({
+            version: "1.5.4",
+            published: true,
+            url: "''' + legacy + '''"
+          });
+          (function(){
+            var input=document.getElementById('update-url');
+            var offer=document.getElementById('update-offer');
+            if(input && offer && offer.style.display==='block'){
+              input.value="''' + release + '''";
+              var status=document.getElementById('update-status');
+              if(status) status.textContent="Version 1.5.4 disponible. Copiez le lien GitHub Releases et ouvrez-le dans Chrome.";
+            }
+          })();
+          '''
           Path('version.js').write_text(script,encoding='utf-8')
           p=Path('index.html')
           html=p.read_text(encoding='utf-8')
