@@ -1,1 +1,3 @@
 Déclenchement de la compilation de Mon Évolution IMC 1.5.3. Les sources Android ont été adaptées au premier lancement neutre et à l'icône de l'application. Publication uniquement après signature et vérification de l'APK.
+
+Nouvelle compilation après correction du contrôle de l’icône.
