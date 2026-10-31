@@ -1,1 +1,3 @@
 Publier Mon Évolution IMC v1.5.4 : téléchargement via GitHub Releases, lien dans l'application et compatibilité v1.5.3.
+
+Relance après correction de la syntaxe du workflow.
