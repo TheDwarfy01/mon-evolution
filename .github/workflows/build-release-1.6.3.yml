@@ -106,7 +106,7 @@ jobs:
                    "Si Chrome bloque l'APK sur Samsung, utiliser Firefox ou DuckDuckGo "
                    "depuis GitHub Releases. Les fonctions et invitations de la 1.6.2 "
                    "sont conservées.")
-          html,n=re.subn(r'<p class="note">Version 1\.6\.2 :.*?</p>',
+          html,n=re.subn(r'<p class="note">Version 1\.6\.3 :.*?</p>',
                          '<p class="note">'+newnote+'</p>',html)
           assert n==1, f"Note du site absente (matches={n})"
           assert "releases/tag/v1.6.3" in html
