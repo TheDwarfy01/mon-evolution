@@ -48,6 +48,7 @@ assert 'linkExistingBackup' in java and 'linkExistingShare' in java
 assert 'else delete record[key]' in html
 assert "exportCsv" in java and "exportSingleProfile" in java
 assert 'csvCell' in html
+assert 'exportProgressPdf' in java and 'export-progress-pdf' in html
 assert 'setAndAllowWhileIdle' in reminders
 assert 'TIMEZONE_CHANGED' in manifest
 assert 'location.reload()' in html
@@ -80,7 +81,7 @@ const confirm=(msg)=>true;
 '''
 tests+=code+"\n"+csv+'''
 let result=mergeRestore({active:"p1",profiles:[{
- id:"p1",name:"Remote",height:180,goal:80,
+ id:"p1",name:"Local",height:180,goal:80,
  entries:[{id:1,date:"2026-10-01",weight:90,note:"remote"},
           {id:2,date:"2026-10-02",weight:99,note:"new"}],
  meals:{"2026-10-01":{lunch:"remote"},"2026-10-02":{dinner:"new"}}
@@ -91,6 +92,16 @@ assert.ok(result.conflicts>=2);
 assert.equal(result.merged.profiles[0].entries.find(x=>x.id===1).weight,100);
 assert.equal(result.merged.profiles[0].meals["2026-10-01"].lunch,"local");
 assert.equal(result.merged.profiles[0].entries.find(x=>x.id===2).weight,99);
+let separate=mergeRestore({active:"p1",profiles:[{
+ id:"p1",name:"Different person",height:170,goal:75,
+ entries:[{id:1,date:"2026-10-01",weight:70,note:"private"}],
+ meals:{}
+}]});
+assert.equal(separate.merged.profiles.length,2);
+assert.equal(separate.merged.profiles[0].name,"Local");
+assert.equal(separate.merged.profiles[1].name,"Different person");
+assert.notEqual(separate.merged.profiles[1].id,"p1");
+assert.ok(separate.conflicts>0);
 assert.ok(csvCell("=SUM(1,2)").startsWith("\\\"'=SUM"));
 assert.ok(csvCell('a"b').includes('a""b'));
 console.log("Behavioral merge & CSV tests passed");
