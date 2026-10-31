@@ -45,6 +45,27 @@ jobs:
           mkdir -p /tmp/mon-evolution-src
           unzip -q android/releases/Mon_Evolution_IMC_v1.5.2_correctif_sources.zip -d /tmp/mon-evolution-src
           sdkmanager --install "platforms;android-35" "build-tools;35.0.0"
+      - name: Contrôler la présence de l'icône de lancement
+        run: |
+          set -euo pipefail
+          SRC=/tmp/mon-evolution-src/app/src/main
+          MANIFEST="$SRC/AndroidManifest.xml"
+          if [ ! -f "$MANIFEST" ]; then
+            echo "::error::AndroidManifest.xml introuvable"
+            exit 1
+          fi
+          ICON=$(sed -n 's/.*android:icon="@\\(mipmap\\|drawable\\)\\/\\([^"]*\\)".*/\\1 \\2/p' "$MANIFEST" | head -n 1)
+          if [ -z "$ICON" ]; then
+            echo "::error::Icône de l'application non déclarée dans AndroidManifest.xml"
+            exit 1
+          fi
+          KIND=$(echo "$ICON" | cut -d' ' -f1)
+          NAME=$(echo "$ICON" | cut -d' ' -f2)
+          if ! find "$SRC/res" -type f \\( -path "*/${KIND}*/${NAME}.png" -o -path "*/${KIND}*/${NAME}.webp" -o -path "*/${KIND}*/${NAME}.xml" \\) | grep -q .; then
+            echo "::error::Ressource de l'icône @${KIND}/${NAME} absente"
+            exit 1
+          fi
+          echo "Icône déclarée et ressource trouvée : @${KIND}/${NAME}"
       - name: Compiler le correctif
         working-directory: /tmp/mon-evolution-src
         run: gradle --no-daemon :app:assembleRelease
