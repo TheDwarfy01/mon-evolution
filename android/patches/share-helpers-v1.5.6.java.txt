@@ -1,0 +1,121 @@
+    // Documents are created/selected using Android SAF; no Google password or OAuth token.
+    private boolean persistUri(Uri uri, boolean writable) {
+        try {
+            int flags=Intent.FLAG_GRANT_READ_URI_PERMISSION |
+                (writable ? Intent.FLAG_GRANT_WRITE_URI_PERMISSION : 0);
+            getContentResolver().takePersistableUriPermission(uri, flags);
+            return true;
+        } catch (SecurityException e) {
+            if (writable) {
+                try {
+                    getContentResolver().takePersistableUriPermission(
+                        uri, Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+                    return true;
+                } catch (SecurityException ignored) { }
+            }
+            return false;
+        }
+    }
+
+    private void writeShared(Uri uri, String json) throws Exception {
+        try (OutputStream out=getContentResolver().openOutputStream(uri, "wt")) {
+            if(out==null) throw new Exception("Fichier Drive inaccessible en écriture");
+            out.write(json.getBytes(StandardCharsets.UTF_8));
+        }
+    }
+
+    private String makeSharedDocument(String id, JSONObject input) throws Exception {
+        JSONObject profile=new JSONObject();
+        String name=input.getString("name");
+        if(name.isEmpty() || name.length()>100) throw new Exception("Nom invalide");
+        profile.put("name",name);
+        profile.put("height",input.getDouble("height"));
+        profile.put("goal",input.getDouble("goal"));
+        JSONArray entries=input.getJSONArray("entries");
+        if(entries.length()==0 || entries.length()>20000) throw new Exception("Pesées manquantes");
+        profile.put("entries",entries);
+        // Whitelist: no photo de profil, no other profiles or backup private metadata.
+        JSONObject filteredMeals=new JSONObject();
+        JSONObject meals=input.optJSONObject("meals");
+        boolean includePhotos=getPreferences(MODE_PRIVATE).getBoolean("share_photos_"+id,false);
+        if (meals!=null) {
+            java.util.Iterator<String> days=meals.keys();
+            while(days.hasNext()) {
+                String date=days.next();
+                if(!date.matches("\\d{4}-\\d{2}-\\d{2}"))continue;
+                JSONObject meal=meals.optJSONObject(date);
+                if(meal==null)continue;
+                JSONObject cleaned=new JSONObject();
+                String[] keys={"morning","morningSnack","lunch","afternoonSnack","dinner","eveningSnack"};
+                for(String key:keys) {
+                    String text=meal.optString(key,"");
+                    if(!text.isEmpty())cleaned.put(key,text.substring(0,Math.min(3000,text.length())));
+                    if(includePhotos) {
+                        String image=meal.optString(key+"Photo","");
+                        if(image.startsWith("data:image/jpeg;base64,") && image.length()<250000)
+                            cleaned.put(key+"Photo",image);
+                    }
+                }
+                if(cleaned.length()>0)filteredMeals.put(date,cleaned);
+            }
+        }
+        profile.put("meals",filteredMeals);
+        java.text.SimpleDateFormat df=new java.text.SimpleDateFormat(
+            "yyyy-MM-dd'T'HH:mm:ss'Z'",java.util.Locale.US);
+        df.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
+        JSONObject document=new JSONObject();
+        document.put("format","mon-evolution-lecture-seule");
+        document.put("version",1);
+        document.put("exportedAt",df.format(new java.util.Date()));
+        document.put("profile",profile);
+        String result=document.toString();
+        if(result.length()>40_000_000)throw new Exception("Profil trop volumineux");
+        return result;
+    }
+
+    // Independent of private backup: update only documents explicitly linked by the user.
+    private void updateSharedFiles(String backup) {
+        if(backup==null || backup.length()>50_000_000)return;
+        io.execute(() -> {
+            try {
+                JSONObject root=new JSONObject(backup);
+                JSONArray profiles=root.getJSONObject("data").getJSONArray("profiles");
+                for(int index=0; index<profiles.length(); index++) {
+                    JSONObject p=profiles.getJSONObject(index);
+                    String id=p.optString("id","");
+                    if(!id.matches("[a-zA-Z0-9_-]{1,75}"))continue;
+                    String value=getPreferences(MODE_PRIVATE).getString("share_uri_"+id,null);
+                    if(value==null)continue;
+                    try {
+                        String document=makeSharedDocument(id,p);
+                        writeShared(Uri.parse(value),document);
+                        runOnUiThread(() -> web.evaluateJavascript("sharedUpdated()",null));
+                    } catch(Exception e) {
+                        runOnUiThread(() -> web.evaluateJavascript("sharedUpdateFailed()",null));
+                    }
+                }
+            } catch(Exception ignored) { }
+        });
+    }
+
+    private void loadShared(Uri uri) {
+        io.execute(() -> {
+            try(InputStream in=getContentResolver().openInputStream(uri)) {
+                if(in==null)throw new Exception("Fichier partagé inaccessible");
+                java.io.ByteArrayOutputStream out=new java.io.ByteArrayOutputStream();
+                byte[] buffer=new byte[8192];
+                int n;
+                while((n=in.read(buffer))!=-1) {
+                    out.write(buffer,0,n);
+                    if(out.size()>40_000_000)throw new Exception("Fichier trop volumineux");
+                }
+                // Decode and validate in the read-only JS view.
+                String encoded=android.util.Base64.encodeToString(
+                    out.toByteArray(),android.util.Base64.NO_WRAP);
+                runOnUiThread(() -> web.evaluateJavascript("sharedLoaded('"+encoded+"')",null));
+            } catch(Exception e) {
+                runOnUiThread(() -> web.evaluateJavascript("sharedReadFailed()",null));
+            }
+        });
+    }
+
