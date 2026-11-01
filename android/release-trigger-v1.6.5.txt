@@ -1,0 +1,2 @@
+Mon Evolution IMC v1.6.5
+Correctif importation de profils partages : selection Google Drive et etats de chargement.
