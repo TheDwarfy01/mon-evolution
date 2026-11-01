@@ -1,0 +1,88 @@
+name: Construire Mon Evolution IMC 1.6.5 (correctif profils partages)
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'android/release-trigger-v1.6.5.txt'
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Préparer les sources 1.6.5 à partir de 1.6.4
+        run: |
+          set -euo pipefail
+          cp -R android/source-1.6.4 android/source-1.6.5
+          python3 android/patches/drive-import-v1.6.5.py
+          grep -q 'versionCode 21' android/source-1.6.5/app/build.gradle
+          grep -q 'intent.setType("\*/\*")' android/source-1.6.5/app/src/main/java/fr/monevolution/app/MainActivity.java
+      - name: Tests de non-régression (données et partage)
+        run: |
+          set -euo pipefail
+          sed 's/source-1.6.4/source-1.6.5/g;s/1\.6\.4/1.6.5/g;s/versionCode 20/versionCode 21/g' android/tests/validate-1.6.4.py > /tmp/validate-1.6.5.py
+          python3 /tmp/validate-1.6.5.py
+      - name: Installer SDK Android
+        run: |
+          set -euo pipefail
+          sdkmanager_bin="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager -print -quit)"
+          echo "$(dirname "$sdkmanager_bin")" >> "$GITHUB_PATH"
+          "$sdkmanager_bin" --install "platforms;android-35" "build-tools;35.0.0"
+      - name: Compiler l'application
+        working-directory: android/source-1.6.5
+        run: gradle --no-daemon :app:assembleRelease
+      - name: Signer l'APK avec la clé existante
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          test -n "$KEYSTORE_B64" && test -n "$KEYSTORE_PASS" && test -n "$KEY_PASS" && test -n "$KEY_ALIAS"
+          printf '%s' "$KEYSTORE_B64" | base64 -d > /tmp/mon-evolution.jks
+          mkdir -p downloads
+          "$ANDROID_HOME/build-tools/35.0.0/zipalign" -p -f 4 \
+            android/source-1.6.5/app/build/outputs/apk/release/app-release-unsigned.apk \
+            /tmp/mon-evolution-aligned.apk
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign \
+            --ks /tmp/mon-evolution.jks --ks-key-alias "$KEY_ALIAS" \
+            --ks-pass env:KEYSTORE_PASS --key-pass env:KEY_PASS \
+            --out downloads/Mon_Evolution_IMC_v1.6.5.apk /tmp/mon-evolution-aligned.apk
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose downloads/Mon_Evolution_IMC_v1.6.5.apk
+          rm -f /tmp/mon-evolution.jks
+      - name: Publier la version 1.6.5
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release create v1.6.5 downloads/Mon_Evolution_IMC_v1.6.5.apk \
+            --title "Mon Évolution IMC 1.6.5 — correction des profils partagés" \
+            --notes "Correctif du sélecteur Google Drive privé (types de fichiers JSON non reconnus), états de chargement, messages d'erreur et parcours de récupération après échec du lien public. Profils personnels, suivi, sauvegardes et partage en lecture seule conservés. Installer par-dessus la 1.6.4."
+      - name: Actualiser le site et version.js
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          for fn in ("version.js","index.html"):
+              p=Path(fn)
+              s=p.read_text(encoding="utf-8")
+              assert "1.6.4" in s
+              p.write_text(s.replace("1.6.4","1.6.5"),encoding="utf-8")
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add version.js index.html android/source-1.6.5
+          if ! git diff --cached --quiet; then
+            git commit -m "Publier Mon Évolution IMC 1.6.5"
+            git pull --rebase
+            git push
+          fi
