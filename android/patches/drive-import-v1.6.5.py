@@ -63,9 +63,9 @@ change(html,'''function sharedReadFailed(){message('Impossible de lire ce fichie
 }''')
 # Reveal private import right after accepting a share invitation.
 change(html,'''   $('shared-state').textContent='Lecture du profil partagé…';
-   const source='https://drive.google.com/file/d/'+pendingId+'/view' ''',
+   const source='https://drive.google.com/file/d/'+pendingId+'/view'\n''',
 '''   $('shared-state').textContent='Lecture du lien… Si le fichier est privé, utilise le bouton « Accès privé : choisir le fichier Google Drive ».';
-   const source='https://drive.google.com/file/d/'+pendingId+'/view' ''')
+   const source='https://drive.google.com/file/d/'+pendingId+'/view'\n''')
 assert 'intent.setType("*/*")' in java.read_text(encoding="utf-8")
 assert 'const installed="1.6.5"' in html.read_text(encoding="utf-8")
 print("v1.6.5 patch applied: private Drive selection, error guidance, import state.")
