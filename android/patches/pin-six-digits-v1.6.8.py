@@ -24,17 +24,11 @@ replace(j,'if(value==null || value.length()<10 || value.length()>512)throw new E
 replace(j,'if(password==null || password.length()<10 || password.length()>512)throw new Exception("Mot de passe nécessaire");',
 '''if(password==null || !(password.matches("[0-9]{6}") || (password.length()>=10 && password.length()<=512)))
             throw new Exception("Code à 6 chiffres ou ancien mot de passe nécessaire");''')
-replace(j,'if(pass!=null && pass.length()>=10)saveSecret("receive_pass_"+key,pass);',
-'''if(pass!=null && (pass.matches("[0-9]{6}") || pass.length()>=10))
-                        saveSecret("receive_pass_"+key,pass);''')
-# Second occurrence differs indentation, so replace only first above then target residual.
 s=j.read_text(encoding="utf-8")
-s=s.replace('if(pass!=null && pass.length()>=10)saveSecret("receive_pass_"+key,pass);',
-'''if(pass!=null && (pass.matches("[0-9]{6}") || pass.length()>=10))
-                    saveSecret("receive_pass_"+key,pass);''')
+old='if(pass!=null && pass.length()>=10)saveSecret("receive_pass_"+key,pass);'
+assert s.count(old)==2, s.count(old)
+s=s.replace(old,'if(pass!=null && (pass.matches("[0-9]{6}") || pass.length()>=10))saveSecret("receive_pass_"+key,pass);')
 j.write_text(s,encoding="utf-8")
-replace(h,"'<input id=\"crypt-input\" type=\"password\" autocomplete=\"off\" style=\"padding:12px;width:100%;border-radius:8px\">'+",
-"'<input id=\"crypt-input\" type=\"password\" autocomplete=\"off\" style=\"padding:12px;width:100%;border-radius:8px\">'+")
 replace(h,"  const input=$('crypt-input');input.value='';",
 '''  const input=$('crypt-input');input.value='';
   input.inputMode=creating?'numeric':'text';
