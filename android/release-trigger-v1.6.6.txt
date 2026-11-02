@@ -1,0 +1,1 @@
+Version 1.6.6 - importation automatique du profil partagé dès ouverture du lien dans Mon Évolution IMC.
