@@ -27,12 +27,12 @@
     <p>Tu peux ajouter son profil à l'application en <strong>lecture seule</strong>. Tes propres profils ne seront pas remplacés.</p>
     <div id="valid-invite" class="hidden">
       <a id="open-app" class="button" href="#">Ouvrir dans Mon Évolution</a>
-      <p>Une fois l'application ouverte, confirme l'ajout du profil. Si l'accès Google Drive est privé, tu devras utiliser ton compte autorisé et sélectionner le document partagé.</p>
+      <p>Une fois l'application ouverte, le profil est importé automatiquement en lecture seule. Si l'accès Google Drive est privé, sélectionne le document avec le compte Google autorisé.</p>
       <a id="drive-link" class="button secondary" href="#" rel="noopener noreferrer">Voir le fichier dans Google Drive</a>
     </div>
     <p id="invalid-invite" class="hidden">Ce lien d'invitation est incomplet ou invalide. Demande à ton proche de renvoyer le lien depuis Mon Évolution.</p>
     <a class="button secondary" href="https://github.com/TheDwarfy01/mon-evolution/releases/latest" rel="noopener noreferrer">Installer ou mettre à jour Mon Évolution</a><p><small>Conseil Samsung : ouvre la page GitHub dans Firefox ou DuckDuckGo si Chrome bloque le fichier APK.</small></p>
-    <p><small>Le fichier reste hébergé dans Google Drive, avec les autorisations choisies par son propriétaire. Cette page ne récupère ni ne stocke tes données personnelles. Sur Android, appuie sur « Ouvrir dans Mon Évolution » pour lancer l’application. Pour télécharger l’APK sur ton téléphone, Firefox ou DuckDuckGo peuvent fonctionner lorsque Chrome bloque le téléchargement.</small></p>
+    <p><small>Le fichier reste hébergé dans Google Drive, avec les autorisations choisies par son propriétaire. Cette page ne récupère ni ne stocke tes données personnelles. Sur Android, la page essaie d’ouvrir directement l’application. Si ton navigateur le bloque, appuie sur « Ouvrir dans Mon Évolution ». Pour télécharger l’APK sur ton téléphone, Firefox ou DuckDuckGo peuvent fonctionner lorsque Chrome bloque le téléchargement.</small></p>
   </main>
   <script>
     (function(){
@@ -47,6 +47,13 @@
       const deep='intent://share?file='+encodeURIComponent(id)+suffix
           +'#Intent;scheme=monevolution;package=fr.monevolution.app;end';
       document.getElementById('open-app').href=deep;
+      // Browsers may block automatic opening of an external application.
+      // The visible button remains as a safe fallback.
+      if(/Android/i.test(navigator.userAgent)){
+        window.addEventListener('load',()=>{
+          try{window.location.href=deep;}catch(e){}
+        },{once:true});
+      }
       document.getElementById('drive-link').href='https://drive.google.com/file/d/'+encodeURIComponent(id)+'/view'+(resourcekey?'?resourcekey='+encodeURIComponent(resourcekey):'');
     })();
   </script>
