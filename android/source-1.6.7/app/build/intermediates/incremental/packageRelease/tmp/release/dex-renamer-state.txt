@@ -1,0 +1,4 @@
+#Mon Nov 02 06:25:46 UTC 2026
+base.0=/home/runner/work/mon-evolution/mon-evolution/android/source-1.6.7/app/build/intermediates/dex/release/mergeDexRelease/classes.dex
+renamed.0=classes.dex
+path.0=classes.dex
