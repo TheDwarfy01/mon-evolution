@@ -3,3 +3,5 @@ Version 1.6.6 - importation automatique du profil partagé dès ouverture du lie
 Retenter avec indentation corrigée.
 
 Compilation corrective après simplification du correctif.
+
+CI grep corrigé.
