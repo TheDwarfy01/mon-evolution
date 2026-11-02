@@ -31,7 +31,16 @@ jobs:
         run: |
           set -euo pipefail
           sed 's/source-1.6.4/source-1.6.7/g;s/1\.6\.4/1.6.7/g;s/versionCode 20/versionCode 23/g;s/loadSharedPublic?\./loadSharedPublicPassword?./g' android/tests/validate-1.6.4.py > /tmp/validate-1.6.7.py
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('/tmp/validate-1.6.7.py')
+          s=p.read_text()
+          s=s.replace('assert "window.AndroidBackup.openShared()" in html', 'assert "openSharedPassword" in html')
+          p.write_text(s)
+          PY
           python3 /tmp/validate-1.6.7.py
+          grep -q 'PBKDF2WithHmacSHA256' android/source-1.6.7/app/src/main/java/fr/monevolution/app/MainActivity.java
+          grep -q 'mon-evolution-chiffre' android/source-1.6.7/app/src/main/java/fr/monevolution/app/MainActivity.java
       - name: Installer SDK Android
         run: |
           set -euo pipefail
