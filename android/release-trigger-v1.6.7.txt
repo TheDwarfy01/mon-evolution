@@ -1,1 +1,3 @@
 Version 1.6.7 : chiffrement du contenu Drive AES-256-GCM, lien inchangé. Test de compilation.
+
+Test de régression adapté au chargeur chiffré.
