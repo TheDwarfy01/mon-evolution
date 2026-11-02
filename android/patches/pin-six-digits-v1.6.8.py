@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""v1.6.8: 6 character share code (4 digits, 1 uppercase, 1 symbol), preserving support for existing stronger passwords."""
+"""v1.6.8: 10 character share password (4+ digits, uppercase, symbol), preserving support for existing stronger passwords."""
 from pathlib import Path
 root=Path("android/source-1.6.8/app")
 j=root/"src/main/java/fr/monevolution/app/MainActivity.java"
@@ -17,18 +17,19 @@ replace(m,'android:versionCode="23" android:versionName="1.6.7"','android:versio
 replace(j,'MonEvolutionIMC/1.6.7','MonEvolutionIMC/1.6.8')
 replace(h,'Version installée : <strong>1.6.7</strong>','Version installée : <strong>1.6.8</strong>')
 replace(h,'const installed="1.6.7";','const installed="1.6.8";')
-# Exact six-character new code. Old 10+ character passwords remain readable.
+# Ten-character new codes: at least four digits, uppercase and symbol.
 replace(j,'    private void saveSecret(String name,String value) throws Exception {',
-'''    private boolean validSixCode(String input) {
-        if(input==null || input.length()!=6)return false;
+'''    private boolean validTenCode(String input) {
+        if(input==null || input.length()!=10)return false;
         int digits=0,uppercase=0,symbols=0;
         for(char c:input.toCharArray()){
             if(c>='0' && c<='9')digits++;
             else if(c>='A' && c<='Z')uppercase++;
             else if("!@#$%&*?._-".indexOf(c)>=0)symbols++;
+            else if(c>='a' && c<='z'){}
             else return false;
         }
-        return digits==4 && uppercase==1 && symbols==1;
+        return digits>=4 && uppercase>=1 && symbols>=1;
     }
     private void saveSecret(String name,String value) throws Exception {''')
 replace(j,'if(value==null || value.length()<10 || value.length()>512)throw new Exception("Invalid secret");',
@@ -36,7 +37,7 @@ replace(j,'if(value==null || value.length()<10 || value.length()>512)throw new E
             throw new Exception("Invalid secret");''')
 replace(j,'if(password==null || password.length()<10 || password.length()>512)throw new Exception("Mot de passe nécessaire");',
 '''if(password==null || !(validSixCode(password) || (password.length()>=10 && password.length()<=512)))
-            throw new Exception("Code à 6 caractères ou ancien mot de passe nécessaire");''')
+            throw new Exception("Code à 10 caractères ou ancien mot de passe nécessaire");''')
 s=j.read_text(encoding="utf-8")
 old='if(pass!=null && pass.length()>=10)saveSecret("receive_pass_"+key,pass);'
 assert s.count(old)==2, s.count(old)
@@ -45,17 +46,17 @@ j.write_text(s,encoding="utf-8")
 replace(h,"  const input=$('crypt-input');input.value='';",
 '''  const input=$('crypt-input');input.value='';
   input.inputMode='text';
-  input.maxLength=creating?6:512;
-  input.placeholder=creating?'4 chiffres + 1 majuscule + 1 symbole':'Code à 6 caractères ou ancien mot de passe';''')
+  input.maxLength=creating?10:512;
+  input.placeholder=creating?'10 caractères, 4 chiffres mini, 1 majuscule, 1 symbole':'Code à 10 caractères ou ancien mot de passe';''')
 replace(h,"   if(creating && pass.length<10){$('crypt-error').textContent='Au moins 10 caractères';return;}",
-'''   if(creating && !/^(?=(?:[^0-9]*[0-9]){4}[^0-9]*$)(?=[^A-Z]*[A-Z][^A-Z]*$)(?=[^!@#$%&*?._-]*[!@#$%&*?._-][^!@#$%&*?._-]*$)[0-9A-Z!@#$%&*?._-]{6}$/.test(pass)){
-    $('crypt-error').textContent='Saisis exactement 4 chiffres, 1 majuscule et 1 symbole (! @ # $ % & * ? . _ -), dans n’importe quel ordre.';return;
+'''   if(creating && !/^(?=(?:[^0-9]*[0-9]){4})(?=.*[A-Z])(?=.*[!@#$%&*?._-])[0-9A-Za-z!@#$%&*?._-]{10}$/.test(pass)){
+    $('crypt-error').textContent='Saisis 10 caractères exactement, dont au moins 4 chiffres, 1 majuscule et 1 symbole (! @ # $ % & * ? . _ -).';return;
    }
-   if(!creating && !(/^(?=(?:[^0-9]*[0-9]){4}[^0-9]*$)(?=[^A-Z]*[A-Z][^A-Z]*$)(?=[^!@#$%&*?._-]*[!@#$%&*?._-][^!@#$%&*?._-]*$)[0-9A-Z!@#$%&*?._-]{6}$/.test(pass) || pass.length>=10)){
-    $('crypt-error').textContent='4 chiffres, 1 majuscule, 1 symbole, ou ancien mot de passe.';return;
+   if(!creating && !(pass.length>=10)){
+    $('crypt-error').textContent='Saisis ton code à 10 caractères ou ton ancien mot de passe.';return;
    }''')
 replace(h,"'<p>Le lien reste inchangé. Envoie le mot de passe séparément au destinataire.</p>'+",
-"""'<p>Le lien reste inchangé. Envoie le code séparément. Attention : 6 caractères offrent une protection limitée si une copie du fichier est récupérée.</p>'+""")
+"""'<p>Le lien reste inchangé. Envoie le code séparément. Choisis un code difficile à deviner et transmets-le séparément.</p>'+""")
 replace(h,"<p class=\"notice\">🔒 Le fichier est chiffré AES-256-GCM. Le lien Google Drive ne change pas. Envoie le mot de passe séparément.</p>",
-"<p class=\"notice\">🔒 Fichier chiffré AES-256-GCM. Le lien ne change pas. Envoie le code à 6 caractères séparément : ce code court ne résiste pas à une attaque hors ligne prolongée.</p>")
-print("v1.6.8: 4 digits + uppercase + symbol, legacy password support, UI validation")
+"<p class=\"notice\">🔒 Fichier chiffré AES-256-GCM. Le lien ne change pas. Envoie le code à 10 caractères séparément. Ne réutilise pas un mot de passe existant.</p>")
+print("v1.6.8: ten characters, >=4 digits, uppercase and symbol, legacy password support, UI validation")
