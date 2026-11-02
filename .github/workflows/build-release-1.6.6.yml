@@ -24,7 +24,7 @@ jobs:
           cp -R android/source-1.6.5 android/source-1.6.6
           python3 android/patches/auto-invite-v1.6.6.py
           grep -q 'versionCode 22' android/source-1.6.6/app/build.gradle
-          grep -q 'window.AndroidBackup.loadSharedPublic(source)' android/source-1.6.6/app/src/main/assets/index.html
+          grep -Fq "panel.scrollIntoView({block:'start'});" android/source-1.6.6/app/src/main/assets/index.html
       - name: Tests de non-régression (données et partage)
         run: |
           set -euo pipefail
