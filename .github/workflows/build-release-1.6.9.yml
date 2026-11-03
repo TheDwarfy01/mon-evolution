@@ -26,7 +26,7 @@ jobs:
           python3 android/patches/auto-invite-v1.6.6.py
           cp -R android/source-1.6.6 android/source-1.6.7
           python3 android/patches/encrypt-share-v1.6.7.py
-          cp -R android/source-1.6.7 android/source-1.6.9
+          cp -R android/source-1.6.7 android/source-1.6.8
           python3 android/patches/pin-six-digits-v1.6.8.py
           python3 android/patches/received-summary-v1.6.8.py
           cp -R android/source-1.6.8 android/source-1.6.9
