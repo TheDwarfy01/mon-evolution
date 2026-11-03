@@ -1,3 +1,5 @@
 Mon Evolution IMC 1.6.8: 10-character encrypted share code and restored received summary card.
 
 Rebuild after clean source copy.
+
+Compilation: validTenCode corrigé.
