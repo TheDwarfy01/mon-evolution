@@ -21,6 +21,7 @@ jobs:
       - name: Préparer les sources 1.6.8 à partir de 1.6.5
         run: |
           set -euo pipefail
+          rm -rf android/source-1.6.6 android/source-1.6.7 android/source-1.6.8
           cp -R android/source-1.6.5 android/source-1.6.6
           python3 android/patches/auto-invite-v1.6.6.py
           cp -R android/source-1.6.6 android/source-1.6.7
