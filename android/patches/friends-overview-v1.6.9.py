@@ -82,8 +82,14 @@ helper = '''
         });
     }
 '''
+# The helper belongs to MainActivity (outer class), shared by its Bridge and registerReceived.
+split=helper.index('    @JavascriptInterface public void refreshFriendsOverview()')
+overview_helper=helper[:split]
+bridge_method=helper[split:]
+rep(java,'    private synchronized String registerReceived(String kind,String source,JSONObject doc)',
+    overview_helper+'\n    private synchronized String registerReceived(String kind,String source,JSONObject doc)')
 rep(java,'        @JavascriptInterface public String listReceivedProfiles() {',
-    helper+'\n        @JavascriptInterface public String listReceivedProfiles() {')
+    bridge_method+'\n        @JavascriptInterface public String listReceivedProfiles() {')
 rep(java,'''                entry.put("name",name);
                 prefs.edit().putString("received_profiles",list.toString()).apply();''',
 '''                entry.put("name",name);
