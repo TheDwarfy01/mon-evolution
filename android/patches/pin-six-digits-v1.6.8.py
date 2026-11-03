@@ -33,15 +33,15 @@ replace(j,'    private void saveSecret(String name,String value) throws Exceptio
     }
     private void saveSecret(String name,String value) throws Exception {''')
 replace(j,'if(value==null || value.length()<10 || value.length()>512)throw new Exception("Invalid secret");',
-'''if(value==null || !(validSixCode(value) || (value.length()>=10 && value.length()<=512)))
+'''if(value==null || !(validTenCode(value) || (value.length()>=10 && value.length()<=512)))
             throw new Exception("Invalid secret");''')
 replace(j,'if(password==null || password.length()<10 || password.length()>512)throw new Exception("Mot de passe nécessaire");',
-'''if(password==null || !(validSixCode(password) || (password.length()>=10 && password.length()<=512)))
+'''if(password==null || !(validTenCode(password) || (password.length()>=10 && password.length()<=512)))
             throw new Exception("Code à 10 caractères ou ancien mot de passe nécessaire");''')
 s=j.read_text(encoding="utf-8")
 old='if(pass!=null && pass.length()>=10)saveSecret("receive_pass_"+key,pass);'
 assert s.count(old)==2, s.count(old)
-s=s.replace(old,'if(pass!=null && (validSixCode(pass) || pass.length()>=10))saveSecret("receive_pass_"+key,pass);')
+s=s.replace(old,'if(pass!=null && (validTenCode(pass) || pass.length()>=10))saveSecret("receive_pass_"+key,pass);')
 j.write_text(s,encoding="utf-8")
 replace(h,"  const input=$('crypt-input');input.value='';",
 '''  const input=$('crypt-input');input.value='';
