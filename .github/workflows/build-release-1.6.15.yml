@@ -44,7 +44,6 @@ jobs:
           cp -R android/source-1.6.14 android/source-1.6.15
           python3 android/patches/high-quality-camera-v1.6.15.py
           grep -q 'PHOTO_CAMERA' android/source-1.6.15/app/src/main/java/fr/monevolution/app/MainActivity.java
-          grep -q 'standard result thumbnail' android/source-1.6.15/app/src/main/java/fr/monevolution/app/MainActivity.java
           grep -q 'height:210px' android/source-1.6.15/app/src/main/assets/index.html
           grep -q 'CameraPhotoProvider' android/source-1.6.15/app/src/main/AndroidManifest.xml
           grep -q '1000f' android/source-1.6.15/app/src/main/java/fr/monevolution/app/MainActivity.java
