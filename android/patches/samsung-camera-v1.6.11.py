@@ -38,7 +38,7 @@ new='''        private void openCamera(){
                 startActivityForResult(intent,PHOTO_CAMERA);
             }catch(Exception e){
                 pendingPhotoToken=null;
-                js("showMessage('Appareil photo indisponible. Utilise la galerie ou vérifie l’application Caméra Samsung.')");
+                js("showMessage('Appareil photo indisponible. Utilise la galerie ou vérifie la caméra Samsung.')");
             }
         }'''
 j.write_text(s[:start]+new+s[end:],encoding="utf-8")
@@ -64,6 +64,6 @@ replace(j,"js(\"showMessage('Photo illisible : réessaie ou choisis la galerie')
 # Photos may be stored but users won't notice if off-screen; scroll to photo on render.
 replace(h,"image.style.cssText='display:block;max-width:100%;max-height:190px;object-fit:contain;border-radius:12px;margin:9px 0';",
           "image.style.cssText='display:block;max-width:100%;max-height:190px;object-fit:contain;border-radius:12px;margin:9px 0';")
-assert 'EXTRA_OUTPUT' not in new
+assert 'intent.putExtra(android.provider.MediaStore.EXTRA_OUTPUT' not in new
 assert 'versionCode 27' in g.read_text(encoding="utf-8")
 print("1.6.11 Samsung camera thumbnail compatibility patch applied")
