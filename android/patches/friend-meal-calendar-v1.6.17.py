@@ -48,14 +48,14 @@ R(h," let receivedTab='home';",
    return;
   }
   const available=Object.keys(meals).filter(date=>
-   /^\\d{4}-\\d{2}-\\d{2}$/.test(date) && meals[date] &&
+   /^\d{4}-\d{2}-\d{2}$/.test(date) && meals[date] &&
    typeof meals[date]==='object' && mealTypes.some(([k])=>
     String(meals[date][k]||'').trim() || meals[date][k+'Photo']
    )).sort();
   const now=dateNow();
   const latest=available.at(-1)||now;
   let selection=friendMealNavigation.get(key)||{month:latest.slice(0,7),day:latest};
-  if(!/^\\d{4}-\\d{2}$/.test(selection.month))selection={month:latest.slice(0,7),day:latest};
+  if(!/^\d{4}-\d{2}$/.test(selection.month))selection={month:latest.slice(0,7),day:latest};
   const card=document.createElement('div');card.className='card';
   const title=document.createElement('h3');title.textContent='Calendrier des repas';card.append(title);
   const explanation=document.createElement('p');explanation.className='notice';
