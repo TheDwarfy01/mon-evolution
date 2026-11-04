@@ -33,8 +33,8 @@ new='''        private void openCamera(){
                 // Request a standard result thumbnail without EXTRA_OUTPUT.
                 // Passing a pending MediaStore URI crashes certain Samsung Camera versions.
                 // The photo is compressed and stored immediately in the meal record.
-                if(intent.resolveActivity(getPackageManager())==null)
-                    throw new Exception("Aucune application appareil photo disponible");
+                // Do not use resolveActivity(): Android package visibility may hide
+                // installed camera apps from queries; startActivityForResult() is reliable.
                 startActivityForResult(intent,PHOTO_CAMERA);
             }catch(Exception e){
                 pendingPhotoToken=null;
