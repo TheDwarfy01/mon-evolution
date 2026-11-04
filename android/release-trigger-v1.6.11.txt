@@ -1,1 +1,2 @@
 Mon Evolution IMC 1.6.11 : capture standard Samsung sans MediaStore EXTRA_OUTPUT.
+Use direct camera intent without package visibility lookup.
