@@ -1,0 +1,1 @@
+Version 1.6.15 : capture haute résolution via URI du cache privée, compression photo nette et aperçu 210 px inchangé.
