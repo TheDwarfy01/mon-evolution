@@ -58,8 +58,6 @@ R(j,'''        @JavascriptInterface public void pickPhoto(String token) {
             pendingCameraUri=null;
             try{
                 Intent intent=new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
-                if(intent.resolveActivity(getPackageManager())==null)
-                    throw new Exception("Aucune application appareil photo");
                 if(android.os.Build.VERSION.SDK_INT>=29){
                     android.content.ContentValues values=new android.content.ContentValues();
                     values.put(android.provider.MediaStore.Images.Media.DISPLAY_NAME,
