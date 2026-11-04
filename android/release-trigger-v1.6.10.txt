@@ -1,0 +1,1 @@
+Version 1.6.10: appareil photo natif, galerie, correction erreurs de synchro Drive.
