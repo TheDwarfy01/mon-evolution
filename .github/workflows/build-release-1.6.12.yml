@@ -1,0 +1,98 @@
+name: Construire Mon Evolution IMC 1.6.12 (correctif profils partages)
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'android/release-trigger-v1.6.12.txt'
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Préparer les sources 1.6.12 à partir de 1.6.5
+        run: |
+          set -euo pipefail
+          rm -rf android/source-1.6.6 android/source-1.6.7 android/source-1.6.8 android/source-1.6.9 android/source-1.6.10 android/source-1.6.11 android/source-1.6.12
+          cp -R android/source-1.6.5 android/source-1.6.6
+          python3 android/patches/auto-invite-v1.6.6.py
+          cp -R android/source-1.6.6 android/source-1.6.7
+          python3 android/patches/encrypt-share-v1.6.7.py
+          cp -R android/source-1.6.7 android/source-1.6.8
+          python3 android/patches/pin-six-digits-v1.6.8.py
+          python3 android/patches/received-summary-v1.6.8.py
+          cp -R android/source-1.6.8 android/source-1.6.9
+          python3 android/patches/friends-overview-v1.6.9.py
+          cp -R android/source-1.6.9 android/source-1.6.10
+          python3 android/patches/camera-and-drive-v1.6.10.py
+          cp -R android/source-1.6.10 android/source-1.6.11
+          python3 android/patches/samsung-camera-v1.6.11.py
+          cp -R android/source-1.6.11 android/source-1.6.12
+          python3 android/patches/meal-photo-width-v1.6.12.py
+          grep -q 'PHOTO_CAMERA' android/source-1.6.12/app/src/main/java/fr/monevolution/app/MainActivity.java
+          grep -q 'standard result thumbnail' android/source-1.6.12/app/src/main/java/fr/monevolution/app/MainActivity.java
+          grep -q 'width:100%;max-width:100%;height:auto' android/source-1.6.12/app/src/main/assets/index.html
+          grep -q 'sharedSyncNeedsPassword' android/source-1.6.12/app/src/main/assets/index.html
+          grep -q 'Mes amis' android/source-1.6.12/app/src/main/assets/index.html
+          grep -q 'refreshFriendsOverview' android/source-1.6.12/app/src/main/java/fr/monevolution/app/MainActivity.java
+          grep -q 'versionCode 28' android/source-1.6.12/app/build.gradle
+          grep -Fq 'AES/GCM/NoPadding' android/source-1.6.12/app/src/main/java/fr/monevolution/app/MainActivity.java
+      - name: Tests de non-régression (données et partage)
+        run: |
+          set -euo pipefail
+          sed 's/source-1.6.4/source-1.6.12/g;s/1\.6\.4/1.6.12/g;s/versionCode 20/versionCode 28/g;s/loadSharedPublic?\./loadSharedPublicPassword?./g' android/tests/validate-1.6.4.py > /tmp/validate-1.6.12.py
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('/tmp/validate-1.6.12.py')
+          s=p.read_text()
+          s=s.replace('assert "window.AndroidBackup.openShared()" in html', 'assert "openSharedPassword" in html')
+          p.write_text(s)
+          PY
+          python3 /tmp/validate-1.6.12.py
+          grep -q 'PBKDF2WithHmacSHA256' android/source-1.6.12/app/src/main/java/fr/monevolution/app/MainActivity.java
+          grep -q 'mon-evolution-chiffre' android/source-1.6.12/app/src/main/java/fr/monevolution/app/MainActivity.java
+      - name: Installer SDK Android
+        run: |
+          set -euo pipefail
+          sdkmanager_bin="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager -print -quit)"
+          echo "$(dirname "$sdkmanager_bin")" >> "$GITHUB_PATH"
+          "$sdkmanager_bin" --install "platforms;android-35" "build-tools;35.0.0"
+      - name: Compiler l'application
+        working-directory: android/source-1.6.12
+        run: gradle --no-daemon :app:assembleRelease
+      - name: Signer l'APK avec la clé existante
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          test -n "$KEYSTORE_B64" && test -n "$KEYSTORE_PASS" && test -n "$KEY_PASS" && test -n "$KEY_ALIAS"
+          printf '%s' "$KEYSTORE_B64" | base64 -d > /tmp/mon-evolution.jks
+          mkdir -p downloads
+          "$ANDROID_HOME/build-tools/35.0.0/zipalign" -p -f 4 \
+            android/source-1.6.12/app/build/outputs/apk/release/app-release-unsigned.apk \
+            /tmp/mon-evolution-aligned.apk
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign \
+            --ks /tmp/mon-evolution.jks --ks-key-alias "$KEY_ALIAS" \
+            --ks-pass env:KEYSTORE_PASS --key-pass env:KEY_PASS \
+            --out downloads/Mon_Evolution_IMC_v1.6.12.apk /tmp/mon-evolution-aligned.apk
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose downloads/Mon_Evolution_IMC_v1.6.12.apk
+          rm -f /tmp/mon-evolution.jks
+      - name: Publier la version 1.6.12
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release create v1.6.12 downloads/Mon_Evolution_IMC_v1.6.12.apk \
+            --title "Mon Évolution IMC 1.6.12 — correction des profils partagés" \
+            --notes "Photos des repas affichées sur toute la largeur du contenu, sans recadrage ni déformation, y compris dans les profils partagés. Correction caméra Samsung conservée. Correctif Drive 1.6.10 conservé. Liste des amis conservée. Code de partage à dix caractères et chiffrement AES-256-GCM conservés. Lecture des anciens partages conservée. Lien inchangé et données privées préservées. Profils personnels, suivi, sauvegardes et partage en lecture seule conservés. Installer par-dessus la 1.6.9."
