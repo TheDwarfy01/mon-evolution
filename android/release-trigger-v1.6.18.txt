@@ -1,0 +1,1 @@
+Version 1.6.18 : bouton Retirer ce partage sur chaque ami, suppression locale confirmée sans altérer Google Drive ni profil personnel.
