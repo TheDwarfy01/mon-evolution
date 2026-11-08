@@ -17,6 +17,13 @@ R(m,'android:versionCode="34" android:versionName="1.6.18"','android:versionCode
 R(j,"MonEvolutionIMC/1.6.18","MonEvolutionIMC/1.6.19")
 R(h,'Version installée : <strong>1.6.18</strong>','Version installée : <strong>1.6.19</strong>')
 R(h,'const installed="1.6.18";','const installed="1.6.19";')
+R(h,'// Aucun portrait n\'est ajouté au document de partage en lecture seule.',
+    '// Le portrait du profil choisi est inclus dans le document partagé chiffré.')
+R(h,'Elle est incluse dans ta sauvegarde privée, mais pas dans le partage en lecture seule.',
+    'Elle est incluse dans ta sauvegarde privée et dans le partage chiffré de ce seul profil.')
+R(h,'La photo de profil et les autres profils ne sont jamais partagés.',
+    'Seule la photo de ce profil est incluse dans le partage chiffré; aucun autre profil n’est envoyé.')
+
 # Add portrait to outgoing share JSON (still AES-GCM ciphertext on Drive).
 R(h,"AndroidBackup.createShare(p.id,JSON.stringify({profile:{name:p.name,height:p.height,goal:p.goal,entries:p.entries,meals:p.meals||{}}}));",
     "AndroidBackup.createShare(p.id,JSON.stringify({profile:{name:p.name,height:p.height,goal:p.goal,entries:p.entries,meals:p.meals||{},avatar:p.avatar||''}}));")
