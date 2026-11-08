@@ -1,0 +1,1 @@
+Mon Evolution IMC v1.6.20: courbes poids, tendance, repères, projection, statistiques hebdomadaires et mensuelles, comparaison chiffrée des profils partagés.
