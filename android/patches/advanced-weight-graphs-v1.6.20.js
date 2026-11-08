@@ -86,9 +86,13 @@
   const etaDate=eta!==null&&eta<=104?dateAt(last.date,Math.ceil(eta*7)):null;
   const month=rows.filter(r=>r.date.slice(0,7)===last.date.slice(0,7));
   const avgMonth=month.reduce((s,r)=>s+r.weight,0)/(month.length||1);
+  const best=weeklyRecords(p).slice().sort((a,b)=>a.change-b.change)[0]||null;
+  const rebound=weeklyRecords(p).slice().sort((a,b)=>b.change-a.change)[0]||null;
+  const bmi=p.height>=80&&p.height<=250?last.weight/Math.pow(p.height/100,2):null;
+  const bmiGoal=p.height>=80&&p.height<=250?p.goal/Math.pow(p.height/100,2):null;
   const first14=interpolateAt(rows,utc(last.date)-14*DAY);
   const plateau=first14&&days(first14.date,last.date)>=14&&Math.abs(last.weight-first14.weight)<.2;
-  return {first,last,weekly,change7,change30,rate,etaDate,avgMonth,plateau};
+  return {first,last,weekly,change7,change30,rate,etaDate,avgMonth,plateau,bmi,bmiGoal,best,rebound};
  }
  function shortNum(x,unit=' kg'){
   return Number.isFinite(x)?(x>0?'+':'')+fmt1(x)+unit:'Données insuffisantes';
@@ -105,7 +109,7 @@
   const pts=series.flatMap(s=>s.points||[]).filter(p=>Number.isFinite(p.x)&&Number.isFinite(p.y));
   if(!pts.length){target.append(node('p','advanced-help','Pas assez de mesures pour dessiner cette courbe.'));return;}
   let minX=Math.min(...pts.map(p=>p.x)),maxX=Math.max(...pts.map(p=>p.x));
-  let minY=Math.min(...pts.map(p=>p.y)),maxY=Math.max(...pts.map(p=>p.y));
+  let minY=Math.min(...pts.flatMap(p=>Number.isFinite(p.y2)?[p.y,p.y2]:[p.y])),maxY=Math.max(...pts.flatMap(p=>Number.isFinite(p.y2)?[p.y,p.y2]:[p.y]));
   if(opts.zeroY){minY=Math.min(0,minY);maxY=Math.max(0,maxY)}
   if(maxX-minX<1){maxX=minX+1}if(maxY-minY<.1){maxY=minY+1}
   const padY=(maxY-minY)*.09;minY-=padY;maxY+=padY;
@@ -158,7 +162,11 @@
    ['Moyenne depuis le départ',s.weekly===null?'Données insuffisantes':fmt1(s.weekly)+' kg/sem.'],
    ['Tendance récente',s.rate===null?'Données insuffisantes':fmt1(s.rate)+' kg/sem.'],
    ['Poids moyen du mois',fmt1(s.avgMonth)+' kg'],
-   ['Objectif estimé',s.etaDate?day(s.etaDate):'Projection indisponible']
+   ['Objectif estimé',s.etaDate?day(s.etaDate):'Projection indisponible'],
+   ['Meilleure semaine',s.best?shortNum(s.best.change):'Données insuffisantes'],
+   ['Plus forte reprise',s.rebound?shortNum(s.rebound.change):'Données insuffisantes'],
+   ['IMC actuel',s.bmi?fmt1(s.bmi):'—'],
+   ['IMC à l’objectif',s.bmiGoal?fmt1(s.bmiGoal):'—']
   ];
   const box=node('div','advanced-stats');
   for(const [label,value] of items){const cell=node('div','advanced-stat');cell.append(node('small','',label),node('b','',value));box.append(cell);}
@@ -214,6 +222,21 @@
    line.append(name,track,val);area.append(line);
   }
   target.append(area);
+  target.append(sectionTitle('Moyenne de poids par mois'));
+  const groups=new Map();
+  for(const row of p.rows){
+   const key=row.date.slice(0,7);
+   if(!groups.has(key))groups.set(key,[]);
+   groups.get(key).push(row.weight);
+  }
+  const monthly=[...groups.entries()].map(([key,weights])=>({
+   date:key,weight:weights.reduce((a,b)=>a+b,0)/weights.length
+  }));
+  if(monthly.length>1){
+   graph(target,[{label:'Poids moyen du mois',color:colors[2],
+      points:monthly.map((e,i)=>({x:i*30.44,y:e.weight}))}],
+      {title:'Moyenne mensuelle des pesées'});
+  }else target.append(node('p','advanced-help','Il faut au moins deux mois avec des mesures.'));
   target.append(node('p','advanced-help','Une barre compare les dernières pesées de deux semaines consécutives contenant des mesures. Vert : baisse de poids ; rose : hausse.'));
  }
  function validComparison(p){
