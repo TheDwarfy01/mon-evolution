@@ -1,0 +1,1 @@
+v1.6.22 : partage du profil personnel et gestion des fichiers partagés uniquement dans l'onglet Partagés, menus repliables.
