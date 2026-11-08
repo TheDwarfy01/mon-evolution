@@ -1,0 +1,1 @@
+Version 1.6.21 : deux menus compacts pour les actions avancées du profil et les sauvegardes Drive.
