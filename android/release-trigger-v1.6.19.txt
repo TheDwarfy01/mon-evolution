@@ -1,1 +1,3 @@
 Mon Evolution IMC v1.6.19 : selecteur par portraits ronds, photo de profil dans partage chiffré, retrait local des amis.
+
+Relance avec correctif interface des portraits.
