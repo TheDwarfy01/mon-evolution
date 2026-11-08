@@ -63,7 +63,7 @@ R(j,'                    edit.remove("receive_pass_"+key);',
 '''                    edit.remove("receive_pass_"+key);
                     edit.remove("friend_avatar_"+key);''')
 # Existing friend card shows portrait instead of generic silhouette.
-R(h,"    name.textContent='👤 '+friend.name;",
+R(h,"   name.textContent='👤 '+friend.name;",
 '''    const thumb=window.AndroidBackup?.receivedAvatar?.(friend.key)||'';
     if(/^data:image\/jpeg;base64,/.test(thumb) && thumb.length<250000){
       const avatar=document.createElement('img');avatar.src=thumb;avatar.alt='Photo de '+friend.name;
