@@ -1,0 +1,1 @@
+v1.6.24 : salutation Bonjour près de Mon Évolution, suppression du doublon portrait et titre, écran résumé compact.
