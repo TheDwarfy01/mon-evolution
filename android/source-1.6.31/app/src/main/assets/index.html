@@ -1456,7 +1456,7 @@ if(initialUnified.startsWith('received:'))selectUnified(initialUnified);
  const days=(a,b)=>(utc(b)-utc(a))/DAY;
  const dateAt=(a,d)=>new Date(utc(a)+d*DAY).toISOString().slice(0,10);
  const colors=['#78e4cf','#f7d77c','#8caeff','#f5a5c4','#ffb47d','#b5e68b','#c9a8ff'];
- let view='weight',period='all',reference=.5,trend=true,projection=true,referenceBand=false,metric='loss';
+ let view='weight',period='all',reference=.5,trend=true,projection=true,referenceBand=false,metric='loss',healthReference=false,healthMetric='weight';
  let sharedMap=new Map(), sharedWanted=new Set(), sharedState='';
  let activeData=null;
  const personalChart=$('chart').querySelector(':scope > .card');
@@ -1571,7 +1571,7 @@ if(initialUnified.startsWith('received:'))selectUnified(initialUnified);
   }
   for(let i=0;i<=4;i++){
    const v=minX+(maxX-minX)*i/4,x=X(v);
-   svg('text',{x,y:height-16,'font-size':12,fill:'#b7cddb','text-anchor':'middle'},root,String(Math.round(v))+' j');
+   svg('text',{x,y:height-16,'font-size':12,fill:'#b7cddb','text-anchor':'middle'},root,opts.xLabel?opts.xLabel(v):String(Math.round(v))+' j');
   }
   for(const s of series){
    const pp=(s.points||[]).filter(v=>Number.isFinite(v.x)&&Number.isFinite(v.y)).sort((a,b)=>a.x-b.x);
@@ -1622,6 +1622,81 @@ if(initialUnified.startsWith('received:'))selectUnified(initialUnified);
   const info=node('p','advanced-help',s.plateau?'Poids stable sur 14 jours environ (variation inférieure à 0,2 kg).':'Les variations quotidiennes et les plateaux sont fréquents : privilégie la tendance de plusieurs semaines.');
   target.append(info);
  }
+function healthReferenceGraph(target,p){
+  const ageOn=date=>p.birthDate&&/^\\d{4}-\\d{2}-\\d{2}$/.test(p.birthDate)?(utc(date)-utc(p.birthDate))/DAY/30.4375:null;
+  const age=ageOn(p.rows.at(-1).date);
+  const child=age!==null&&age>=0&&age<216;
+  const tall=r=>Number(r.heightCm)>=45&&Number(r.heightCm)<=250?Number(r.heightCm):null;
+  const actualMetric=r=>{
+   if(healthMetric==='weight')return r.weight;
+   if(healthMetric==='height')return tall(r);
+   const h=tall(r)||(child?null:p.height);
+   return h? r.weight/Math.pow(h/100,2):null;
+  };
+  target.append(sectionTitle('Courbe '+(healthMetric==='bmi'?'IMC':healthMetric==='height'?'taille':'poids')+' et références'));
+  if(child&&p.sex!=='female'&&p.sex!=='male'){
+   target.append(node('p','advanced-help','Choisis fille ou garçon dans le profil pour afficher les courbes pédiatriques.'));
+   return;
+  }
+  if(child&&age<24&&healthMetric!=='bmi'){
+   target.append(node('p','advanced-help','Pour cet âge, les tables OMS 2007 de 5 à 19 ans ne couvrent pas encore la croissance. Consulter le carnet de santé et son médecin.'));
+  }
+  const first=p.rows[0].date;
+  const relevant=rangeRows(p);
+  const points=relevant.map(r=>({x:child?ageOn(r.date):days(first,r.date),y:actualMetric(r),note:r.note})).filter(q=>q.x!==null&&Number.isFinite(q.y));
+  if(!points.length){
+   target.append(node('p','advanced-help',healthMetric==='weight'?'Aucune pesée exploitable.':'Renseigne la taille mesurée à chaque pesée pour calculer la taille et l’IMC de l’enfant.'));
+   return;
+  }
+  const series=[{label:'Mesures du profil',color:'#7de3cf',notes:true,points}];
+  const lo=Math.min(...points.map(q=>q.x)),hi=Math.max(...points.map(q=>q.x));
+  const palette=['#7fabe5','#eac67b','#d88989','#bd89d4','#98cdb3'];
+  const line=(label,color,values)=>{if(values.length)series.push({label,color,dashed:true,thin:true,points:values})};
+  if(child){
+   const sexBoy=p.sex==='male';
+   const table=window.GROWTH_WHO2007||[];
+   const low=Math.max(61,Math.floor(lo-6)),high=Math.min(228,Math.ceil(hi+6));
+   const indices=healthMetric==='height'?(sexBoy?[1,2]:[3,4]):
+      healthMetric==='weight'?(sexBoy?[5,6,7]:[8,9,10]):
+      (sexBoy?[11,12,13]:[14,15,16]);
+   const derived=(row,z)=>{
+    if(healthMetric==='height'){
+      const M=row[indices[0]],S=row[indices[1]];
+      return M==null||S==null?null:M*(1+S*z);
+    }
+    const L=row[indices[0]],M=row[indices[1]],S=row[indices[2]];
+    if(L==null||M==null||S==null)return null;
+    return Math.abs(L)<.00001?M*Math.exp(S*z):M*Math.pow(1+L*S*z,1/L);
+   };
+   const reference=table.filter(q=>q[0]>=low&&q[0]<=high);
+   for(const [z,label,color] of [[-2,'OMS −2 écarts-types',palette[0]],[0,'OMS médiane',palette[1]],[2,'OMS +2 écarts-types',palette[2]]]){
+    line(label,color,reference.map(q=>({x:q[0],y:derived(q,z)})).filter(v=>Number.isFinite(v.y)));
+   }
+   if(healthMetric==='bmi'){
+    const sex=sexBoy?1:2;
+    const iotf=(window.GROWTH_IOTF2012||[]).filter(q=>q[1]===sex&&q[0]>=Math.max(24,lo-12)&&q[0]<=Math.min(216,hi+12));
+    line('IOTF seuil surpoids (IMC 25 adulte)',palette[3],iotf.map(q=>({x:q[0],y:q[2]})));
+    line('IOTF seuil obésité (IMC 30 adulte)',palette[4],iotf.map(q=>({x:q[0],y:q[3]})));
+   }
+   graph(target,series,{title:'Croissance et références selon âge et sexe',xLabel:v=>(v/12).toFixed(1)+' ans'});
+   target.append(node('p','advanced-help','Références de croissance OMS 2007 (5–19 ans, poids jusqu’à 10 ans) et seuils IMC IOTF 2012 (2–18 ans). Distinctes des courbes françaises AFPA 2018 du carnet de santé. Interprétation médicale nécessaire, notamment pendant la croissance.'));
+  }else{
+   if(healthMetric==='height'){
+    target.append(node('p','advanced-help','Le suivi de la taille par âge est réservé aux profils enfants.'));
+    return;
+   }
+   const thresholds=[18.5,25,30,35,40];
+   const labels=['Insuffisance pondérale','Surpoids','Obésité I','Obésité II','Obésité III'];
+   const factor=Math.pow(p.height/100,2);
+   for(let i=0;i<thresholds.length;i++){
+    const val=healthMetric==='weight'?thresholds[i]*factor:thresholds[i];
+    line(labels[i]+' · IMC '+thresholds[i],palette[i],[{x:lo,y:val},{x:Math.max(lo+1,hi),y:val}]);
+   }
+   graph(target,series,{title:'Poids et catégories IMC de l’adulte'});
+   target.append(node('p','advanced-help','Références IMC adultes : seuils 18,5 / 25 / 30 / 35 / 40. En mode Poids, conversion selon la taille du profil. Les catégories ne remplacent pas une évaluation médicale.'));
+  }
+ }
+ 
  function primaryGraph(target,p){
   target.append(sectionTitle('Évolution du poids'));
   controls(target,[['30 j',period==='30',()=>{period='30';redraw()}],['90 j',period==='90',()=>{period='90';redraw()}],['1 an',period==='365',()=>{period='365';redraw()}],['Tout',period==='all',()=>{period='all';redraw()}]]);
@@ -1743,7 +1818,16 @@ if(initialUnified.startsWith('received:'))selectUnified(initialUnified);
   target.replaceChildren();
   if(!p){target.append(node('p','advanced-help','Sélectionne un profil puis charge ses mesures pour afficher les graphiques.'));return;}
   controls(target,[['Poids',view==='weight',()=>{view='weight';redraw()}],['Progression',view==='progress',()=>{view='progress';redraw()}],['Comparaison',view==='compare',()=>{view='compare';redraw()}]]);
-  if(view==='weight')primaryGraph(target,p);
+  if(view==='weight'){
+   target.append(checkbox('Afficher les références santé',healthReference,checked=>{healthReference=checked;redraw()}));
+   if(healthReference){
+    const child=p.birthDate&&Number.isFinite(utc(p.birthDate))&&days(p.birthDate,p.rows.at(-1).date)<365.25*18;
+    const options=child?[['Poids', 'weight'],['Taille','height'],['IMC','bmi']]:[['Poids','weight'],['IMC','bmi']];
+    if(!options.some(v=>v[1]===healthMetric))healthMetric='weight';
+    controls(target,options.map(v=>[v[0],healthMetric===v[1],()=>{healthMetric=v[1];redraw()}]));
+    healthReferenceGraph(target,p);
+   }else primaryGraph(target,p);
+  }
   else if(view==='progress')progressGraph(target,p);
   else compareTarget(target);
   if(view!=='compare')metrics(target,p);
