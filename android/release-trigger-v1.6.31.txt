@@ -1,0 +1,1 @@
+v1.6.31 : rappel par profil et bouton plus permettant le choix entre profil personnel et profil partagé.
