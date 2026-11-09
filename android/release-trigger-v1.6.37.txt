@@ -1,0 +1,1 @@
+Déclencher build signé APK v1.6.37 : À propos accessible via icône i à côté du statut de version, supprimé de Profils.
