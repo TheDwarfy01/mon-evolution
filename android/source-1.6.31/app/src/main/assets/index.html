@@ -1030,7 +1030,7 @@ if(initialUnified.startsWith('received:'))selectUnified(initialUnified);
   for(const friend of saved){
    const div=document.createElement('div');
    div.className='card';
-   div.style.cssText='margin-top:12px;padding:16px';
+   div.style.cssText='margin-top:12px;padding:16px;position:relative;padding-right:58px';
    const name=document.createElement('h3');
     const thumb=window.AndroidBackup?.receivedAvatar?.(friend.key)||'';
     if(/^data:image\/jpeg;base64,/.test(thumb) && thumb.length<250000){
@@ -1052,7 +1052,7 @@ if(initialUnified.startsWith('received:'))selectUnified(initialUnified);
    const remove=document.createElement('button');
    remove.type='button';
    remove.className='secondary';
-   remove.style.cssText='width:34px;height:34px;padding:5px;margin-top:5px;display:block;margin-left:auto;font-size:17px';
+   remove.style.cssText='position:absolute;top:12px;right:12px;width:34px;height:34px;padding:5px;font-size:17px';
    remove.textContent='🗑';
    remove.title='Retirer ce partage';
    remove.setAttribute('aria-label','Retirer le profil partagé de '+friend.name);
@@ -1886,6 +1886,10 @@ if(initialUnified.startsWith('received:'))selectUnified(initialUnified);
 <style>
 .update-compact-line{display:flex;align-items:center;gap:9px;min-height:36px;font-size:12px}.update-compact-line>span:first-child{font-weight:650;margin-right:auto}.update-compact-line #update-status{font-size:11px;color:#a8e8d8;white-space:nowrap}.update-compact-line #update-check{width:34px;height:34px;padding:0;flex:none;border:1px solid #4a6680;border-radius:10px;background:#2b4b63;color:white;font-size:23px;line-height:1}.update-release-link{display:inline-block;margin-top:3px;color:#a3bfcd;font-size:11px;text-decoration:none}
 #friends-release-status-row{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0;margin:0 0 3px}#friends-release-status-row p{font-size:10px!important;line-height:1.3!important;margin:0!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#friends-auto-sync-status{flex:1;min-width:0}#release-auto-check-status{flex:0 1 auto;max-width:50%;text-align:right}
+</style>
+<style>
+/* Les fiches détaillées restent dans le DOM comme source des onglets du proche, mais ne sont plus répétées dans Partagés. */
+#shared-content{display:none!important}
 </style>
 <style>
 #friends-auto-sync-status,#release-auto-check-status{font-size:10px;line-height:1.3;color:#b5d3dc;margin:2px 0!important}
