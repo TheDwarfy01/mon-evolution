@@ -15,7 +15,7 @@ R(h,'Version installée : <strong>1.6.30</strong>','Version installée : <strong
 R(h,'const installed="1.6.30";','const installed="1.6.31";')
 R(h,"const latest=String(version||''),installed='1.6.30';","const latest=String(version||''),installed='1.6.31';")
 # Keep existing invitation route and original profile creation action.
-R(h,"  button.setAttribute('aria-label','Ajouter un profil partagé');",
+R(h,"button.setAttribute('aria-label','Ajouter un profil partagé');",
     "  button.setAttribute('aria-label','Ajouter un profil personnel ou partagé');")
 R(h,"  button.onclick=()=>oldAdd.click();",
 """  const chooser=document.createElement('dialog');
