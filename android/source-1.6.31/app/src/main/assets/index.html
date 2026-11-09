@@ -1,0 +1,2315 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Mon Évolution IMC</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#091827;color:#f1f8ff;font:15px system-ui,-apple-system,sans-serif}header{background:linear-gradient(125deg,#194a70,#0e293f);padding:26px 18px 0}h1{font-size:25px;margin:4px 0 0}h2{font-size:24px;letter-spacing:-.04em;margin:0 0 6px}h3{font-size:17px;margin:0 0 14px}.upper{font-size:11px;letter-spacing:.15em;color:#9bbfd5}.nav{display:grid;grid-template-columns:repeat(4,1fr);margin-top:25px}.nav button{font-size:12px;color:#b0c4d3;border:0;border-bottom:3px solid transparent;background:none;padding:12px 2px}.nav .on{border-color:#76decc;color:#fff}main{padding:25px 17px 60px}.muted{color:#9cb7c9;font-size:13px;line-height:1.5}.card,.hero{border:1px solid #2b4a60;background:#132b3f;border-radius:19px;padding:19px;margin-top:15px}.hero{background:radial-gradient(circle at top right,#29738788,transparent 60%),linear-gradient(125deg,#18486a,#112b42);padding:25px;border-color:#406c83}.weight{font-size:56px;font-weight:800;letter-spacing:-.06em;margin:18px 0}.weight small{font-size:19px;font-weight:400}.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}.tile{background:#ffffff0b;border:1px solid #ffffff18;border-radius:14px;padding:15px;margin:14px 0}.tile span{display:block;color:#a8bfce;font-size:12px}.tile strong{display:block;font-size:23px;margin-top:8px}.bar{height:9px;background:#49687a;border-radius:10px;overflow:hidden;margin-top:10px}.bar div{height:100%;width:0;background:linear-gradient(90deg,#59d5c0,#b0ed91)}button{font:inherit;cursor:pointer}.primary{background:#7de3cf;border:0;color:#073942;padding:15px;border-radius:14px;font-weight:800;width:100%}.secondary{background:#2b4b63;border:1px solid #4a6680;color:#fff;padding:12px 15px;border-radius:12px}.field{display:block;color:#b8cfdd;font-size:13px;margin:17px 0 8px}input,select{display:block;width:100%;padding:13px;border:1px solid #48657b;border-radius:12px;background:#0b2032;color:white;font:inherit;margin-top:7px;color-scheme:dark}.entry{display:flex;justify-content:space-between;align-items:center;border-top:1px solid #2a485d;padding:14px 0;gap:10px}.entry small{display:block;color:#93b1c5;margin-top:5px}.entry strong{font-size:20px}svg{width:100%;height:300px}.notice{font-size:12px;color:#a3bfcd;line-height:1.6}dialog{background:#162f43;color:#fff;border:1px solid #4b7188;border-radius:20px;width:min(92vw,430px);padding:22px}dialog::backdrop{background:#010712d0}section[hidden]{display:none}.pill{color:#9af0cb;background:#285967;border-radius:30px;padding:7px 11px;font-size:12px}.spread{display:flex;justify-content:space-between;align-items:center;gap:8px}.toast{position:fixed;bottom:18px;left:10%;width:80%;border-radius:12px;background:#286758;text-align:center;padding:14px;display:none}
+.nav{grid-template-columns:repeat(5,1fr)}.nav button{font-size:11px;padding:12px 1px}
+.calendar-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:14px}.calendar-head button{width:42px;height:40px;border-radius:12px;border:1px solid #4a6a80;color:white;background:#294d65}.calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}.weekday{text-align:center;font-size:11px;color:#9cb5c7;padding:7px 0}.calendar-grid button{min-height:51px;border-radius:10px;border:1px solid #2e4b62;background:#102638;color:#edf6ff;padding:7px 2px;font-size:14px;position:relative}.calendar-grid button.selected{border-color:#81e4d1;background:#295f68}.calendar-grid button.has-meals:after{content:"";display:block;width:6px;height:6px;border-radius:50%;background:#78e3c8;margin:4px auto 0}.meal-field{margin:14px 0}.meal-field textarea{display:block;resize:vertical;width:100%;min-height:70px;padding:13px;margin-top:7px;background:#0b2032;border:1px solid #48657b;border-radius:12px;color:#fff;font:inherit}.meal-field label{color:#b8cfdd;font-size:13px}.meal-actions{display:grid;gap:10px;margin-top:18px}
+.checkline{display:flex;align-items:center;gap:9px;margin:12px 0;color:#dcecf5}.checkline input{width:19px;height:19px;margin:0;accent-color:#7de3cf}
+body.needs-setup header,body.needs-setup main{display:none}#setup-screen{display:none;min-height:100dvh;padding:30px 20px;background:linear-gradient(160deg,#102f46,#081522)}body.needs-setup #setup-screen{display:flex;align-items:center;justify-content:center}.setup-inner{width:min(100%,440px);text-align:center}.setup-logo{font-size:65px;color:#76decc}.setup-inner h1{font-size:28px;margin:14px 0}.setup-inner h2{margin-top:40px}.setup-inner p{color:#bfd3df;line-height:1.6}.setup-inner button{width:100%;margin:10px 0}.setup-inner small{display:block;color:#9cb7c9;margin:24px 0}body.needs-setup dialog{z-index:10}
+</style></head><body class="needs-setup">
+<div id="setup-screen" role="region" aria-label="Première utilisation"><div class="setup-inner"><div class="setup-logo">✦</div><h1>Mon Évolution IMC</h1><p>Votre suivi du poids et des repas, en toute simplicité.</p><h2>Bienvenue !</h2><p>Comment souhaitez-vous commencer ?</p><button class="primary" id="setup-create" type="button">＋ Créer mon profil</button><button class="secondary" id="setup-restore" type="button">☁ Restaurer une sauvegarde Google Drive</button>
+<button class="secondary" id="setup-received" type="button">♧ Consulter un profil partagé</button><small>Aucune donnée personnelle n’est préchargée.</small></div></div>
+<header><div class="upper">TON PARCOURS, À TON RYTHME</div><div class="brand-hello"><h1>Mon Évolution ✦</h1><span class="header-greeting">Bonjour 👋</span></div>
+<div class="profile-global" style="margin-top:16px">
+  <label for="unified-profile-picker" style="font-size:13px;color:#cfe7f6">Profil affiché</label>
+  <select id="unified-profile-picker" aria-label="Choisir un profil personnel ou partagé" style="margin-top:5px"></select>
+  <button id="unified-add-received" type="button" style="font-size:12px;color:#93e6d6;background:transparent;border:0;padding:10px 0 0">＋ Ajouter un profil partagé</button>
+</div><nav class="nav"><button class="on" data-tab="home">◉ Résumé</button><button data-tab="chart">⌁ Courbe</button><button data-tab="history">◷ Poids</button><button data-tab="meals">☷ Repas</button><button data-tab="profiles">⚙ Profils</button></nav></header>
+<main>
+<section id="home"><h2>Bonjour, <span id="name"></span> 👋</h2><p class="muted" id="today"></p><div class="hero"><div class="spread"><span>Poids actuel</span><span class="pill" id="delta">Premier jour</span></div><div class="weight"><span id="current">—</span><small> kg</small></div><p class="muted" id="last"></p><div class="spread"><span>Progression</span><b id="pct">0 %</b></div><div class="bar"><div id="fill"></div></div><div class="two"><div class="tile"><span>Départ</span><strong id="start">—</strong></div><div class="tile"><span>Objectif</span><strong id="goal-value">—</strong></div></div><button class="primary" id="add">＋ Enregistrer une pesée</button></div><div class="two"><div class="tile"><span>Poids perdu</span><strong id="lost"></strong></div><div class="tile"><span>Poids restant</span><strong id="remaining"></strong></div><div class="tile"><span>IMC actuel</span><strong id="bmi"></strong></div><div class="tile"><span>Nombre de pesées</span><strong id="count"></strong></div></div></section>
+<section id="chart" hidden><h2>Graphique</h2><p class="muted">Évolution du poids · ligne dorée : objectif</p><div class="card"><svg viewBox="0 0 640 300" id="plot" role="img" aria-label="Courbe du poids"></svg></div></section>
+<section id="history" hidden><h2>Historique</h2><div class="card" id="entries"></div><button class="primary" style="margin-top:16px" id="add2">＋ Ajouter une pesée</button></section>
+<section id="meals" hidden><h2>Journal alimentaire</h2><p class="muted">Choisis un jour pour noter les repas du profil actif.</p><div class="card"><div class="calendar-head"><button id="previous-month" aria-label="Mois précédent">‹</button><h3 id="meal-month" style="margin:0"></h3><button id="next-month" aria-label="Mois suivant">›</button></div><div id="meal-calendar" class="calendar-grid"></div></div><div class="card"><h3 id="meal-day-title">Repas du jour</h3><div id="meal-inputs"></div><div class="meal-actions"><button class="primary" id="save-meals">Enregistrer les repas du jour</button><button class="secondary" id="clear-meals">Effacer les repas du jour</button></div></div><div class="card"><h3>Compte rendu mensuel</h3><p class="notice">Télécharge le détail des repas du mois affiché au format PDF.</p><button class="primary" id="export-meals-pdf">↓ Télécharger le PDF du mois</button></div></section>
+<section id="profiles" hidden><h2>Mes profils</h2><p class="muted">Choisis un profil pour consulter ses mesures.</p><div class="card"><label class="field">Profil actif<select id="profile-picker"></select></label><button class="secondary" id="new-profile">＋ Créer un profil</button></div><div class="card"><h3>Modifier le profil</h3><label class="field">Prénom<input id="edit-name"></label><div class="two"><label class="field">Taille (cm)<input id="edit-height" type="number" min="80" max="250"></label><label class="field">Objectif (kg)<input id="edit-goal" type="number" min="25" max="400" step=".1"></label></div><button class="primary" id="save-profile">Enregistrer</button><button class="secondary" style="margin-top:12px;width:100%" id="export-weights">Exporter les pesées (CSV)</button><button class="secondary" style="margin-top:10px;width:100%" id="export-profile">Exporter ce profil (JSON privé)</button><button class="secondary" style="margin-top:12px;width:100%" id="delete-profile">Supprimer le profil local</button><button class="secondary" style="margin-top:10px;width:100%" id="delete-drive-profile">Supprimer ce profil de la sauvegarde Drive</button></div>
+<div class="card"><h3>Google Drive — sauvegardes</h3><p class="notice" id="drive-state">Aucun fichier de sauvegarde relié.</p><p class="notice">La première fois, choisis Google Drive comme destination. Les modifications suivantes seront enregistrées automatiquement dans ce fichier. Google Drive synchronisera les changements lorsque le téléphone sera connecté.</p><button class="primary" id="backup">☁ Relier / enregistrer sur Drive</button><button class="secondary" style="width:100%;margin-top:12px" id="backup-relink">↗ Relier une sauvegarde déjà présente sur Drive</button><button class="secondary" style="width:100%;margin-top:12px" id="restore">↥ Charger une sauvegarde</button><button class="secondary" style="width:100%;margin-top:12px" id="disconnect">Déconnecter la sauvegarde</button><p class="notice">Pour supprimer un profil uniquement sur Drive, utilise le bouton situé dans Modifier le profil. L'application demandera une double confirmation.</p><p class="notice">Le chargement remplace les profils présents après confirmation. Une même sauvegarde ouverte sur plusieurs téléphones ne se fusionne pas automatiquement : le dernier enregistrement peut remplacer l'autre.</p></div></section>
+</main>
+<dialog id="measure-dialog"><form id="measure-form"><h2>Nouvelle pesée</h2><label class="field">Poids (kg)<input id="weight-input" type="number" min="25" max="400" step=".1" required></label><label class="field">Date<input id="date-input" type="date" required></label><label class="field">Note<input id="note-input" maxlength="120" placeholder="Facultatif"></label><div class="two" style="margin-top:20px"><button class="secondary" type="button" id="cancel-measure">Annuler</button><button class="primary">Enregistrer</button></div></form></dialog>
+<dialog id="edit-weight-dialog"><form id="edit-weight-form"><h2>Corriger une pesée</h2><label class="field">Poids (kg)<input id="edit-weight-input" type="number" min="25" max="400" step=".1" required></label><label class="field">Date<input id="edit-weight-date" type="date" required></label><label class="field">Note<input id="edit-weight-note" maxlength="120"></label><div class="two" style="margin-top:20px"><button class="secondary" type="button" id="cancel-edit-weight">Annuler</button><button class="primary">Enregistrer</button></div></form></dialog>
+<dialog id="profile-dialog"><form id="profile-form"><h2>Nouveau profil</h2><label class="field">Prénom<input id="new-name" required maxlength="40"></label><label class="field">Taille (cm)<input id="new-height" required type="number" min="80" max="250"></label><label class="field">Poids de départ (kg)<input id="new-weight" required type="number" min="25" max="400" step=".1"></label><label class="field">Objectif (kg)<input id="new-goal" required type="number" min="25" max="400" step=".1"></label><div class="two" style="margin-top:20px"><button type="button" class="secondary" id="cancel-profile">Annuler</button><button class="primary">Créer</button></div></form></dialog>
+<div class="toast" id="toast" role="status"></div><script>
+const storage='mon-evolution-multiprofil-v1',initial={active:'',profiles:[]};let data;try{const saved=window.AndroidBackup?.loadLocal?.()||localStorage.getItem(storage);data=JSON.parse(saved);validate(data)}catch{data=initial}
+const $=id=>document.getElementById(id),fmt=n=>Number(n).toLocaleString('fr-FR',{minimumFractionDigits:1,maximumFractionDigits:1}),day=d=>new Date(d+'T12:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'}),dateNow=()=>{let d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')},emptyProfile={id:'',name:'',height:170,goal:80,entries:[{id:0,date:new Date().toISOString().slice(0,10),weight:80,note:''}]},profile=()=>data.profiles.find(p=>p.id===data.active)||data.profiles[0]||emptyProfile,entries=()=>[...profile().entries].sort((a,b)=>a.date.localeCompare(b.date)||a.id-b.id),backupPayload=()=>JSON.stringify({format:'mon-evolution',version:1,exportedAt:new Date().toISOString(),data}),save=(sync=true)=>{const json=JSON.stringify(data);if(window.AndroidBackup){if(!AndroidBackup.saveLocal(json))message('Erreur : stockage local indisponible');if(sync)AndroidBackup.autoSave(backupPayload())}try{localStorage.setItem(storage,json)}catch(e){if(!window.AndroidBackup)message('Stockage du navigateur plein')}};function message(s){$('toast').textContent=s;$('toast').style.display='block';setTimeout(()=>$('toast').style.display='none',2400)}
+function validate(v){if(!v||!Array.isArray(v.profiles)||!v.profiles.length||v.profiles.length>50||!v.profiles.every(p=>typeof p.id==='string'&&typeof p.name==='string'&&p.name.length<100&&Number.isFinite(p.height)&&p.height>=80&&p.height<=250&&Number.isFinite(p.goal)&&p.goal>=25&&p.goal<=400&&Array.isArray(p.entries)&&p.entries.length&&p.entries.length<=20000&&p.entries.every(e=>Number.isFinite(e.weight)&&e.weight>=25&&e.weight<=400&&/^\d{4}-\d{2}-\d{2}$/.test(e.date))))throw Error('Format invalide')}
+function render(){let p=profile(),e=entries(),first=e[0],last=e.at(-1),lost=first.weight-last.weight,remaining=Math.max(0,last.weight-p.goal),progress=Math.max(0,Math.min(100,lost/(first.weight-p.goal)*100||0));$('name').textContent=p.name;$('today').textContent=new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});$('current').textContent=fmt(last.weight);$('start').textContent=fmt(first.weight)+' kg';$('goal-value').textContent=fmt(p.goal)+' kg';$('pct').textContent=Math.round(progress)+' %';$('fill').style.width=progress+'%';$('delta').textContent=lost>0?'− '+fmt(lost)+' kg':lost<0?'+ '+fmt(-lost)+' kg':'Premier jour';$('last').textContent='Dernière mesure : '+day(last.date);$('lost').textContent=fmt(lost)+' kg';$('remaining').textContent=fmt(remaining)+' kg';$('bmi').textContent=fmt(last.weight/(p.height/100)**2);$('count').textContent=e.length;$('edit-name').value=p.name;$('edit-height').value=p.height;$('edit-goal').value=p.goal;$('profile-picker').replaceChildren();for(let x of data.profiles){let op=document.createElement('option');op.value=x.id;op.textContent=x.name;$('profile-picker').append(op)}$('profile-picker').value=p.id;$('entries').replaceChildren();for(let x of [...e].reverse()){let div=document.createElement('div');div.className='entry';let info=document.createElement('div'),strong=document.createElement('strong'),small=document.createElement('small');strong.textContent=fmt(x.weight)+' kg';small.textContent=day(x.date)+(x.note?' · '+x.note:'');info.append(strong,small);div.append(info);if(e.length>1){let del=document.createElement('button');del.className='secondary';del.textContent='Supprimer';del.onclick=()=>{if(confirm('Supprimer cette pesée ?')){p.entries=p.entries.filter(a=>a.id!==x.id);save();render()}};div.append(del)}$('entries').append(div)}draw(e,p)}
+function draw(e,p){let weights=e.map(a=>a.weight),lo=Math.min(p.goal,...weights)-2,hi=Math.max(p.goal,...weights)+2,dates=e.map(a=>new Date(a.date+'T12:00:00').getTime()),t0=Math.min(...dates),t1=Math.max(...dates),x=t=>50+(t0===t1?280:(t-t0)/(t1-t0)*565),y=v=>20+(hi-v)/(hi-lo)*230,svg='';for(let i=0;i<5;i++){let val=lo+(hi-lo)*i/4,yy=y(val);svg+='<line x1="50" y1="'+yy+'" x2="630" y2="'+yy+'" stroke="#315067"/><text x="42" y="'+(yy+4)+'" text-anchor="end" fill="#a2bfd1" font-size="12">'+fmt(val)+'</text>'}svg+='<line x1="50" y1="'+y(p.goal)+'" x2="630" y2="'+y(p.goal)+'" stroke="#efba67" stroke-dasharray="7 6"/>';let pts=e.map((a,i)=>[t0===t1?50+(i+1)*580/(e.length+1):x(dates[i])+(i>0&&dates[i]===dates[i-1]?Math.min(10,i*3):0),y(a.weight)]);if(pts.length>1)svg+='<polyline points="'+pts.map(a=>a.join(',')).join(' ')+'" fill="none" stroke="#70e3d2" stroke-width="4"/>';pts.forEach((a,i)=>svg+='<circle cx="'+a[0]+'" cy="'+a[1]+'" r="6" fill="#70e3d2"><title>'+day(e[i].date)+' : '+fmt(e[i].weight)+' kg</title></circle>');[...new Set([0,Math.floor((e.length-1)/2),e.length-1])].forEach(i=>svg+='<text x="'+pts[i][0]+'" y="287" fill="#a2bfd1" text-anchor="middle" font-size="13">'+new Date(e[i].date+'T12:00:00').toLocaleDateString('fr-FR',{day:'2-digit',month:'short'})+'</text>');$('plot').innerHTML=svg}
+document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-tab]').forEach(v=>v.classList.toggle('on',v===b));['home','chart','history','profiles'].forEach(t=>$(t).hidden=t!==b.dataset.tab)});$('profile-picker').onchange=e=>{data.active=e.target.value;save();render()};function openWeight(){$('weight-input').value=entries().at(-1).weight;$('date-input').max=dateNow();$('date-input').value=dateNow();$('note-input').value='';$('measure-dialog').showModal()}$('add').onclick=openWeight;$('add2').onclick=openWeight;$('cancel-measure').onclick=()=>$('measure-dialog').close();$('measure-form').onsubmit=e=>{e.preventDefault();if($('date-input').value>dateNow())return alert('Une pesée ne peut pas être enregistrée dans le futur.');profile().entries.push({id:Date.now(),weight:Number($('weight-input').value),date:$('date-input').value,note:$('note-input').value.trim()});save();render();$('measure-dialog').close();message('Pesée enregistrée ✓')};$('new-profile').onclick=()=>$('profile-dialog').showModal();$('cancel-profile').onclick=()=>$('profile-dialog').close();$('profile-form').onsubmit=e=>{e.preventDefault();let id='p'+Date.now();data.profiles.push({id,name:$('new-name').value.trim(),height:Number($('new-height').value),goal:Number($('new-goal').value),entries:[{id:Date.now(),date:dateNow(),weight:Number($('new-weight').value),note:'Départ'}]});data.active=id;save();render();$('profile-dialog').close();message('Profil créé ✓')};$('save-profile').onclick=()=>{let p=profile(),name=$('edit-name').value.trim(),height=Number($('edit-height').value),goal=Number($('edit-goal').value);if(!name||height<80||height>250||goal<25||goal>400)return message('Vérifie les valeurs');Object.assign(p,{name,height,goal});save();render();message('Profil enregistré ✓')};$('delete-profile').onclick=()=>{
+ const p=profile();
+ if(!confirm('Supprimer le profil « '+p.name+' » UNIQUEMENT de ce téléphone ? La sauvegarde Drive ne sera pas modifiée et sera déconnectée pour éviter tout écrasement.'))return;
+ if(!confirm('Confirmer la suppression locale définitive de « '+p.name+' » ?'))return;
+ window.AndroidBackup?.disconnect?.();
+ window.AndroidBackup?.stopShare?.(p.id);
+ data.profiles=data.profiles.filter(x=>x.id!==p.id);
+ data.active=data.profiles[0]?.id||'';
+ save(false);
+ location.reload();
+};
+$('delete-drive-profile').onclick=()=>{
+ const p=profile();
+ if(!window.AndroidBackup?.deleteProfileOnDrive)return message('Fonction Drive indisponible');
+ if(!window.AndroidBackup?.isLinked?.())return alert('Relie une sauvegarde Drive existante avant cette suppression.');
+ if(!confirm('Supprimer « '+p.name+' » UNIQUEMENT de la sauvegarde Google Drive reliée ? Le profil local restera intact.'))return;
+ if(!confirm('Confirmer la suppression sur Drive ? Si la sauvegarde ne contient que ce profil, le fichier complet sera supprimé.'))return;
+ AndroidBackup.deleteProfileOnDrive(p.id);
+ message('Suppression sur Drive demandée…');
+};
+function driveProfileRemoved(){
+ refreshDriveState();
+ alert('Profil supprimé sur Drive. Le fichier a été déconnecté pour éviter de réenvoyer ce profil.');
+}
+function driveProfileRemoveFailed(){alert('Suppression Drive refusée (fichier modifié, absent ou accès insuffisant). Aucune donnée locale supprimée.');}$('backup').onclick=()=>{if(window.AndroidBackup)AndroidBackup.save(JSON.stringify({format:'mon-evolution',version:1,exportedAt:new Date().toISOString(),data}));else message('Sauvegarde Android indisponible')};$('restore').onclick=()=>{if(window.AndroidBackup)AndroidBackup.load();else message('Chargement Android indisponible')};function backupCompleted(){message('Sauvegarde enregistrée ✓')}function mergeRestore(incoming){
+ const byId=new Map(data.profiles.map(p=>[p.id,p]));
+ const copy=x=>JSON.parse(JSON.stringify(x)),merged=copy(data);
+ let addedProfiles=0,addedWeights=0,conflicts=0,addedDays=0;
+ for(const remote of incoming.profiles){
+  let local=merged.profiles.find(p=>p.id===remote.id);
+  if(!local){merged.profiles.push(copy(remote));addedProfiles++;continue;}
+  if(local.name!==remote.name){
+   // Profiles sharing an ID but not a name are kept separate to avoid mixing sensitive data.
+   const separate=copy(remote);
+   let suffix=1;
+   let newId='import_'+String(remote.id).replace(/[^A-Za-z0-9_-]/g,'')+'_'+suffix;
+   while(merged.profiles.some(p=>p.id===newId)){
+    suffix++;newId='import_'+String(remote.id).replace(/[^A-Za-z0-9_-]/g,'')+'_'+suffix;
+   }
+   separate.id=newId;
+   merged.profiles.push(separate);
+   addedProfiles++;conflicts++;continue;
+  }
+  const ids=new Map(local.entries.map(x=>[String(x.id),x]));
+  for(const entry of remote.entries){
+   const old=ids.get(String(entry.id));
+   if(!old){local.entries.push(copy(entry));addedWeights++;ids.set(String(entry.id),entry);}
+   else if(JSON.stringify(old)!==JSON.stringify(entry))conflicts++;
+  }
+  local.meals||={};
+  for(const [date,meal] of Object.entries(remote.meals||{})){
+   if(!local.meals[date]){local.meals[date]=copy(meal);addedDays++;}
+   else if(JSON.stringify(local.meals[date])!==JSON.stringify(meal))conflicts++;
+  }
+  if(remote.height!==local.height||remote.goal!==local.goal||remote.name!==local.name)conflicts++;
+ }
+ if(merged.profiles.length>50)throw Error('Trop de profils pour fusionner');
+ if(conflicts && !confirm(conflicts+' différences trouvées dans des enregistrements existants. La fusion conservera les valeurs locales lors de ces conflits, tout en ajoutant les nouvelles mesures. Continuer ?'))return null;
+ validate(merged);
+ return {merged,addedProfiles,addedWeights,addedDays,conflicts};
+}
+function restoreBase64(base64){
+ try{
+  const bytes=atob(base64),arr=Uint8Array.from(bytes,c=>c.charCodeAt(0)),raw=new TextDecoder().decode(arr),v=JSON.parse(raw);
+  if(v.format!=='mon-evolution'||v.version!==1)throw Error('format');
+  validate(v.data);
+  if(!data.profiles.length || !confirm('Fusionner les profils de cette sauvegarde avec tes profils actuels ? Choisis Annuler pour accéder à l’option Remplacer.')){
+   if(!confirm('REMPLACER tous les profils du téléphone par ceux du fichier ? Les données locales actuelles non sauvegardées seront perdues.'))return;
+   data=v.data;
+  }else{
+   const result=mergeRestore(v.data);
+   if(!result)return;
+   data=result.merged;
+   alert('Fusion réussie : '+result.addedProfiles+' profils, '+result.addedWeights+' pesées, '+result.addedDays+' jours de repas ajoutés. '+result.conflicts+' différences conservées en local.');
+  }
+  data.active=data.profiles.some(p=>p.id===data.active)?data.active:data.profiles[0]?.id||'';
+  save();
+  location.reload();
+ }catch(e){message('Sauvegarde incompatible ou données invalides');}
+}
+
+function csvCell(value){
+ let v=String(value??'').replace(/\r\n?/g,' ').replace(/\n/g,' ');
+ if(/^[=+\-@]/.test(v))v="'"+v;
+ return '"'+v.replace(/"/g,'""')+'"';
+}
+$('export-weights').onclick=()=>{
+ if(!window.AndroidBackup?.exportCsv)return message('Export CSV indisponible');
+ const p=profile();
+ const rows=['date,poids_kg,note,profil',...entries().map(e=>[e.date,e.weight,e.note||'',p.name].map(csvCell).join(','))];
+ AndroidBackup.exportCsv('\uFEFF'+rows.join('\r\n')+'\r\n');
+};
+$('export-profile').onclick=()=>{
+ if(!window.AndroidBackup?.exportSingleProfile)return message('Export individuel indisponible');
+ if(!confirm('Ce fichier JSON contiendra toutes les données privées du profil, y compris ses photos. Ne le partage pas publiquement. Continuer ?'))return;
+ AndroidBackup.exportSingleProfile(JSON.stringify({format:'mon-evolution',version:1,exportedAt:new Date().toISOString(),data:{active:profile().id,profiles:[profile()]}}));
+};
+function exportCompleted(){message('Export enregistré ✓')}
+function exportFailed(){alert('Export impossible ou trop volumineux. Vérifie le dossier de destination et réessaie avec moins de photos.')}
+function showMessage(s){message(s)}render();
+</script>
+<script>
+function refreshDriveState() {
+  const linked = !!(window.AndroidBackup && AndroidBackup.isLinked());
+  const status=window.AndroidBackup?.backupStatus?.()||'0|0';
+  const time=Number(status.split('|')[1]);
+  document.getElementById('drive-state').textContent = linked
+    ? '✓ Sauvegarde automatique reliée'+(time?' · Dernier enregistrement : '+new Date(time).toLocaleString('fr-FR'):'')
+    : 'Aucun fichier relié. Choisis Google Drive à la première sauvegarde.';
+  document.getElementById('disconnect').style.display = linked ? 'block' : 'none';
+  document.getElementById('backup-relink').style.display = linked ? 'none' : 'block';
+  document.getElementById('delete-drive-profile').disabled=!linked;
+  document.getElementById('backup').textContent = linked
+    ? '↻ Mettre à jour la sauvegarde Drive'
+    : '☁ Créer une sauvegarde (une seule fois)';
+}
+document.getElementById('backup').onclick = () => {
+  if (!window.AndroidBackup) return message('Cette option nécessite l’application Android');
+  if (AndroidBackup.isLinked()) message('Mise à jour du fichier Drive existant…');
+  else if (!confirm('Un fichier mon-evolution-profils.json existe-t-il déjà sur Drive ? Si oui, annule et utilise « Relier une sauvegarde déjà présente » pour éviter un doublon.')) return;
+  AndroidBackup.save(backupPayload());
+};
+document.getElementById('backup-relink').onclick = () => {
+  if (!window.AndroidBackup?.linkExistingBackup) return message('Liaison Drive indisponible');
+  if (!confirm('Choisir la sauvegarde existante à réutiliser ? Le fichier ne sera pas modifié immédiatement. Les prochaines modifications synchronisées pourront remplacer son contenu.')) return;
+  AndroidBackup.linkExistingBackup();
+};
+function backupRelinked(){
+  refreshDriveState();
+  message('Sauvegarde existante reliée ✓ Aucun nouveau fichier créé.');
+}
+function backupRelinkFailed(){
+  alert('Impossible de relier cette sauvegarde. Sélectionne un fichier mon-evolution-profils.json dont tu possèdes les droits de modification.');
+}
+document.getElementById('disconnect').onclick = () => {
+  if (window.AndroidBackup && confirm('Arrêter les sauvegardes automatiques ? Le fichier existant sera conservé.')) {
+    AndroidBackup.disconnect();
+    refreshDriveState();
+  }
+};
+function backupCompleted(linked) {
+  refreshDriveState();
+  message(linked ? 'Drive relié : sauvegarde automatique activée ✓' : 'Sauvegarde enregistrée. Liaison permanente non disponible.');
+}
+function backupFailed() { message('Sauvegarde Drive impossible : vérifie la connexion ou relie à nouveau le fichier'); }
+function backupConflict() { alert('Conflit de sauvegarde : le fichier Drive a changé sur un autre appareil. Les données locales sont conservées. Vérifie la sauvegarde avant de relier à nouveau Drive.'); }
+refreshDriveState();
+</script>
+<script>
+const mealTypes=[
+  ['morning','Matin'],
+  ['morningSnack','Collation du matin'],
+  ['lunch','Déjeuner'],
+  ['afternoonSnack','Goûter'],
+  ['dinner','Dîner'],
+  ['eveningSnack','Collation du dîner']
+];
+let mealDate=dateNow(),mealMonth=mealDate.slice(0,7);
+const previousValidate=validate;
+validate=function(v){
+  previousValidate(v);
+  for(const p of v.profiles){
+    if(p.meals===undefined)continue;
+    if(!p.meals||Array.isArray(p.meals)||typeof p.meals!=='object'||Object.keys(p.meals).length>3660)throw Error('Repas invalides');
+    for(const [date,items] of Object.entries(p.meals)){
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!items||typeof items!=='object'||Array.isArray(items))throw Error('Date invalide');
+      for(const [type,value] of Object.entries(items)){
+        const isPhoto=mealTypes.some(a=>type===a[0]+'Photo');
+        const isText=mealTypes.some(a=>type===a[0]);
+        if(!(isPhoto||isText)||typeof value!=='string'||(isPhoto?(!value.startsWith('data:image/jpeg;base64,')||value.length>250000):value.length>3000))throw Error('Contenu invalide');
+      }
+    }
+  }
+};
+function mealRecord(p,date){return p.meals?.[date]||{}}
+function hasMeal(items){return mealTypes.some(([key])=>String(items[key]||'').trim()||items[key+'Photo'])}
+function renderMeals(){
+  const p=profile(),[year,month]=mealMonth.split('-').map(Number);
+  $('meal-month').textContent=new Date(year,month-1,1).toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
+  const calendar=$('meal-calendar');calendar.replaceChildren();
+  for(const label of ['L','M','M','J','V','S','D']){
+    const element=document.createElement('div');element.className='weekday';element.textContent=label;calendar.append(element);
+  }
+  const offset=(new Date(year,month-1,1).getDay()+6)%7;
+  for(let i=0;i<offset;i++){calendar.append(document.createElement('span'))}
+  const count=new Date(year,month,0).getDate();
+  for(let n=1;n<=count;n++){
+    const date=mealMonth+'-'+String(n).padStart(2,'0');
+    const button=document.createElement('button');button.textContent=n;
+    button.classList.toggle('selected',date===mealDate);
+    button.classList.toggle('has-meals',!!hasMeal(mealRecord(p,date)));
+    button.setAttribute('aria-label',day(date)+(hasMeal(mealRecord(p,date))?', repas enregistrés':''));
+    button.onclick=()=>{mealDate=date;renderMeals()};
+    calendar.append(button);
+  }
+  $('meal-day-title').textContent='Repas du '+day(mealDate);
+  const inputs=$('meal-inputs');inputs.replaceChildren();
+  const saved=mealRecord(p,mealDate);
+  for(const [key,label] of mealTypes){
+    const wrapper=document.createElement('div');wrapper.className='meal-field';
+    const lab=document.createElement('label');lab.textContent=label;lab.htmlFor='meal-'+key;
+    const field=document.createElement('textarea');field.id='meal-'+key;field.maxLength=3000;
+    field.placeholder='Aliments, boissons, quantités…';field.value=saved[key]||'';
+    wrapper.append(lab,field);
+    if(saved[key+'Photo']){
+      const image=document.createElement('img');image.src=saved[key+'Photo'];image.alt='Photo du '+label;
+      image.style.cssText='display:block;width:100%;height:210px;max-width:100%;object-fit:cover;object-position:center;border-radius:12px;margin:12px 0;cursor:zoom-in';
+       image.title='Appuyer pour voir la photo entière';
+       image.onclick=()=>window.showMealPhoto?.(image.src);
+      wrapper.append(image);
+    }
+    const photoButton=document.createElement('button');photoButton.className='secondary';
+    photoButton.textContent=saved[key+'Photo']?'📷 Remplacer la photo':'📷 Photo : appareil ou galerie';
+    photoButton.onclick=()=>{saveMealInputs(false);if(window.AndroidBackup?.pickPhoto)AndroidBackup.pickPhoto(p.id+'|'+mealDate+'|'+key);else message('Sélection de photo disponible sur Android')};
+    wrapper.append(photoButton);
+    if(saved[key+'Photo']){
+      const remove=document.createElement('button');remove.className='secondary';remove.style.marginLeft='8px';remove.textContent='Retirer';
+      remove.onclick=()=>{delete p.meals[mealDate][key+'Photo'];save();renderMeals()};
+      wrapper.append(remove);
+    }
+    inputs.append(wrapper);
+  }
+}
+document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('[data-tab]').forEach(v=>v.classList.toggle('on',v===b));
+  ['home','chart','history','meals','profiles'].forEach(t=>$(t).hidden=t!==b.dataset.tab);
+  if(b.dataset.tab==='meals')renderMeals();
+});
+$('previous-month').onclick=()=>moveMealMonth(-1);
+$('next-month').onclick=()=>moveMealMonth(1);
+function moveMealMonth(delta){
+  const [y,m]=mealMonth.split('-').map(Number),d=new Date(y,m-1+delta,1);
+  mealMonth=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+  mealDate=mealMonth+'-01';renderMeals();
+}
+function saveMealInputs(showNotice=true){
+  const p=profile();p.meals ||= {};
+  const record={...mealRecord(p,mealDate)};
+  for(const [key] of mealTypes){
+    const value=$('meal-'+key).value.trim();
+    if(value)record[key]=value;
+    else delete record[key];
+  }
+  if(hasMeal(record))p.meals[mealDate]=record;
+  else delete p.meals[mealDate];
+  save();if(showNotice){renderMeals();message('Repas enregistrés ✓')}
+}
+$('save-meals').textContent='Enregistrer les descriptions des repas';
+ $('save-meals').title='Enregistre les aliments, boissons et quantités saisis. Les photos sont enregistrées dès leur ajout.';
+ const info=document.createElement('p');
+ info.className='notice';
+ info.textContent='Les photos sont enregistrées automatiquement dès leur ajout. Ce bouton enregistre tes descriptions de repas.';
+ $('save-meals').insertAdjacentElement('afterend',info);
+ $('save-meals').onclick=()=>saveMealInputs();
+function photoPicked(token,photo){
+  const [id,date,key]=token.split('|');
+  const p=data.profiles.find(x=>x.id===id);
+  if(!p||!mealTypes.some(t=>t[0]===key)||!/^data:image\/jpeg;base64,/.test(photo))return message('Photo non reconnue');
+  p.meals ||= {};p.meals[date] ||= {};p.meals[date][key+'Photo']=photo;
+  save();if(profile().id===id&&mealDate===date)renderMeals();message('Photo ajoutée ✓');
+}
+$('clear-meals').onclick=()=>{
+  if(!confirm('Effacer les repas du '+day(mealDate)+' ?'))return;
+  const p=profile();if(p.meals)delete p.meals[mealDate];
+  save();renderMeals();message('Repas effacés');
+};
+$('export-meals-pdf').onclick=()=>{
+  const p=profile(),days=Object.keys(p.meals||{}).filter(d=>d.slice(0,7)===mealMonth)
+    .sort().map(date=>({date,meals:mealTypes
+      .filter(([key])=>String(p.meals[date][key]||'').trim()||p.meals[date][key+'Photo'])
+      .map(([key,label])=>({label,text:p.meals[date][key]||'',photo:p.meals[date][key+'Photo']||''}))}));
+  if(!window.AndroidBackup?.exportMealsPdf)return message('Export PDF disponible dans l’application Android');
+  const weights=entries().filter(e=>e.date.startsWith(mealMonth)).map(e=>({date:e.date,weight:e.weight}));
+  AndroidBackup.exportMealsPdf(JSON.stringify({name:p.name,month:mealMonth,goal:p.goal,weights,days}));
+};
+const previousRender=render;
+render=function(){previousRender();renderMeals()};
+function pdfCompleted(){message('Compte rendu PDF enregistré ✓')}
+renderMeals();
+</script>
+<script>
+let editingWeightId=null;
+const summary=document.createElement('div');
+summary.className='card';
+summary.innerHTML='<h3>Statistiques avancées</h3><div class="two"><div class="tile"><span>Moyenne sur 7 jours</span><strong id="average-seven">—</strong></div><div class="tile"><span>Évolution du mois</span><strong id="month-change">—</strong></div><div class="tile"><span>Poids le plus bas</span><strong id="lowest-weight">—</strong></div><div class="tile"><span>Pesées sur 30 jours</span><strong id="weighings-month">0</strong></div></div><button id="export-progress-pdf" class="secondary" style="width:100%;margin-top:12px">Télécharger le bilan PDF global</button>';
+$('home').append(summary);
+$('export-progress-pdf').onclick=()=>{
+ if(!window.AndroidBackup?.exportProgressPdf)return message('Bilan global indisponible sur Android');
+ const p=profile();
+ const rows=entries();
+ if(rows.length>12000)return alert('Trop de pesées pour cet export PDF. Utilise plutôt le CSV.');
+ AndroidBackup.exportProgressPdf(JSON.stringify({
+  name:p.name,height:p.height,goal:p.goal,
+  weights:rows.map(e=>({date:e.date,weight:e.weight,note:e.note||''}))
+ }));
+};
+function enhanceWeights(){
+  const list=entries(),lastDate=new Date(),start7=new Date(lastDate),start30=new Date(lastDate);
+  start7.setDate(start7.getDate()-6);start30.setDate(start30.getDate()-29);
+  const within=(date,start)=>new Date(date+'T12:00:00')>=new Date(start.getFullYear(),start.getMonth(),start.getDate());
+  const lastWeek=list.filter(e=>e.date<=dateNow()&&within(e.date,start7));
+  $('average-seven').textContent=lastWeek.length?fmt(lastWeek.reduce((s,e)=>s+e.weight,0)/lastWeek.length)+' kg':'—';
+  const currentMonth=dateNow().slice(0,7),monthEntries=list.filter(e=>e.date<=dateNow()&&e.date.startsWith(currentMonth));
+  $('month-change').textContent=monthEntries.length>1?fmt(monthEntries.at(-1).weight-monthEntries[0].weight)+' kg':'—';
+  $('lowest-weight').textContent=fmt(Math.min(...list.map(e=>e.weight)))+' kg';
+  $('weighings-month').textContent=list.filter(e=>e.date<=dateNow()&&within(e.date,start30)).length;
+  const rows=[...$('entries').children];
+  for(let i=0;i<rows.length;i++){
+    const record=[...list].reverse()[i];
+    const edit=document.createElement('button');edit.className='secondary';edit.textContent='Modifier';
+    edit.onclick=()=>openEditWeight(record.id);
+    rows[i].append(edit);
+  }
+}
+function openEditWeight(id){
+  const record=profile().entries.find(e=>e.id===id);if(!record)return;
+  editingWeightId=id;
+  $('edit-weight-input').value=record.weight;
+  $('edit-weight-date').max=dateNow();$('edit-weight-date').value=record.date;
+  $('edit-weight-note').value=record.note||'';
+  $('edit-weight-dialog').showModal();
+}
+$('cancel-edit-weight').onclick=()=>$('edit-weight-dialog').close();
+$('edit-weight-form').onsubmit=e=>{
+  e.preventDefault();
+  const record=profile().entries.find(x=>x.id===editingWeightId);if(!record)return;
+  if($('edit-weight-date').value>dateNow())return alert('Une pesée ne peut pas être future.');
+  Object.assign(record,{weight:Number($('edit-weight-input').value),date:$('edit-weight-date').value,note:$('edit-weight-note').value.trim()});
+  save();render();$('edit-weight-dialog').close();message('Pesée corrigée ✓');
+};
+const renderBeforeEnhancement=render;
+render=function(){renderBeforeEnhancement();enhanceWeights()};
+enhanceWeights();
+</script>
+<script>
+const reminderCard=document.createElement('div');
+reminderCard.className='card';
+reminderCard.innerHTML=`
+  <h3>🔔 Rappels facultatifs</h3>
+  <p class="notice">Les rappels sont propres à ce téléphone et peuvent arriver avec un léger décalage.</p>
+  <label class="checkline"><input type="checkbox" id="remind-meals"> Journal alimentaire chaque jour</label>
+  <label class="field">Heure du rappel des repas<input type="time" id="meals-time" value="20:00"></label>
+  <label class="checkline"><input type="checkbox" id="remind-weight"> Pesée chaque semaine</label>
+  <div class="two"><label class="field">Jour<select id="weight-weekday">
+    <option value="2">Lundi</option><option value="3">Mardi</option><option value="4">Mercredi</option><option value="5">Jeudi</option>
+    <option value="6">Vendredi</option><option value="7">Samedi</option><option value="1">Dimanche</option>
+  </select></label><label class="field">Heure<input type="time" id="weight-time" value="09:00"></label></div>
+  <button class="primary" id="save-reminders">Enregistrer les rappels</button>`;
+$('profiles').append(reminderCard);
+try{
+  const config=JSON.parse(window.AndroidBackup?.reminderSettings?.()||'{}');
+  for(const type of ['meals','weight']){
+    const r=config[type];if(!r)continue;
+    $('remind-'+type).checked=!!r.enabled;
+    $(type+'-time').value=String(r.hour).padStart(2,'0')+':'+String(r.minute).padStart(2,'0');
+    if(type==='weight')$('weight-weekday').value=String(r.weekday);
+  }
+}catch(e){}
+$('save-reminders').onclick=()=>{
+  if(!window.AndroidBackup?.setReminder)return message('Rappels disponibles sur Android');
+  for(const type of ['meals','weight']){
+    const [h,m]=$(type+'-time').value.split(':').map(Number);
+    if(!Number.isInteger(h)||!Number.isInteger(m))return message('Choisis une heure valide');
+    AndroidBackup.setReminder(type,$('remind-'+type).checked,h,m,Number($('weight-weekday').value));
+  }
+  message('Rappels enregistrés ✓');
+};
+</script>
+<style>
+.profile-avatar{width:96px;height:96px;border-radius:50%;border:3px solid #80e3cf;object-fit:cover;background:#234e63;display:block;margin:0 auto 14px}
+.avatar-placeholder{width:96px;height:96px;border-radius:50%;border:3px solid #80e3cf;background:#234e63;display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 14px;color:#d8f8ed}
+.avatar-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:10px 0 4px}
+.avatar-actions button{font-size:13px}
+</style>
+<script>
+// Portrait individuel : sauvegarde locale + sauvegarde Drive des profils.
+// Le portrait du profil choisi est inclus dans le document partagé chiffré.
+const avatarCard=document.createElement('div');avatarCard.className='card';
+avatarCard.innerHTML='<h3>📷 Photo du profil</h3><div id="avatar-display"></div><div class="avatar-actions"><button class="secondary" id="avatar-choose">Choisir une photo</button><button class="secondary" id="avatar-remove">Supprimer la photo</button></div><p class="notice">La photo est propre à ce profil. Elle est incluse dans ta sauvegarde privée et dans le partage chiffré de ce seul profil.</p>';
+$('profiles').insertBefore(avatarCard,$('profiles').children[1]);
+const headerAvatar=document.createElement('div');headerAvatar.id='header-avatar';headerAvatar.style.margin='16px auto 0';
+$('home').insertBefore(headerAvatar,$('home').children[1]);
+function avatarView(container,portrait,small){
+ container.replaceChildren();
+ if(typeof portrait==='string'&&portrait.startsWith('data:image/jpeg;base64,')&&portrait.length<250000){
+  const image=document.createElement('img');image.src=portrait;image.alt='Photo du profil';image.className='profile-avatar';
+  if(small){image.style.width='72px';image.style.height='72px'}container.append(image);
+ }else{
+  const placeholder=document.createElement('div');placeholder.className='avatar-placeholder';placeholder.textContent='♙';
+  if(small){placeholder.style.width='72px';placeholder.style.height='72px'}container.append(placeholder);
+ }
+}
+function renderAvatars(){const portrait=profile().avatar;avatarView($('avatar-display'),portrait,false);avatarView(headerAvatar,portrait,true);$('avatar-remove').style.display=portrait?'inline-block':'none'}
+$('avatar-choose').onclick=()=>{
+ if(window.AndroidBackup?.pickPhoto)AndroidBackup.pickPhoto('avatar|'+profile().id);
+ else message('Sélection de photo disponible sur Android');
+};
+$('avatar-remove').onclick=()=>{
+ if(!profile().avatar||!confirm('Supprimer la photo de ce profil ?'))return;
+ delete profile().avatar;save();renderAvatars();message('Photo supprimée ✓');
+};
+const previousPhotoPicked=photoPicked;
+photoPicked=function(token,photo){
+ if(typeof token==='string'&&token.startsWith('avatar|')){
+  const id=token.slice(7),p=data.profiles.find(x=>x.id===id);
+  if(!p||!/^data:image\/jpeg;base64,/.test(photo)||photo.length>250000)return message('Photo non reconnue');
+  p.avatar=photo;save();renderAvatars();message('Photo de profil enregistrée ✓');
+  return;
+ }
+ previousPhotoPicked(token,photo);
+};
+const renderBeforeAvatar=render;
+render=function(){renderBeforeAvatar();renderAvatars()};
+renderAvatars();
+</script>
+<script>
+const aboutCard=document.createElement('div');aboutCard.className='card';
+aboutCard.innerHTML='<h3>ⓘ À propos de Mon Évolution IMC</h3><p class="notice">Version installée : <strong>1.6.31</strong> · Android 7.0 ou plus récent</p><p class="notice">Suivi du poids, historique, graphiques, plusieurs profils, journal des repas, sauvegardes Google Drive et partage en lecture seule.</p><p class="notice">Les données enregistrées sur ce téléphone restent conservées lorsque tu installes une mise à jour signée avec la même clé. Une sauvegarde Google Drive reste recommandée.</p>';
+$('profiles').insertBefore(aboutCard,$('profiles').children[1]);
+aboutCard.insertAdjacentHTML('beforeend','<div style="margin-top:15px;border-top:1px solid #34506a;padding-top:15px">\n<button id="update-check" class="secondary" type="button">↻ Rechercher une mise à jour</button>\n<button id="releases-home" class="secondary" type="button" style="margin-top:8px">🌐 Toutes les versions sur GitHub</button>\n<p class="notice" id="update-status" aria-live="polite">Version installée : 1.6.4. Vérifie sur GitHub si une version plus récente est disponible.</p>\n<div id="update-offer" style="display:none">\n<p class="notice" id="update-details"></p>\n<p class="notice">Téléchargement depuis GitHub Releases : page de la version recommandée ou APK direct. Si Chrome bloque sur ton Samsung, essaie Firefox ou DuckDuckGo.</p>\n<p class="notice">Sur certains Samsung, Chrome peut bloquer le téléchargement des APK. Si cela arrive, ouvre ce lien dans Firefox ou DuckDuckGo, puis choisis l’APK dans Assets. Le téléchargement direct reste disponible.</p>\n<input id="update-url" readonly style="margin:6px 0;width:100%;font-size:12px;padding:10px;border-radius:8px;background:#07192a;color:#e6f8ff;border:1px solid #496578" value="" aria-label="Adresse de téléchargement de la nouvelle version" />\n<button id="update-page-open" class="primary" type="button" style="margin:12px 0 6px">🌐 Ouvrir la page GitHub</button>\n<button id="update-direct-open" class="secondary" type="button" style="width:100%;margin:6px 0 12px">⬇ Télécharger l’APK directement</button>\n<button id="update-copy" class="secondary" type="button">Copier le lien de la page GitHub</button>\n</div>\n</div>');
+</script>
+<script>
+// Partage d'un seul profil. La sauvegarde privée contenant tous les profils n'est jamais partagée.
+const shareCard=document.createElement('div');shareCard.className='card';
+shareCard.innerHTML=`<h3>🔗 Partage en lecture seule</h3>
+ <p class="notice">Publie uniquement ce profil : poids, objectif, progression et journal des repas. Le destinataire ne peut rien modifier.</p>
+ <label class="checkline"><input type="checkbox" id="share-photos"> Autoriser aussi les photos des repas</label>
+ <p class="notice">Les photos de repas sont exclues par défaut. Seule la photo de ce profil est incluse dans le partage chiffré; aucun autre profil n’est envoyé.</p>
+ <p id="share-state" class="notice"></p>
+ <button class="primary" id="create-share">Créer le fichier partagé sur Drive</button><button class="secondary" style="width:100%;margin-top:10px" id="share-relink">↗ Relier un fichier partagé existant</button>
+ <div id="share-link-panel" style="display:none;margin-top:15px;border-top:1px solid #38576b;padding-top:15px">
+   <h3>🔗 Envoyer mon profil à un proche</h3>
+   <p class="notice">🔒 Fichier chiffré AES-256-GCM. Le lien ne change pas. Envoie le code à 10 caractères séparément. Ne réutilise pas un mot de passe existant.</p>
+   <p class="notice">1. Dans Drive, retrouve le fichier « mon-evolution-partage-… ». Appuie sur ⋮ → Partager, invite les proches comme <strong>Lecteurs</strong> et copie le lien. Garde l’accès général sur <strong>Limité</strong>.</p>
+   <button id="share-open-drive" class="secondary" type="button" style="width:100%">Ouvrir Google Drive</button>
+   <label class="field">2. Colle ici le lien obtenu dans Google Drive
+     <input id="share-link-input" type="url" maxlength="1500" placeholder="https://drive.google.com/file/d/…/view" autocomplete="off">
+   </label>
+   <button id="share-link-save" class="secondary" type="button" style="width:100%">Enregistrer ce lien</button>
+   <label class="field">3. Lien d’invitation à envoyer
+     <input id="share-invite-preview" readonly type="url" aria-label="Lien d’invitation Mon Évolution">
+   </label>
+   <div class="two" style="margin-top:12px">
+     <button id="share-link-copy" class="secondary" type="button">Copier l’invitation</button>
+     <button id="share-link-send" class="primary" type="button">Inviter un proche</button>
+   </div>
+   <p class="notice">Ce lien ouvre une page Mon Évolution qui propose de lancer l’application et d’ajouter ton profil après confirmation. L’accès au fichier reste soumis à tes autorisations Drive. Un lien privé nécessite un compte autorisé.</p>
+ </div>
+ <button class="secondary" style="width:100%;margin-top:10px" id="stop-share">Désactiver les mises à jour (conserver le fichier)</button><button class="secondary" style="width:100%;margin-top:10px" id="delete-active-share">Supprimer le partage actif de Drive</button><button class="secondary" style="width:100%;margin-top:10px" id="manage-drive-share">Gérer les accès dans Google Drive</button>
+ <p class="notice">Après création, ouvre Google Drive et accorde uniquement le rôle <strong>Lecteur</strong> au destinataire. Pour lui retirer l'accès, supprime également son autorisation dans Drive.</p>
+ <button class="secondary" style="width:100%;margin-top:10px" id="open-share">Consulter un profil reçu</button>`;
+$('profiles').append(shareCard);
+const sharedNav=document.createElement('button');
+sharedNav.textContent='♧ Partagés';sharedNav.dataset.tab='shared';
+document.querySelector('.nav').append(sharedNav);
+document.querySelector('.nav').style.gridTemplateColumns='repeat(6,minmax(0,1fr))';
+const sharedSection=document.createElement('section');sharedSection.id='shared';sharedSection.hidden=true;
+sharedSection.innerHTML=`<h2>Profil d'un proche</h2><p class="muted">Consultation uniquement · aucune modification possible</p>
+ <div class="card"><h3>Consulter un profil via une URL publique</h3>
+ <p class="notice" id="shared-state">Colle ici le lien d’un fichier partagé. Le propriétaire doit avoir autorisé « Tous les utilisateurs disposant du lien → Lecteur » dans Drive. Ce mode de partage rend le fichier accessible à quiconque possède le lien.</p>
+ <label class="field">URL Google Drive du profil partagé<input id="shared-public-url" type="url" maxlength="1500" placeholder="https://drive.google.com/file/d/…/view" autocomplete="off"></label>
+ <button class="primary" id="shared-url-load">Charger le profil depuis l’URL</button>
+ <button class="secondary" style="width:100%;margin-top:10px" id="shared-refresh">Actualiser le profil reçu</button>
+ <p class="notice">Partage privé (accès limité à des adresses Google) : utilise plutôt le sélecteur de fichier, sans rendre les données publiques.</p>
+  <button class="secondary" style="width:100%;margin-top:10px" id="shared-open">Ou choisir un fichier Drive privé</button>
+  <button class="secondary" style="width:100%;margin-top:12px" id="forget-received">Retirer ce profil partagé de ma liste</button>
+  <p class="notice">Cette action retire uniquement le raccourci de ton application, jamais le fichier Drive appartenant à ton proche.</p></div>
+ <div id="shared-content"></div>`;
+$('profiles').parentNode.append(sharedSection);
+function shareStatus(){
+ const id=profile().id,linked=window.AndroidBackup?.sharedStatus?.(id)==='1';
+ $('share-state').textContent=linked?'✓ Fichier de partage relié et mis à jour à chaque modification.':'Aucun fichier de partage relié pour ce profil.';
+ $('stop-share').style.display=linked?'block':'none';
+ $('delete-active-share').style.display=linked?'block':'none';
+ $('manage-drive-share').style.display=linked?'block':'none';
+ $('create-share').textContent=linked?'↻ Mettre à jour le partage Drive':'Créer le fichier partagé sur Drive';
+ $('share-relink').textContent=linked?'Changer de fichier partagé relié':'↗ Relier un fichier partagé existant';
+ $('share-link-panel').style.display=linked?'block':'none';
+ const savedLink=linked?(window.AndroidBackup?.getShareLink?.(id)||''):'';
+ $('share-link-input').value=savedLink;
+ const invitation=linked?(window.AndroidBackup?.getInvitationLink?.(id)||''):'';
+ $('share-invite-preview').value=invitation;
+ $('share-link-copy').disabled=!invitation;
+ $('share-link-send').disabled=!invitation;
+ $('share-photos').checked=!!window.AndroidBackup?.sharePhotosEnabled?.(id);
+}
+$('share-open-drive').onclick=()=>window.AndroidBackup?.openDrive?.();
+$('share-link-save').onclick=()=>{
+ if(!window.AndroidBackup?.saveShareLink)return message('Partage de lien indisponible sur Android');
+ if(!confirm('As-tu vérifié que ce lien correspond au fichier du profil actif et que seuls les destinataires voulus ont accès au document ?'))return;
+ if(!AndroidBackup.saveShareLink(profile().id,$('share-link-input').value.trim()))
+   return alert('Lien non reconnu. Copie le lien du fichier JSON depuis Google Drive (et pas celui du dossier).');
+ shareStatus();
+ message('Lien Drive enregistré pour ce profil ✓');
+};
+$('share-link-copy').onclick=()=>window.AndroidBackup?.copyShareLink?.(profile().id);
+$('share-link-send').onclick=()=>window.AndroidBackup?.sendShareLink?.(profile().id);
+$('share-photos').onchange=()=>{
+ if(!window.AndroidBackup?.setSharePhotos)return message('Option réservée à Android');
+ AndroidBackup.setSharePhotos(profile().id,$('share-photos').checked);
+ AndroidBackup.autoSave(backupPayload());
+ message($('share-photos').checked?'Photos des repas incluses dans le partage':'Photos exclues du partage');
+};
+$('create-share').onclick=()=>{
+ if(!window.AndroidBackup?.createShare)return message('Partage disponible dans l’application Android');
+ const p=profile();
+ const linked=window.AndroidBackup?.sharedStatus?.(p.id)==='1';
+ if(!linked && !confirm('Un fichier de partage existe-t-il déjà pour ce profil ? Si oui, annule et utilise « Relier un fichier partagé existant » pour éviter un doublon.'))return;
+ const publish=()=>AndroidBackup.createShare(p.id,JSON.stringify({profile:{name:p.name,height:p.height,goal:p.goal,entries:p.entries,meals:p.meals||{},avatar:p.avatar||''}}));
+ if(AndroidBackup.hasSharePassword?.(p.id))publish();
+ else askCrypt('Créer le mot de passe du fichier chiffré',true,pass=>{
+  if(pass!==null && AndroidBackup.saveSharePassword(p.id,pass))publish();
+ });
+ if(linked)message('Actualisation du fichier partagé existant…');
+};
+$('share-relink').onclick=()=>{
+ if(!window.AndroidBackup?.linkExistingShare)return message('Liaison du partage indisponible');
+ const p=profile();
+ if(!confirm('Relier un fichier partagé existant correspondant à '+p.name+' ? Le fichier sélectionné ne sera pas écrasé immédiatement.'))return;
+ AndroidBackup.linkExistingShare(p.id,p.name);
+};
+function shareRelinked(){
+ shareStatus();
+ message('Fichier de partage existant relié ✓');
+}
+$('manage-drive-share').onclick=()=>window.AndroidBackup?.openDrive?.();
+$('delete-active-share').onclick=()=>{
+ const p=profile();
+ if(!window.AndroidBackup?.deleteActiveShare)return message('Suppression Drive indisponible');
+ if(!confirm('Supprimer le fichier PARTAGÉ actif de « '+p.name+' » dans Drive ? Les lecteurs perdront l’accès à ce fichier, mais leurs copies déjà téléchargées resteront.'))return;
+ if(!confirm('Confirmer la suppression du fichier de partage actif ? Les autres fichiers ne seront pas supprimés.'))return;
+ AndroidBackup.deleteActiveShare(p.id);
+ message('Suppression demandée à Google Drive…');
+};
+function shareDeleted(){shareStatus();alert('Partage actif supprimé. Les autres fichiers Drive et les sauvegardes ne sont pas touchés.')}
+function shareDeleteFailed(){alert('Drive a refusé la suppression. Retire les autorisations Lecteur depuis Google Drive.');}
+$('stop-share').onclick=()=>{
+ if(!confirm('Arrêter la mise à jour du fichier partagé ? Pour révoquer l’accès, retire aussi les droits du lecteur dans Google Drive.'))return;
+ AndroidBackup.stopShare(profile().id);shareStatus();
+};
+function shareCreated(persistent){shareStatus();alert(persistent?
+'Fichier de partage créé ! Ouvre Google Drive et partage-le uniquement avec les destinataires choisis, avec le rôle Lecteur. Les modifications de ce profil actualiseront ce fichier.':
+'Fichier créé ! Le fournisseur de stockage ne permet pas la mise à jour automatique. Pour une synchronisation, crée le fichier dans Google Drive.');};
+function sharedUpdated(){shareStatus()}
+function sharedUpdateFailed(){
+ $('share-state').textContent='Mise à jour du partage impossible. Vérifie le mot de passe de partage et les droits Google Drive ; utilise « Relier un fichier partagé existant » si nécessaire.';
+ alert('Impossible de modifier le fichier partagé. Le profil personnel reste enregistré. Vérifie le mot de passe ou les droits Drive, sans créer de fichier en double.');
+}
+function sharedSyncNeedsPassword(){
+ const note=$('share-state');
+ if(note)note.textContent='Ton profil est bien enregistré. Le fichier partagé existant n’a pas encore de code de chiffrement : ouvre Profils → Mettre à jour le partage Drive pour définir le code à 10 caractères.';
+}
+function sharedSyncFailed(){
+ const note=$('share-state');
+ if(note)note.textContent='Ton profil personnel est enregistré, mais le fichier partagé n’a pas pu être synchronisé. Vérifie les autorisations de modification Google Drive dans Profils.';
+}
+function sharedReadFailed(){
+ $('shared-state').textContent='Impossible de lire le profil sélectionné. Vérifie que c’est le fichier mon-evolution-partage-…json, avec le bon compte Google et un accès Lecteur.';
+ message('Fichier de partage illisible ou accès Google Drive refusé');
+}
+function sharedPublicFailed(reason){
+ const errors={
+  html:'Google Drive renvoie une page de prévisualisation plutôt que le fichier JSON. Essaie de sélectionner directement le fichier dans Google Drive.',
+  forbidden:'Google Drive refuse le téléchargement direct (403). Vérifie les autorisations du fichier JSON lui-même, et pas seulement celles du dossier.',
+  notfound:'Le fichier lié est introuvable. Demande à ton proche un nouveau lien vers le fichier JSON.',
+  network:'La connexion à Google Drive a échoué. Vérifie la connexion et réessaie.',
+  too_large:'Ce profil est trop volumineux pour être récupéré par un lien.',
+  invalid_json:'Le document téléchargé ne contient pas un profil Mon Évolution compatible.',
+  error:'Chargement impossible. Essaie de sélectionner le fichier directement dans Google Drive.'
+ };
+ const msg=errors[reason]||errors.error;
+ $('shared-state').textContent=msg+' Si tu vois le fichier dans Google Drive, utilise « Accès privé : choisir le fichier Google Drive » ou « Ou choisir un fichier Drive privé ».';
+ const button=$('shared-url-load');
+ if(button){button.disabled=false;button.textContent='Charger le profil depuis l’URL';}
+ const fallback=$('shared-open');
+ if(fallback){fallback.hidden=false;fallback.focus();}
+ alert(msg+'\n\nTu peux importer le document via « Ou choisir un fichier Drive privé ».');
+}
+$('open-share').onclick=()=>window.AndroidBackup?.openShared?.();
+$('shared-open').onclick=()=>askCrypt('Mot de passe du fichier reçu',false,pass=>{
+ if(pass!==null)window.AndroidBackup?.openSharedPassword?.(pass);
+});
+$('shared-url-load').onclick=()=>{
+ const u=$('shared-public-url').value.trim();
+ if(!u)return message('Colle une URL pour continuer');
+ if(!window.AndroidBackup?.loadSharedPublic)return message('Chargement URL indisponible');
+ $('shared-state').textContent='Lecture du profil partagé…';
+ $('shared-url-load').disabled=true;
+ $('shared-url-load').textContent='Lecture Google Drive en cours…';
+ askCrypt('Mot de passe du profil partagé',false,pass=>{
+  if(pass!==null)AndroidBackup.loadSharedPublicPassword(u,pass);
+  else $('shared-url-load').disabled=false;
+ });
+};
+$('shared-refresh').onclick=()=>window.AndroidBackup?.refreshShared?.();
+sharedNav.onclick=()=>{
+ document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('on',b===sharedNav));
+ ['home','chart','history','meals','profiles','shared'].forEach(t=>$(t).hidden=t!=='shared');
+ if(typeof unifiedCurrent!=='undefined' && unifiedCurrent.startsWith('received:'))window.AndroidBackup?.refreshShared?.();
+};
+document.querySelectorAll('[data-tab]:not([data-tab="shared"])').forEach(b=>b.addEventListener('click',()=>{$('shared').hidden=true}));
+function sharedLoaded(base64,receivedKey){
+ try {
+  const raw=new TextDecoder().decode(Uint8Array.from(atob(base64),c=>c.charCodeAt(0)));
+  const doc=JSON.parse(raw),p=doc.profile;
+  if(doc.format!=='mon-evolution-lecture-seule'||doc.version!==1||!p||typeof p.name!=='string'||p.name.length>100
+    ||!Number.isFinite(p.goal)||!Number.isFinite(p.height)||!Array.isArray(p.entries)||!p.entries.length||p.entries.length>20000
+    ||!p.entries.every(e=>Number.isFinite(e.weight)&&e.weight>=25&&e.weight<=400&&/^\d{4}-\d{2}-\d{2}$/.test(e.date)))throw Error('invalide');
+  const rows=[...p.entries].sort((a,b)=>a.date.localeCompare(b.date)),first=rows[0],last=rows.at(-1);
+  const lost=first.weight-last.weight,progress=first.weight>p.goal?Math.max(0,Math.min(100,100*lost/(first.weight-p.goal))):0;
+  $('shared-url-load').disabled=false;
+  $('shared-url-load').textContent='Charger le profil depuis l’URL';
+  $('shared-state').textContent='Dernière synchronisation : '+new Date(doc.exportedAt||Date.now()).toLocaleString('fr-FR');
+  const content=$('shared-content');content.replaceChildren();
+  const panel=heading=>{const div=document.createElement('div');div.className='card';const title=document.createElement('h3');title.textContent=heading;div.append(title);content.append(div);return div};
+  const overview=panel('👤 '+p.name),summary=document.createElement('p');
+  summary.textContent='Actuel : '+fmt(last.weight)+' kg · Départ : '+fmt(first.weight)+' kg · Objectif : '+fmt(p.goal)+' kg · Perdus : '+fmt(lost)+' kg · Progression : '+Math.round(progress)+' %';
+  overview.append(summary);
+  const chart=panel('Courbe de progression');
+  const graph=document.createElementNS('http://www.w3.org/2000/svg','svg');graph.setAttribute('viewBox','0 0 400 200');graph.setAttribute('role','img');graph.setAttribute('aria-label','Courbe de poids');
+  const lo=Math.min(p.goal,...rows.map(e=>e.weight))-1,hi=Math.max(p.goal,...rows.map(e=>e.weight))+1;
+  const xs=rows.map(e=>new Date(e.date+'T12:00:00').getTime()),a=Math.min(...xs),b=Math.max(...xs);
+  const pts=rows.map((e,i)=>[25+(a===b?175:(xs[i]-a)/(b-a)*345),15+(hi-e.weight)/(hi-lo)*165]);
+  const line=document.createElementNS('http://www.w3.org/2000/svg','polyline');line.setAttribute('points',pts.map(x=>x.join(',')).join(' '));line.setAttribute('stroke','#70e3d2');line.setAttribute('stroke-width','3');line.setAttribute('fill','none');graph.append(line);
+  for(const pt of pts){const circle=document.createElementNS('http://www.w3.org/2000/svg','circle');circle.setAttribute('cx',pt[0]);circle.setAttribute('cy',pt[1]);circle.setAttribute('r','3');circle.setAttribute('fill','#f8d780');graph.append(circle)}chart.append(graph);
+  const history=panel('Historique des pesées');
+  for(const e of rows.slice().reverse()){const row=document.createElement('div');row.className='entry';row.textContent=day(e.date)+' · '+fmt(e.weight)+' kg'+(e.note?' · '+String(e.note).slice(0,120):'');history.append(row)}
+  const food=panel('Journal des repas');
+  const types=[['morning','Matin'],['morningSnack','Collation du matin'],['lunch','Déjeuner'],['afternoonSnack','Goûter'],['dinner','Dîner'],['eveningSnack','Collation du dîner']];
+  const days=p.meals&&typeof p.meals==='object'&&!Array.isArray(p.meals)?Object.entries(p.meals).filter(([d,v])=>/^\d{4}-\d{2}-\d{2}$/.test(d)&&v&&typeof v==='object').sort((x,y)=>y[0].localeCompare(x[0])):[];
+  for(const [date,meal] of days.slice(0,3660)){
+   const h=document.createElement('h4');h.textContent=day(date);food.append(h);
+   for(const [key,label] of types){if(!meal[key]&&!meal[key+'Photo'])continue;
+    const text=document.createElement('p');text.textContent=label+' : '+String(meal[key]||'').slice(0,3000);food.append(text);
+    const photo=meal[key+'Photo'];if(typeof photo==='string'&&photo.startsWith('data:image/jpeg;base64,')&&photo.length<250000){const img=document.createElement('img');img.src=photo;img.alt=label;img.style.cssText='display:block;width:100%;height:210px;max-width:100%;object-fit:cover;object-position:center;border-radius:9px;margin:10px 0;cursor:zoom-in';img.title='Appuyer pour voir la photo entière';img.onclick=()=>window.showMealPhoto?.(img.src);food.append(img)}
+   }
+  }
+  if(!days.length){const empty=document.createElement('p');empty.textContent='Aucun repas enregistré';food.append(empty)}
+  if($('shared').hidden){document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('on',b===sharedNav));['home','chart','history','meals','profiles','shared'].forEach(t=>$(t).hidden=t!=='shared')}
+  window.onReceivedProfileLoaded?.(receivedKey,p.name);
+  message('Profil partagé actualisé ✓');
+ }catch(e){message('Fichier de partage incompatible ou invalide')}
+}
+const renderBeforeShare=render;render=function(){renderBeforeShare();shareStatus()};
+shareStatus();
+// Quand le profil partagé est affiché, vérifier régulièrement les changements disponibles.
+setInterval(()=>{if(!$('shared').hidden&&document.visibilityState==='visible')window.AndroidBackup?.refreshShared?.()},60000);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&!$('shared').hidden)window.AndroidBackup?.refreshShared?.()});
+</script>
+<script>
+// Native Android reads JSON from GitHub Releases. No remote JavaScript is executed.
+(function(){
+ const installed="1.6.31";
+ const releases="https://github.com/TheDwarfy01/mon-evolution/releases";
+ const check=document.getElementById("update-check");
+ const offer=document.getElementById("update-offer");
+ const status=document.getElementById("update-status");
+ const input=document.getElementById("update-url");
+ const valid=/^\d+(?:\.\d+){1,3}$/;
+ const page=v=>releases+"/tag/v"+v;
+ const apk=v=>releases+"/download/v"+v+"/Mon_Evolution_IMC_v"+v+".apk";
+ const compare=(a,b)=>{
+  const x=a.split(".").map(Number),y=b.split(".").map(Number);
+  for(let i=0;i<Math.max(x.length,y.length);i++)if((x[i]||0)!==(y[i]||0))return (x[i]||0)>(y[i]||0)?1:-1;
+  return 0;
+ };
+ let latest="";
+ const open=url=>{
+  if(window.AndroidBackup?.openOfficialUrl)AndroidBackup.openOfficialUrl(url);
+  else window.open(url,"_blank","noopener,noreferrer");
+ };
+ window.receiveUpdateVersion=version=>{
+  const v=String(version||"");
+  if(!valid.test(v))return window.updateVersionFailed();
+  latest=v;
+  if(compare(v,installed)<=0){status.textContent="L’application est à jour (version "+installed+").";return;}
+  document.getElementById("update-details").textContent="Version "+v+" disponible";
+  input.value=page(v);
+  offer.style.display="block";
+  status.textContent="Nouvelle version : "+v+". Ouvre la page GitHub Releases.";
+ };
+ window.updateVersionFailed=()=>{status.textContent="Vérification impossible. La page GitHub reste accessible.";};
+ check.onclick=()=>{
+  offer.style.display="none";
+  status.textContent="Recherche de la dernière version publiée…";
+  if(!window.AndroidBackup?.checkLatestVersion)return window.updateVersionFailed();
+  AndroidBackup.checkLatestVersion();
+ };
+ document.getElementById("releases-home").onclick=()=>open(releases);
+ document.getElementById("update-page-open").onclick=()=>{if(valid.test(latest))open(page(latest));};
+ document.getElementById("update-direct-open").onclick=()=>{if(valid.test(latest))open(apk(latest));};
+ document.getElementById("update-copy").onclick=()=>{
+  if(!valid.test(latest))return;
+  input.value=page(latest);
+  input.focus();input.select();
+  try{document.execCommand("copy");}catch(e){}
+  status.textContent="Lien GitHub sélectionné : ouvre-le dans Firefox ou DuckDuckGo si Chrome bloque le téléchargement.";
+ };
+})();
+</script>
+<script>
+// L'accueil initial n'apparaît que lorsqu'aucun profil personnel n'existe.
+function updateFirstLaunch(){
+ const empty=!data||!Array.isArray(data.profiles)||data.profiles.length===0;
+ let received=false;
+ try{received=JSON.parse(window.AndroidBackup?.listReceivedProfiles?.()||"[]").length>0;}catch(e){}
+ document.body.classList.toggle('needs-setup',empty&&!received);
+}
+$('setup-create').addEventListener('click',()=>{$('profile-dialog').showModal()});
+$('setup-restore').addEventListener('click',()=>{if(window.AndroidBackup?.load)AndroidBackup.load();else message('Restauration disponible sur Android')});
+$('setup-received').addEventListener('click',()=>{
+ document.body.classList.remove('needs-setup');
+ sharedNav.click();
+ $('shared-public-url').focus();
+});
+const renderBeforeFirstLaunch=render;
+render=function(){if(data.profiles.length){renderBeforeFirstLaunch()}updateFirstLaunch()};
+updateFirstLaunch();
+</script>
+<script>
+// Unified list: personal profiles are editable; received profiles remain read-only.
+const unifiedPicker=$('unified-profile-picker');
+const unifiedStorageKey='mon-evolution-unified-selection-v1';
+let unifiedCurrent='';
+function getReceivedList(){
+ try{
+  const list=JSON.parse(window.AndroidBackup?.listReceivedProfiles?.()||'[]');
+  return Array.isArray(list)?list.filter(item=>
+   item && typeof item.key==='string' && /^[a-f0-9-]{36}$/.test(item.key) &&
+   typeof item.name==='string' && item.name.length<=100 &&
+   ['private','public'].includes(item.kind)
+  ).slice(0,100):[];
+ }catch(e){return [];}
+}
+function showUnifiedTab(tab){
+ const nav=document.querySelector('[data-tab="'+tab+'"]');
+ document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('on',b===nav));
+ ['home','chart','history','meals','profiles','shared'].forEach(t=>$(t).hidden=t!==tab);
+ if(tab==='meals' && data.profiles.length)renderMeals();
+}
+function updateUnifiedPicker(prefer){
+ const received=getReceivedList();
+ const before=prefer||unifiedCurrent||localStorage.getItem(unifiedStorageKey)||('local:'+data.active);
+ unifiedPicker.replaceChildren();
+ const own=data.profiles||[];
+ if(own.length){
+  const group=document.createElement('optgroup');group.label='Mes profils personnels';
+  for(const p of own){
+   const item=document.createElement('option');
+   item.value='local:'+p.id;
+   item.textContent=p.name+' · Personnel';
+   group.append(item);
+  }
+  unifiedPicker.append(group);
+ }
+ if(received.length){
+  const group=document.createElement('optgroup');group.label='Profils reçus (lecture seule)';
+  received.forEach((r,i)=>{
+   const item=document.createElement('option');
+   item.value='received:'+r.key;
+   item.textContent=r.name+' · Partagé '+(r.kind==='private'?'(privé)':'(lien)');
+   group.append(item);
+  });
+  unifiedPicker.append(group);
+ }
+ const options=[...unifiedPicker.options].map(o=>o.value);
+ const fallback=own.length?'local:'+data.active:(received.length?'received:'+received[0].key:'');
+ const next=options.includes(before)?before:fallback;
+ if(next){
+  unifiedPicker.value=next;
+  unifiedCurrent=next;
+ }else unifiedCurrent='';
+ unifiedPicker.disabled=!next;
+ $('forget-received').style.display=unifiedCurrent.startsWith('received:')?'block':'none';
+ return next;
+}
+function selectUnified(value,refresh=true){
+ if(!value)return;
+ if(value.startsWith('local:')){
+  const id=value.slice(6);
+  if(!data.profiles.some(p=>p.id===id))return;
+  unifiedCurrent=value;
+  localStorage.setItem(unifiedStorageKey,value);
+  if(data.active!==id){data.active=id;save();render();}
+  updateUnifiedPicker(value);
+  showUnifiedTab('home');
+  updateFirstLaunch();
+ }else if(value.startsWith('received:')){
+  const key=value.slice(9);
+  if(!getReceivedList().some(p=>p.key===key))return;
+  unifiedCurrent=value;
+  localStorage.setItem(unifiedStorageKey,value);
+  updateUnifiedPicker(value);
+  showUnifiedTab('shared');
+  $('shared-state').textContent='Chargement du profil partagé en lecture seule…';
+  updateFirstLaunch();
+  if(refresh)window.AndroidBackup?.selectReceivedProfile?.(key);
+ }
+}
+unifiedPicker.addEventListener('change',()=>selectUnified(unifiedPicker.value));
+$('unified-add-received').addEventListener('click',()=>{
+ document.body.classList.remove('needs-setup');
+ sharedNav.click();
+ $('shared-public-url').focus();
+});
+$('forget-received').onclick=()=>{
+ const chosen=unifiedCurrent.startsWith('received:')?unifiedCurrent.slice(9):
+   (window.AndroidBackup?.receivedSelected?.()||'');
+ if(!chosen)return alert('Sélectionne un profil partagé pour le retirer de ta liste.');
+ const item=getReceivedList().find(p=>p.key===chosen);
+ if(!item)return;
+ if(!confirm('Retirer « '+item.name+' » de cette application ? Aucun fichier du propriétaire ne sera supprimé.'))return;
+ if(!window.AndroidBackup?.forgetReceivedProfile?.(chosen))
+  return alert('Impossible de retirer ce profil de la liste.');
+ $('shared-content').replaceChildren();
+ unifiedCurrent='';
+ localStorage.removeItem(unifiedStorageKey);
+ const fallback=updateUnifiedPicker();
+ if(fallback)selectUnified(fallback);
+ else updateFirstLaunch();
+ message('Profil partagé retiré de ta liste ✓');
+};
+window.onReceivedProfileLoaded=(key,name)=>{
+ if(!key || !getReceivedList().some(p=>p.key===key))return;
+ unifiedCurrent='received:'+key;
+ localStorage.setItem(unifiedStorageKey,unifiedCurrent);
+ updateUnifiedPicker(unifiedCurrent);
+ showUnifiedTab('shared');
+ updateFirstLaunch();
+};
+const originalRenderForSwitcher=render;
+render=function(){
+ originalRenderForSwitcher();
+ if(data.profiles.length && !unifiedCurrent.startsWith('received:')){
+  unifiedCurrent='local:'+data.active;
+ }
+ updateUnifiedPicker();
+};
+$('profile-picker').addEventListener('change',()=>{
+ unifiedCurrent='local:'+data.active;
+ localStorage.setItem(unifiedStorageKey,unifiedCurrent);
+ updateUnifiedPicker(unifiedCurrent);
+});
+document.querySelectorAll('[data-tab]:not([data-tab="shared"])').forEach(b=>
+ b.addEventListener('click',()=>{
+  if(data.profiles.length){
+   unifiedCurrent='local:'+data.active;
+   localStorage.setItem(unifiedStorageKey,unifiedCurrent);
+   updateUnifiedPicker(unifiedCurrent);
+  }
+ })
+);
+const initialUnified=updateUnifiedPicker();
+if(initialUnified.startsWith('received:'))selectUnified(initialUnified);
+</script>
+
+
+<script>
+(function(){
+ const d=document.createElement('dialog');
+ d.style.cssText='background:#122e43;color:white;border:1px solid #5791a1;border-radius:14px;padding:20px;max-width:90vw';
+ d.innerHTML='<h3 id="crypt-title">Mot de passe du partage</h3>'+
+ '<p>Le lien reste inchangé. Envoie le code séparément. Choisis un code difficile à deviner et transmets-le séparément.</p>'+
+ '<input id="crypt-input" type="password" autocomplete="off" style="padding:12px;width:100%;border-radius:8px">'+
+ '<p id="crypt-error" style="color:#ffbaba"></p>'+
+ '<button type="button" class="primary" id="crypt-ok">Continuer</button>'+
+ '<button type="button" class="secondary" id="crypt-cancel">Annuler</button>';
+ document.body.append(d);
+ window.askCrypt=(title,creating,callback)=>{
+  $('crypt-title').textContent=title;
+  $('crypt-error').textContent='';
+  const input=$('crypt-input');input.value='';
+  input.inputMode='text';
+  input.maxLength=creating?10:512;
+  input.placeholder=creating?'10 caractères, 4 chiffres mini, 1 majuscule, 1 symbole':'Code à 10 caractères ou ancien mot de passe';
+  $('crypt-ok').onclick=()=>{
+   const pass=input.value;
+   if(creating && !/^(?=(?:[^0-9]*[0-9]){4})(?=.*[A-Z])(?=.*[!@#$%&*?._-])[0-9A-Za-z!@#$%&*?._-]{10}$/.test(pass)){
+    $('crypt-error').textContent='Saisis 10 caractères exactement, dont au moins 4 chiffres, 1 majuscule et 1 symbole (! @ # $ % & * ? . _ -).';return;
+   }
+   if(!creating && !(pass.length>=10)){
+    $('crypt-error').textContent='Saisis ton code à 10 caractères ou ton ancien mot de passe.';return;
+   }
+   d.close();input.value='';callback(pass);
+  };
+  $('crypt-cancel').onclick=()=>{d.close();input.value='';callback(null)};
+  d.showModal();input.focus();
+ };
+})();
+</script>
+<script>
+(function(){
+ const dialog=document.createElement('dialog');
+ dialog.id='meal-photo-zoom';
+ dialog.style.cssText='background:#0b1d2b;border:0;border-radius:14px;padding:12px;max-width:96vw;max-height:94vh';
+ dialog.innerHTML='<button type="button" id="meal-photo-zoom-close" style="display:block;margin:0 0 10px auto;padding:10px">Fermer ✕</button><img id="meal-photo-zoom-image" alt="Photo complète du repas" style="display:block;max-width:90vw;max-height:82vh;width:auto;height:auto;object-fit:contain;margin:auto">';
+ document.body.append(dialog);
+ $('meal-photo-zoom-close').onclick=()=>dialog.close();
+ window.showMealPhoto=(src)=>{
+  if(typeof src!=='string'||!src.startsWith('data:image/jpeg;base64,'))return;
+  $('meal-photo-zoom-image').src=src;
+  dialog.showModal();
+ };
+ dialog.addEventListener('close',()=>{$('meal-photo-zoom-image').removeAttribute('src')});
+})();
+</script>
+<script>
+// Incoming Android intent: only a validated Google Drive file ID is accepted.
+// Opening an invitation is the explicit action; import immediately in read-only mode.
+(function(){
+ const section=$('shared');
+ const panel=document.createElement('div');
+ panel.id='incoming-invitation';
+ panel.className='card';
+ panel.hidden=true;
+ panel.innerHTML='<h3>✉ Invitation à un profil partagé</h3>'+
+ '<p class="notice">Un proche t’invite à consulter son profil en lecture seule. '+
+ 'Aucune donnée de ton téléphone ne sera remplacée. Importation automatique…</p>'+
+ '<button id="invite-accept" class="primary" type="button">Ajouter ce profil</button>'+
+ '<button id="invite-private" class="secondary" style="width:100%;margin-top:10px" type="button">Accès privé : choisir le fichier Google Drive</button>'+
+ '<button id="invite-cancel" class="secondary" style="width:100%;margin-top:10px" type="button">Ignorer cette invitation</button>'+
+ '<p class="notice">Si le propriétaire n’a autorisé que certaines adresses Gmail, '+
+ 'le téléchargement par URL peut échouer : dans ce cas, choisis le fichier privé '+
+ 'avec le compte Google qui a reçu l’autorisation.</p>';
+ section.insertBefore(panel,section.querySelector('.card'));
+ let pendingId='';
+ let pendingResourceKey='';
+ window.receiveShareInvitation=function(fileId,resourceKey){
+   if(typeof fileId!=='string'||!(/^[A-Za-z0-9_-]{10,200}$/).test(fileId))return;
+   pendingId=fileId;
+   pendingResourceKey=typeof resourceKey==='string'&&/^[A-Za-z0-9_-]{3,200}$/.test(resourceKey)
+      ?resourceKey:'';
+   const url='https://drive.google.com/file/d/'+fileId+'/view'
+      +(pendingResourceKey?'?resourcekey='+encodeURIComponent(pendingResourceKey):'');
+   $('shared-public-url').value=url;
+   document.body.classList.remove('needs-setup');
+   showUnifiedTab('shared');
+   panel.hidden=false;
+   $('shared-state').textContent='Invitation reçue : chargement automatique du profil partagé…';
+   panel.scrollIntoView({block:'start'});
+   $('invite-accept').click();
+ };
+ $('invite-accept').onclick=()=>{
+   if(!pendingId)return;
+   $('shared-state').textContent='Lecture du lien… Si le fichier est privé, utilise le bouton « Accès privé : choisir le fichier Google Drive ».';
+   const source='https://drive.google.com/file/d/'+pendingId+'/view'
+     +(pendingResourceKey?'?resourcekey='+encodeURIComponent(pendingResourceKey):'');
+   askCrypt('Mot de passe du profil reçu',false,pass=>{
+    if(pass!==null)window.AndroidBackup?.loadSharedPublicPassword?.(source,pass);
+   });
+ };
+ $('invite-private').onclick=()=>{
+   if(!pendingId)return;
+   if(!window.AndroidBackup?.openShared)return alert('Ouverture Drive indisponible.');
+   $('shared-open').click();
+ };
+ $('invite-cancel').onclick=()=>{
+   pendingId='';
+   pendingResourceKey='';
+   panel.hidden=true;
+   $('shared-state').textContent='Invitation ignorée. Aucun profil n’a été ajouté.';
+ };
+ const priorLoaded=window.onReceivedProfileLoaded;
+ window.onReceivedProfileLoaded=function(key,name){
+   pendingId='';
+   pendingResourceKey='';
+   panel.hidden=true;
+   if(typeof priorLoaded==='function')priorLoaded(key,name);
+ };
+})();
+</script>
+<script>
+// Always show saved received profiles, even when a personal profile is active.
+// Source documents remain on Google Drive; this list stores only name/key/kind.
+(function(){
+ const section=$('shared');
+ const card=document.createElement('div');
+ card.className='card';
+ card.id='received-list-card';
+ const heading=document.createElement('h3');
+ heading.textContent='Profils partagés déjà reçus';
+ const status=document.createElement('p');
+ status.className='notice';
+ status.id='received-list-status';
+ const choices=document.createElement('div');
+ choices.id='received-list-choices';
+ card.append(heading,status,choices);
+ section.insertBefore(card,section.querySelector('.card'));
+ function updateReceivedChoices(){
+  const saved=getReceivedList();
+  choices.replaceChildren();
+  if(!saved.length){
+   status.textContent='Aucun ami enregistré. Ouvre une invitation pour ajouter un profil.';
+   return;
+  }
+  status.textContent=saved.length===1?'1 ami partagé':'Mes amis · '+saved.length+' profils partagés';
+  for(const friend of saved){
+   const div=document.createElement('div');
+   div.className='card';
+   div.style.cssText='margin-top:12px;padding:16px';
+   const name=document.createElement('h3');
+    const thumb=window.AndroidBackup?.receivedAvatar?.(friend.key)||'';
+    if(/^data:image\/jpeg;base64,/.test(thumb) && thumb.length<250000){
+      const avatar=document.createElement('img');avatar.src=thumb;avatar.alt='Photo de '+friend.name;
+      avatar.style.cssText='width:56px;height:56px;object-fit:cover;border-radius:50%;border:2px solid #80e3cf;display:block;margin-bottom:8px';
+      div.append(avatar);
+    }
+    name.textContent=friend.name;
+   div.append(name);
+   const details=document.createElement('p');
+   details.className='notice';
+   if(Number.isFinite(friend.previewCurrent)&&Number.isFinite(friend.previewGoal)&&Number.isFinite(friend.previewStart)){
+    const lost=friend.previewStart-friend.previewCurrent;
+    details.textContent='Actuel : '+fmt(friend.previewCurrent)+' kg · Objectif : '+fmt(friend.previewGoal)+' kg · Évolution : '+(lost>=0?'−':'+')+fmt(Math.abs(lost))+' kg · Mesure : '+friend.previewDate;
+   }else{
+    details.textContent='Résumé non synchronisé. Actualise les résumés pour afficher ses mesures.';
+   }
+   div.append(details);
+   const button=document.createElement('button');
+   button.type='button';button.className='secondary';
+   button.style.cssText='width:100%;margin-top:8px';
+   button.textContent='Consulter le profil complet';
+   button.dataset.friendKey=friend.key;
+   button.onclick=()=>selectUnified('received:'+friend.key);
+   div.append(button);
+   const remove=document.createElement('button');
+   remove.type='button';
+   remove.className='secondary';
+   remove.style.cssText='width:100%;margin-top:8px';
+   remove.textContent='Retirer ce partage';
+   remove.setAttribute('aria-label','Retirer le profil partagé de '+friend.name);
+   remove.onclick=()=>{
+    const warning='Retirer « '+friend.name+' » de la liste des amis sur ce téléphone ?\n\nLe fichier Google Drive de ton ami et tes profils personnels ne seront pas supprimés.';
+    if(!confirm(warning))return;
+    if(!window.AndroidBackup?.forgetReceivedProfile?.(friend.key)){
+     alert('Impossible de retirer le partage. Réessaie.');return;
+    }
+    const removedCurrent=unifiedCurrent==='received:'+friend.key;
+    if(removedCurrent){
+      $('shared-content').replaceChildren();
+      unifiedCurrent='';
+      localStorage.removeItem(unifiedStorageKey);
+      const own=(data.profiles||[]).find(p=>p.id===data.active)||data.profiles?.[0];
+      if(own)selectUnified('local:'+own.id);
+      else updateUnifiedPicker();
+    }else{
+      updateUnifiedPicker(unifiedCurrent);
+    }
+    updateReceivedChoices();
+    message('Partage retiré de ce téléphone ✓');
+   };
+   div.append(remove);
+   choices.append(div);
+  }
+ }
+ const reload=document.createElement('button');
+ reload.className='secondary';
+ reload.type='button';
+ reload.style.cssText='width:100%;margin-top:10px';
+ reload.textContent='↻ Actualiser les résumés des amis';
+ reload.onclick=()=>{
+  status.textContent='Actualisation des résumés depuis Google Drive…';
+  window.AndroidBackup?.refreshFriendsOverview?.();
+ };
+ card.append(reload);
+ window.friendsOverviewUpdated=()=>updateReceivedChoices();
+ const oldClick=sharedNav.onclick;
+ sharedNav.onclick=()=>{
+  if(typeof oldClick==='function')oldClick();
+  updateReceivedChoices();
+  // Preserve Mario · Personnel; do not invoke selectUnified here.
+  window.AndroidBackup?.refreshFriendsOverview?.();
+ };
+ const loaded=window.onReceivedProfileLoaded;
+ window.onReceivedProfileLoaded=function(key,name){
+  if(typeof loaded==='function')loaded(key,name);
+  updateReceivedChoices();
+ };
+ updateReceivedChoices();
+})();
+</script>
+
+<script>
+(function(){
+ const tabs=['home','chart','history','meals','profiles'];
+ const index={home:0,chart:1,history:2,meals:3,profiles:0};
+ let receivedTab='home';
+ const friendMealsCache=new Map();
+ const friendMealNavigation=new Map();
+ // Keep the validated shared document's meal data for its calendar.
+ // sharedLoaded itself validates the structure and invokes onReceivedProfileLoaded.
+ const originalSharedLoaded=window.sharedLoaded;
+ window.sharedLoaded=function(encoded,key){
+  try{
+   const raw=new TextDecoder().decode(Uint8Array.from(atob(encoded),c=>c.charCodeAt(0)));
+   const doc=JSON.parse(raw);
+   if(doc.format==='mon-evolution-lecture-seule' && doc.version===1 &&
+      doc.profile && doc.profile.meals && typeof doc.profile.meals==='object' &&
+      !Array.isArray(doc.profile.meals) && typeof key==='string'){
+     friendMealsCache.set(key,doc.profile.meals);
+   }else friendMealsCache.delete(key);
+  }catch(e){friendMealsCache.delete(key);}
+  return originalSharedLoaded(encoded,key);
+ };
+ function renderFriendMealCalendar(container,key){
+  const meals=friendMealsCache.get(key);
+  if(!meals){
+   const text=document.createElement('p');
+   text.className='notice';
+   text.textContent='Chargement du calendrier des repas partagés…';
+   container.append(text);
+   return;
+  }
+  const available=Object.keys(meals).filter(date=>
+   /^\d{4}-\d{2}-\d{2}$/.test(date) && meals[date] &&
+   typeof meals[date]==='object' && mealTypes.some(([k])=>
+    String(meals[date][k]||'').trim() || meals[date][k+'Photo']
+   )).sort();
+  const now=dateNow();
+  const latest=available.at(-1)||now;
+  let selection=friendMealNavigation.get(key)||{month:latest.slice(0,7),day:latest};
+  if(!/^\d{4}-\d{2}$/.test(selection.month))selection={month:latest.slice(0,7),day:latest};
+  const card=document.createElement('div');card.className='card';
+  const title=document.createElement('h3');title.textContent='Calendrier des repas';card.append(title);
+  const explanation=document.createElement('p');explanation.className='notice';
+  explanation.textContent='Un point indique qu’un repas ou une photo est disponible pour ce jour. Appuie sur une date pour le consulter.';
+  card.append(explanation);
+  const toolbar=document.createElement('div');
+  toolbar.style.cssText='display:flex;align-items:center;justify-content:space-between;gap:10px;margin:12px 0';
+  const prev=document.createElement('button');prev.type='button';prev.className='secondary';prev.textContent='‹';prev.setAttribute('aria-label','Mois précédent');
+  const month=document.createElement('strong');
+  const next=document.createElement('button');next.type='button';next.className='secondary';next.textContent='›';next.setAttribute('aria-label','Mois suivant');
+  toolbar.append(prev,month,next);card.append(toolbar);
+  const grid=document.createElement('div');grid.className='friend-meal-grid';card.append(grid);
+  const detail=document.createElement('div');detail.className='friend-meal-details';card.append(detail);
+  function renderDetails(){
+   detail.replaceChildren();
+   const heading=document.createElement('h4');heading.textContent='Repas du '+day(selection.day);detail.append(heading);
+   const record=meals[selection.day];
+   if(!record||!mealTypes.some(([k])=>String(record[k]||'').trim()||record[k+'Photo'])){
+    const empty=document.createElement('p');empty.className='notice';empty.textContent='Aucun repas partagé pour cette date.';detail.append(empty);return;
+   }
+   for(const [mealKey,label] of mealTypes){
+    const info=String(record[mealKey]||'').trim();
+    const photo=record[mealKey+'Photo'];
+    if(!info&&!photo)continue;
+    const block=document.createElement('div');block.className='friend-meal-item';
+    const labelNode=document.createElement('strong');labelNode.textContent=label;block.append(labelNode);
+    if(info){const text=document.createElement('p');text.textContent=info.slice(0,3000);block.append(text);}
+    if(typeof photo==='string'&&photo.startsWith('data:image/jpeg;base64,')&&photo.length<250000){
+     const image=document.createElement('img');image.src=photo;image.alt='Photo du '+label;
+     image.style.cssText='display:block;width:100%;height:210px;object-fit:cover;border-radius:12px;margin-top:10px;cursor:zoom-in';
+     image.onclick=()=>window.showMealPhoto?.(image.src);
+     block.append(image);
+    }
+    detail.append(block);
+   }
+  }
+  function renderMonth(){
+   const [year,monthIndex]=selection.month.split('-').map(Number);
+   if(!year||!monthIndex||monthIndex<1||monthIndex>12)return;
+   month.textContent=new Date(year,monthIndex-1,1).toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
+   grid.replaceChildren();
+   for(const label of ['L','M','M','J','V','S','D']){
+    const cell=document.createElement('span');cell.className='friend-weekday';cell.textContent=label;grid.append(cell);
+   }
+   const offset=(new Date(year,monthIndex-1,1).getDay()+6)%7;
+   for(let i=0;i<offset;i++)grid.append(document.createElement('span'));
+   const count=new Date(year,monthIndex,0).getDate();
+   for(let n=1;n<=count;n++){
+    const date=selection.month+'-'+String(n).padStart(2,'0');
+    const has=available.includes(date);
+    const b=document.createElement('button');b.type='button';b.textContent=n;
+    b.className='friend-meal-day'+(has?' has-friend-meals':'')+
+      (date===selection.day?' friend-meal-selected':'');
+    b.setAttribute('aria-label',day(date)+(has?', repas disponibles':''));
+    b.onclick=()=>{
+     selection.day=date;friendMealNavigation.set(key,{...selection});
+     renderMonth();renderDetails();
+    };
+    grid.append(b);
+   }
+  }
+  function changeMonth(delta){
+   const [y,m]=selection.month.split('-').map(Number);
+   const date=new Date(y,m-1+delta,1);
+   selection.month=date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0');
+   selection.day=selection.month+'-01';
+   friendMealNavigation.set(key,{...selection});
+   renderMonth();renderDetails();
+  }
+  prev.onclick=()=>changeMonth(-1);
+  next.onclick=()=>changeMonth(1);
+  container.append(card);
+  renderMonth();renderDetails();
+ }
+ function clearFriendPanels(){
+  for(const tab of tabs){
+   const node=$(tab);
+   node.classList.remove('friend-view-active');
+   node.querySelectorAll(':scope > .friend-view').forEach(v=>v.remove());
+  }
+ }
+ function displayFriendTab(tab){
+  if(!unifiedCurrent.startsWith('received:'))return false;
+  if(tab==='shared'){
+   clearFriendPanels();
+   showUnifiedTab('shared');
+   return true;
+  }
+  if(!tabs.includes(tab))return false;
+  receivedTab=tab;
+  clearFriendPanels();
+  const area=$(tab);
+  area.classList.add('friend-view-active');
+  const section=document.createElement('section');
+  section.className='friend-view';
+  const selected=getReceivedList().find(p=>'received:'+p.key===unifiedCurrent);
+  const heading=document.createElement('h2');
+  heading.textContent=(selected?selected.name:'Profil partagé')+' · '+(
+   {home:'Résumé',chart:'Courbe',history:'Poids',meals:'Repas',profiles:'Profil'}[tab]);
+  section.append(heading);
+  const readOnly=document.createElement('p');
+  readOnly.className='notice';
+  readOnly.textContent='Consultation en lecture seule — aucune modification du profil personnel';
+  section.append(readOnly);
+  const cards=Array.from($('shared-content').children);
+  // Validation and rendering of the received document occurs in sharedLoaded.
+  const source=cards[index[tab]];
+  if(tab==='meals'){
+   renderFriendMealCalendar(section,unifiedCurrent.slice(9));
+  }else if(source){
+   const copy=source.cloneNode(true);
+   section.append(copy);
+   copy.querySelectorAll('img').forEach(img=>{
+    img.style.cursor='zoom-in';
+    img.onclick=()=>window.showMealPhoto?.(img.src);
+   });
+  } else {
+   const notice=document.createElement('p');
+   notice.textContent='Chargement des données du profil partagé…';
+   section.append(notice);
+  }
+  area.append(section);
+  if(tab==='chart')window.onFriendChartView?.(section);
+  showUnifiedTab(tab);
+  // showUnifiedTab may render editable personal meal fields in the background;
+  // the CSS below keeps them hidden throughout friend mode.
+  return true;
+ }
+ const sheet=document.createElement('style');
+ sheet.textContent='.friend-view-active > :not(.friend-view){display:none!important}.friend-view-active > .friend-view{display:block}.friend-view .card{margin-top:12px}'+
+ '.friend-meal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}'+
+ '.friend-weekday{text-align:center;color:#9ab5c7;font-size:12px;padding:8px 0}'+
+ '.friend-meal-day{position:relative;min-height:45px;padding:7px 2px 15px!important;border-radius:10px}'+
+ '.friend-meal-day.has-friend-meals::after{content:"";position:absolute;bottom:5px;left:50%;transform:translateX(-50%);width:6px;height:6px;border-radius:50%;background:#76e4d0}'+
+ '.friend-meal-day.friend-meal-selected{outline:2px solid #76e4d0}'+
+ '.friend-meal-details{margin-top:20px}.friend-meal-item{padding:14px 0;border-top:1px solid #365269}';
+ document.head.append(sheet);
+ // Original listeners unconditionally reset received selection to local:...
+ // Intercept user tab navigation before those listeners can change selection.
+ for(const nav of document.querySelectorAll('.nav [data-tab]')){
+  nav.addEventListener('click',e=>{
+   if(!unifiedCurrent.startsWith('received:'))return;
+   e.preventDefault();e.stopImmediatePropagation();
+   displayFriendTab(nav.dataset.tab);
+  },true);
+ }
+ const originalSelect=selectUnified;
+ selectUnified=function(value,refresh=true){
+  if(value && value.startsWith('local:')){
+   clearFriendPanels();
+   return originalSelect(value,refresh);
+  }
+  if(value && value.startsWith('received:')){
+   const selected=getReceivedList().some(item=>'received:'+item.key===value);
+   if(!selected)return;
+   const changed=unifiedCurrent!==value;
+   unifiedCurrent=value;
+   localStorage.setItem(unifiedStorageKey,value);
+   updateUnifiedPicker(value);
+   if(changed)$('shared-content').replaceChildren();
+   displayFriendTab('home');
+   updateFirstLaunch();
+   if(refresh)window.AndroidBackup?.selectReceivedProfile?.(value.slice(9));
+   return;
+  }
+  return originalSelect(value,refresh);
+ };
+ // The native callback fires after sharedLoaded has validated and rendered
+ // the friend's data. Keep the friend selected and switch back to its summary.
+ const beforeLoaded=window.onReceivedProfileLoaded;
+ window.onReceivedProfileLoaded=function(key,name){
+  if(typeof beforeLoaded==='function')beforeLoaded(key,name);
+  if(!key||!getReceivedList().some(p=>p.key===key))return;
+  unifiedCurrent='received:'+key;
+  localStorage.setItem(unifiedStorageKey,unifiedCurrent);
+  updateUnifiedPicker(unifiedCurrent);
+  displayFriendTab(receivedTab);
+ };
+ // Make the friend row activate the full profile including the top picker.
+ const list=$('received-list-choices');
+ if(list){
+  list.addEventListener('click',e=>{
+   const button=e.target.closest('button[data-friend-key]');
+   if(!button)return;
+   e.preventDefault();e.stopPropagation();
+   selectUnified('received:'+button.dataset.friendKey);
+  },true);
+ }
+ // In case Android reloads a WebView while a friend's profile is selected.
+ if(unifiedCurrent.startsWith('received:')){
+  selectUnified(unifiedCurrent);
+ }
+})();
+</script>
+
+<style>
+#visual-profile-picker{display:flex;gap:14px;overflow-x:auto;padding:12px 2px 16px;scroll-snap-type:x proximity;align-items:flex-start}
+.profile-portrait-choice{background:transparent;border:0;padding:3px 2px;min-width:74px;max-width:92px;color:#e3f7fb;text-align:center;flex:0 0 auto;scroll-snap-align:start}
+.profile-portrait-circle{display:flex;align-items:center;justify-content:center;width:62px;height:62px;margin:0 auto 6px;border-radius:50%;border:2px solid #517d8d;background:#173a4f;overflow:hidden;font-size:23px;font-weight:700}
+.profile-portrait-circle img{width:100%;height:100%;object-fit:cover}
+.profile-portrait-choice[aria-pressed="true"] .profile-portrait-circle{border:3px solid #7ee3cf;box-shadow:0 0 0 3px rgba(126,227,207,.25)}
+.profile-portrait-name{display:block;font-size:12px;line-height:1.25;overflow-wrap:anywhere}
+.profile-portrait-kind{display:block;color:#acc5d5;font-size:10px;margin-top:3px}
+#visual-profile-picker-label{font-size:13px;color:#cfe7f6;margin-top:7px}
+</style>
+<script>
+(function(){
+ const select=$('unified-profile-picker');
+ if(!select)return;
+ const wrap=select.parentElement;
+ const oldLabel=wrap.querySelector('label[for="unified-profile-picker"]');
+ if(oldLabel){oldLabel.textContent='Profil sélectionné';oldLabel.style.position='absolute';oldLabel.style.width='1px';oldLabel.style.height='1px';oldLabel.style.overflow='hidden';oldLabel.style.clipPath='inset(50%)';}
+ // Preserve the native accessible select for keyboard and screen readers.
+ select.style.cssText='position:absolute!important;width:1px!important;height:1px!important;opacity:0!important;pointer-events:none!important';
+ const title=document.createElement('div');title.id='visual-profile-picker-label';title.textContent='Choisir un profil';
+ const bar=document.createElement('div');bar.id='visual-profile-picker';bar.setAttribute('aria-label','Choisir un profil par sa photo');
+ wrap.insertBefore(title,select);wrap.insertBefore(bar,select);
+ function validPortrait(src){return typeof src==='string' && /^data:image\/jpeg;base64,/.test(src) && src.length<250000;}
+ function paint(){
+  bar.replaceChildren();
+  const items=[
+   ...(data.profiles||[]).map(p=>({id:'local:'+p.id,name:p.name,kind:'Personnel',avatar:p.avatar||''})),
+   ...getReceivedList().map(p=>({id:'received:'+p.key,name:p.name,kind:'Partagé',avatar:window.AndroidBackup?.receivedAvatar?.(p.key)||''}))
+  ];
+  for(const p of items){
+   const button=document.createElement('button');button.type='button';
+   button.className='profile-portrait-choice';button.setAttribute('aria-pressed',String(unifiedCurrent===p.id));
+   button.setAttribute('aria-label',p.name+', '+p.kind);
+   const circle=document.createElement('span');circle.className='profile-portrait-circle';
+   if(validPortrait(p.avatar)){
+    const image=document.createElement('img');image.src=p.avatar;image.alt='';circle.append(image);
+   }else{
+    circle.textContent=(p.name||'?').trim().slice(0,1).toLocaleUpperCase('fr-FR');
+   }
+   const label=document.createElement('span');label.className='profile-portrait-name';label.textContent=p.name;
+   const kind=document.createElement('span');kind.className='profile-portrait-kind';kind.textContent=p.kind;
+   button.append(circle,label,kind);
+   button.onclick=()=>{
+    if(p.id===unifiedCurrent)return;
+    selectUnified(p.id);
+    paint();
+   };
+   bar.append(button);
+  }
+ }
+ const originalUpdate=updateUnifiedPicker;
+ updateUnifiedPicker=function(prefer){
+  const result=originalUpdate(prefer);
+  paint();return result;
+ };
+ const originalRenderAvatars=renderAvatars;
+ renderAvatars=function(){originalRenderAvatars();paint()};
+ const oldFriendsUpdate=window.friendsOverviewUpdated;
+ window.friendsOverviewUpdated=function(){
+  if(typeof oldFriendsUpdate==='function')oldFriendsUpdate();
+  paint();
+ };
+ // Native import and refreshing already trigger onReceivedProfileLoaded.
+ const oldLoaded=window.onReceivedProfileLoaded;
+ window.onReceivedProfileLoaded=function(key,name){
+  if(typeof oldLoaded==='function')oldLoaded(key,name);
+  paint();
+ };
+ paint();
+})();
+</script>
+<script>
+/* Advanced Mon Évolution weight visualization — no third-party services. */
+(function(){
+ 'use strict';
+ const DAY=86400000, NS='http://www.w3.org/2000/svg';
+ const fmt1=v=>Number(v).toLocaleString('fr-FR',{maximumFractionDigits:1,minimumFractionDigits:1});
+ const DATE=/^\d{4}-\d{2}-\d{2}$/;
+ const utc=date=>Date.parse(date+'T12:00:00Z');
+ const days=(a,b)=>(utc(b)-utc(a))/DAY;
+ const dateAt=(a,d)=>new Date(utc(a)+d*DAY).toISOString().slice(0,10);
+ const colors=['#78e4cf','#f7d77c','#8caeff','#f5a5c4','#ffb47d','#b5e68b','#c9a8ff'];
+ let view='weight',period='all',reference=.5,trend=true,projection=true,referenceBand=false,metric='loss';
+ let sharedMap=new Map(), sharedWanted=new Set(), sharedState='';
+ let activeData=null;
+ const personalChart=$('chart').querySelector(':scope > .card');
+ const panel=document.createElement('div');panel.className='card';panel.id='advanced-weight-panel';
+ if(personalChart)personalChart.hidden=true;
+ $('chart').append(panel);
+ const style=document.createElement('style');
+ style.textContent='.advanced-controls{display:flex;gap:7px;flex-wrap:wrap;margin:12px 0}.advanced-controls button,.advanced-controls select{width:auto;margin:0;padding:9px 11px;border:1px solid #4a6f82;border-radius:10px;background:#213e54;color:#edfaff;font-size:12px}.advanced-controls button.chosen{background:#2c706d;border-color:#8be8d4}.advanced-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0}.advanced-stat{border:1px solid #345a70;background:#10293d;border-radius:12px;padding:12px}.advanced-stat b{display:block;font-size:18px;margin-top:5px}.advanced-stat small{color:#b3cede}.advanced-graph{display:block;width:100%;height:auto;min-height:240px}.advanced-legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:12px;color:#bcd2df;font-size:12px}.advanced-legend span:before{content:"● ";color:var(--legend-color)}.advanced-check{display:flex;gap:8px;align-items:center;margin:10px 0;color:#d6e7f0;font-size:13px}.advanced-check input{width:17px;height:17px;margin:0;accent-color:#7de3cf}.advanced-help{color:#a9c3d2;font-size:12px;line-height:1.5}.friend-view-active #advanced-weight-panel{display:none}';
+ document.head.append(style);
+ function node(tag,cls,text){
+  const e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=text;return e;
+ }
+ function button(label,active,fn){
+  const b=node('button',active?'chosen':'',label);b.type='button';b.onclick=fn;return b;
+ }
+ function sectionTitle(text){return node('h3','',text);}
+ function controls(target,items){
+  const box=node('div','advanced-controls');
+  for(const item of items)box.append(button(item[0],item[1],item[2]));
+  target.append(box);return box;
+ }
+ function checkbox(label,checked,fn){
+  const row=node('label','advanced-check');const input=document.createElement('input');
+  input.type='checkbox';input.checked=checked;input.onchange=()=>fn(input.checked);
+  row.append(input,node('span','',label));return row;
+ }
+ function clean(p){
+  if(!p||!Array.isArray(p.entries))return null;
+  const entries=p.entries.filter(e=>e && DATE.test(e.date) && Number.isFinite(e.weight) && e.weight>=25 && e.weight<=400)
+   .slice(0,20000).sort((a,b)=>a.date.localeCompare(b.date)||(Number(a.id)||0)-(Number(b.id)||0));
+  if(!entries.length)return null;
+  const unique=[];for(const e of entries){
+   if(unique.length&&unique[unique.length-1].date===e.date)unique[unique.length-1]=e;
+   else unique.push(e);
+  }
+  return {name:String(p.name||'Profil').slice(0,100),goal:Number(p.goal),height:Number(p.height)||0,rows:unique};
+ }
+ function current(){
+  if(typeof unifiedCurrent==='string'&&unifiedCurrent.startsWith('received:'))return clean(sharedMap.get(unifiedCurrent.slice(9))) ;
+  return clean(profile());
+ }
+ function rangeRows(p){
+  if(period==='all')return p.rows;
+  const end=p.rows.at(-1).date;
+  const cutoff=utc(end)-Number(period)*DAY;
+  const subset=p.rows.filter(r=>utc(r.date)>=cutoff);
+  const before=p.rows.filter(r=>utc(r.date)<cutoff).at(-1);
+  return before?[before,...subset]:subset;
+ }
+ function interpolateAt(rows,target){
+  const ordered=rows.filter(r=>utc(r.date)<=target);
+  return ordered.length?ordered.at(-1):null;
+ }
+ function slope(p){
+  const rows=p.rows,last=rows.at(-1),cutoff=utc(last.date)-28*DAY;
+  let recent=rows.filter(r=>utc(r.date)>=cutoff);
+  if(recent.length<3 || days(recent[0].date,last.date)<14)recent=rows;
+  if(recent.length<3 || days(recent[0].date,recent.at(-1).date)<14)return null;
+  const x0=utc(recent[0].date),xs=recent.map(r=>(utc(r.date)-x0)/DAY);
+  const ys=recent.map(r=>r.weight),avgX=xs.reduce((a,b)=>a+b,0)/xs.length,avgY=ys.reduce((a,b)=>a+b,0)/ys.length;
+  let num=0,den=0;xs.forEach((x,i)=>{num+=(x-avgX)*(ys[i]-avgY);den+=(x-avgX)**2});
+  return den>0?num/den:null;
+ }
+ function stats(p){
+  const rows=p.rows,first=rows[0],last=rows.at(-1),daySpan=days(first.date,last.date);
+  const weekly=daySpan>=7?(first.weight-last.weight)*7/daySpan:null;
+  const cutoff7=interpolateAt(rows,utc(last.date)-7*DAY);
+  const cutoff30=interpolateAt(rows,utc(last.date)-30*DAY);
+  const change7=cutoff7&&days(cutoff7.date,last.date)>=7?last.weight-cutoff7.weight:null;
+  const change30=cutoff30&&days(cutoff30.date,last.date)>=30?last.weight-cutoff30.weight:null;
+  const recentSlope=slope(p);
+  const rate=recentSlope!==null?-recentSlope*7:null;
+  const remaining=last.weight-p.goal;
+  const eta=rate>0.1&&remaining>0?remaining/rate:null;
+  const etaDate=eta!==null&&eta<=104?dateAt(last.date,Math.ceil(eta*7)):null;
+  const month=rows.filter(r=>r.date.slice(0,7)===last.date.slice(0,7));
+  const avgMonth=month.reduce((s,r)=>s+r.weight,0)/(month.length||1);
+  const best=weeklyRecords(p).slice().sort((a,b)=>a.change-b.change)[0]||null;
+  const rebound=weeklyRecords(p).slice().sort((a,b)=>b.change-a.change)[0]||null;
+  const bmi=p.height>=80&&p.height<=250?last.weight/Math.pow(p.height/100,2):null;
+  const bmiGoal=p.height>=80&&p.height<=250?p.goal/Math.pow(p.height/100,2):null;
+  const first14=interpolateAt(rows,utc(last.date)-14*DAY);
+  const plateau=first14&&days(first14.date,last.date)>=14&&Math.abs(last.weight-first14.weight)<.2;
+  return {first,last,weekly,change7,change30,rate,etaDate,avgMonth,plateau,bmi,bmiGoal,best,rebound};
+ }
+ function shortNum(x,unit=' kg'){
+  return Number.isFinite(x)?(x>0?'+':'')+fmt1(x)+unit:'Données insuffisantes';
+ }
+ function svg(tag,attrs,parent,textValue){
+  const el=document.createElementNS(NS,tag);
+  for(const [k,v] of Object.entries(attrs||{}))el.setAttribute(k,String(v));
+  if(textValue!==undefined)el.textContent=textValue;
+  if(parent)parent.append(el);
+  return el;
+ }
+ function graph(target,series,opts={}){
+  const width=640,height=290,left=56,right=14,top=16,bottom=44;
+  const pts=series.flatMap(s=>s.points||[]).filter(p=>Number.isFinite(p.x)&&Number.isFinite(p.y));
+  if(!pts.length){target.append(node('p','advanced-help','Pas assez de mesures pour dessiner cette courbe.'));return;}
+  let minX=Math.min(...pts.map(p=>p.x)),maxX=Math.max(...pts.map(p=>p.x));
+  let minY=Math.min(...pts.flatMap(p=>Number.isFinite(p.y2)?[p.y,p.y2]:[p.y])),maxY=Math.max(...pts.flatMap(p=>Number.isFinite(p.y2)?[p.y,p.y2]:[p.y]));
+  if(opts.zeroY){minY=Math.min(0,minY);maxY=Math.max(0,maxY)}
+  if(maxX-minX<1){maxX=minX+1}if(maxY-minY<.1){maxY=minY+1}
+  const padY=(maxY-minY)*.09;minY-=padY;maxY+=padY;
+  const X=v=>left+(v-minX)/(maxX-minX)*(width-left-right);
+  const Y=v=>height-bottom-(v-minY)/(maxY-minY)*(height-top-bottom);
+  const root=svg('svg',{viewBox:'0 0 640 290',class:'advanced-graph',role:'img','aria-label':opts.title||'Graphique du poids'},target);
+  for(let i=0;i<=4;i++){
+   const v=minY+(maxY-minY)*i/4,y=Y(v);
+   svg('line',{x1:left,x2:width-right,y1:y,y2:y,stroke:'#36576c','stroke-width':1},root);
+   svg('text',{x:left-8,y:y+5,'font-size':13,fill:'#b7cddb','text-anchor':'end'},root,fmt1(v));
+  }
+  for(let i=0;i<=4;i++){
+   const v=minX+(maxX-minX)*i/4,x=X(v);
+   svg('text',{x,y:height-16,'font-size':12,fill:'#b7cddb','text-anchor':'middle'},root,String(Math.round(v))+' j');
+  }
+  for(const s of series){
+   const pp=(s.points||[]).filter(v=>Number.isFinite(v.x)&&Number.isFinite(v.y)).sort((a,b)=>a.x-b.x);
+   if(!pp.length)continue;
+   if(s.band){
+    const polygon=pp.map(p=>X(p.x)+','+Y(p.y)).join(' ')+' '+pp.slice().reverse().map(p=>X(p.x)+','+Y(p.y2)).join(' ');
+    svg('polygon',{points:polygon,fill:s.color,'fill-opacity':.14,stroke:'none'},root);continue;
+   }
+   if(pp.length>1)svg('polyline',{points:pp.map(p=>X(p.x)+','+Y(p.y)).join(' '),fill:'none',stroke:s.color||colors[0],'stroke-width':s.thin?2:3,'stroke-dasharray':s.dashed?'8 6':'none','stroke-linecap':'round','stroke-linejoin':'round'},root);
+   if(pp.length===1)svg('circle',{cx:X(pp[0].x),cy:Y(pp[0].y),r:5,fill:s.color||colors[0]},root);
+   if(s.notes){
+    for(const p of pp.filter(p=>p.note)){
+     const c=svg('circle',{cx:X(p.x),cy:Y(p.y),r:4,fill:'#fff0ac',stroke:'#142f43','stroke-width':1},root);
+     svg('title',{},c,String(p.note).slice(0,120));
+    }
+   }
+  }
+  const leg=node('div','advanced-legend');for(const s of series.filter(s=>!s.band)){
+   const span=node('span','',s.label);span.style.setProperty('--legend-color',s.color||colors[0]);leg.append(span);
+  }target.append(leg);
+ }
+ function weeklyRecords(p){
+  const byWeek=new Map();
+  for(const row of p.rows){
+   const d=new Date(utc(row.date)),dow=(d.getUTCDay()+6)%7;
+   const monday=new Date(d.getTime()-dow*DAY).toISOString().slice(0,10);
+   byWeek.set(monday,row);
+  }
+  const weeks=[...byWeek.entries()].sort((a,b)=>a[0].localeCompare(b[0]));
+  return weeks.slice(1).map(([key,row],i)=>({date:key,change:row.weight-weeks[i][1].weight})).slice(-16);
+ }
+ function metrics(target,p){
+  const s=stats(p),items=[
+   ['7 jours',shortNum(s.change7)],
+   ['30 jours',shortNum(s.change30)],
+   ['Moyenne depuis le départ',s.weekly===null?'Données insuffisantes':fmt1(s.weekly)+' kg/sem.'],
+   ['Tendance récente',s.rate===null?'Données insuffisantes':fmt1(s.rate)+' kg/sem.'],
+   ['Poids moyen du mois',fmt1(s.avgMonth)+' kg'],
+   ['Objectif estimé',s.etaDate?day(s.etaDate):'Projection indisponible'],
+   ['Meilleure semaine',s.best?shortNum(s.best.change):'Données insuffisantes'],
+   ['Plus forte reprise',s.rebound?shortNum(s.rebound.change):'Données insuffisantes'],
+   ['IMC actuel',s.bmi?fmt1(s.bmi):'—'],
+   ['IMC à l’objectif',s.bmiGoal?fmt1(s.bmiGoal):'—']
+  ];
+  const box=node('div','advanced-stats');
+  for(const [label,value] of items){const cell=node('div','advanced-stat');cell.append(node('small','',label),node('b','',value));box.append(cell);}
+  target.append(box);
+  const info=node('p','advanced-help',s.plateau?'Poids stable sur 14 jours environ (variation inférieure à 0,2 kg).':'Les variations quotidiennes et les plateaux sont fréquents : privilégie la tendance de plusieurs semaines.');
+  target.append(info);
+ }
+ function primaryGraph(target,p){
+  target.append(sectionTitle('Évolution du poids'));
+  controls(target,[['30 j',period==='30',()=>{period='30';redraw()}],['90 j',period==='90',()=>{period='90';redraw()}],['1 an',period==='365',()=>{period='365';redraw()}],['Tout',period==='all',()=>{period='all';redraw()}]]);
+  controls(target,[['Réel + tendance',trend,()=>{trend=!trend;redraw()}],['Projection',projection,()=>{projection=!projection;redraw()}],['Repères types',referenceBand,()=>{referenceBand=!referenceBand;redraw()}]]);
+  const rows=rangeRows(p),origin=p.rows[0].date,last=p.rows.at(-1),wEnd=days(origin,last.date);
+  const series=[{label:'Poids réel',color:colors[0],notes:true,points:rows.map(r=>({x:days(origin,r.date),y:r.weight,note:r.note}))},
+   {label:'Objectif',color:'#f7d77c',dashed:true,thin:true,points:[{x:0,y:p.goal},{x:wEnd,y:p.goal}]}];
+  if(trend){
+   const trendPoints=rows.map(r=>{
+    let recent=p.rows.filter(q=>utc(q.date)<=utc(r.date)&&utc(q.date)>=utc(r.date)-7*DAY);
+    if(recent.length<3)recent=p.rows.filter(q=>utc(q.date)<=utc(r.date)).slice(-3);
+    return {x:days(origin,r.date),y:recent.reduce((s,q)=>s+q.weight,0)/recent.length};
+   });
+   series.push({label:'Tendance (7 jours / 3 pesées)',color:colors[2],points:trendPoints});
+  }
+  if(referenceBand){
+   const horizon=Math.max(28,wEnd);
+   series.unshift({band:true,color:'#7ee3cf',points:[{x:0,y:p.rows[0].weight,y2:p.rows[0].weight},{x:horizon,y:p.rows[0].weight-horizon/7*.25,y2:p.rows[0].weight-horizon/7*1}]});
+  }
+  const ref=Math.max(28,wEnd);
+  series.push({label:'Repère '+fmt1(reference)+' kg/sem.',color:'#ffb47d',dashed:true,points:[{x:0,y:p.rows[0].weight},{x:ref,y:p.rows[0].weight-ref/7*reference}]});
+  const sl=slope(p);
+  if(projection&&sl!==null&&sl<-.014&&last.weight>p.goal){
+   const horizon=Math.min(365,Math.max(28,(p.goal-last.weight)/sl));
+   series.push({label:'Projection (indicative)',color:'#c9a8ff',dashed:true,points:[{x:wEnd,y:last.weight},{x:wEnd+horizon,y:last.weight+sl*horizon}]});
+  }
+  graph(target,series,{title:'Poids réel, tendance, objectif, repère et projection'});
+  target.append(node('p','advanced-help','Repères 0,25 à 1 kg/semaine : simples scénarios, pas une norme médicale. Les projections prolongent la tendance passée et ne prédisent pas les résultats futurs.'));
+  controls(target,[...([.25,.5,.75,1].map(value=>['Repère '+fmt1(value),reference===value,()=>{reference=value;redraw()}]))]);
+ }
+ function progressGraph(target,p){
+  target.append(sectionTitle('Progression et évolution hebdomadaire'));
+  const start=p.rows[0].weight,goal=p.goal;
+  const loss=p.rows.map(r=>({x:days(p.rows[0].date,r.date),y:start-r.weight}));
+  const objective=Math.max(.001,start-goal);
+  graph(target,[{label:'Kg perdus cumulés',color:colors[0],points:loss},{label:'Objectif en kg',color:colors[1],dashed:true,points:[{x:0,y:objective},{x:Math.max(1,loss.at(-1).x),y:objective}]}],{title:'Perte cumulée depuis le départ',zeroY:true});
+  const bars=weeklyRecords(p),area=node('div','',undefined);target.append(sectionTitle('Variation par semaine'));
+  if(!bars.length){target.append(node('p','advanced-help','Au moins deux semaines de mesures sont nécessaires.'));return}
+  const max=Math.max(.1,...bars.map(b=>Math.abs(b.change)));
+  for(const b of bars){
+   const line=node('div','',undefined);line.style.cssText='display:flex;align-items:center;gap:10px;margin:8px 0;font-size:12px';
+   const name=node('span','',b.date.slice(5));name.style.width='42px';
+   const track=node('div');track.style.cssText='height:15px;background:#1c4055;border-radius:8px;flex:1;overflow:hidden';
+   const fill=node('div');fill.style.cssText='height:100%;width:'+Math.round(Math.abs(b.change)/max*100)+'%;background:'+(b.change<=0?'#78e4cf':'#f2a3a3')+';border-radius:8px';
+   track.append(fill);const val=node('span','',shortNum(b.change));val.style.minWidth='70px';
+   line.append(name,track,val);area.append(line);
+  }
+  target.append(area);
+  target.append(sectionTitle('Moyenne de poids par mois'));
+  const groups=new Map();
+  for(const row of p.rows){
+   const key=row.date.slice(0,7);
+   if(!groups.has(key))groups.set(key,[]);
+   groups.get(key).push(row.weight);
+  }
+  const monthly=[...groups.entries()].map(([key,weights])=>({
+   date:key,weight:weights.reduce((a,b)=>a+b,0)/weights.length
+  }));
+  if(monthly.length>1){
+   graph(target,[{label:'Poids moyen du mois',color:colors[2],
+      points:monthly.map((e,i)=>({x:i*30.44,y:e.weight}))}],
+      {title:'Moyenne mensuelle des pesées'});
+  }else target.append(node('p','advanced-help','Il faut au moins deux mois avec des mesures.'));
+  target.append(node('p','advanced-help','Une barre compare les dernières pesées de deux semaines consécutives contenant des mesures. Vert : baisse de poids ; rose : hausse.'));
+ }
+ function validComparison(p){
+  return p&&p.rows.length>0&&Number.isFinite(p.goal);
+ }
+ function compareTarget(target){
+  target.append(sectionTitle('Comparer les profils'));
+  target.append(node('p','advanced-help','Pour comparer équitablement des personnes qui démarrent à des dates ou poids différents, chaque courbe commence à son premier jour de suivi (jour 0).'));
+  const people=[...(data.profiles||[]).map(p=>({id:'local:'+p.id,name:p.name,local:true})),
+    ...getReceivedList().map(p=>({id:'received:'+p.key,name:p.name,local:false}))];
+  const opts=node('div');
+  for(const item of people){
+   if(item.id===unifiedCurrent)continue;
+   opts.append(checkbox(item.name+(item.local?' · Personnel':' · Partagé'),sharedWanted.has(item.id),checked=>{
+    if(checked){sharedWanted.add(item.id);if(!item.local&&!sharedMap.has(item.id.slice(9)))window.AndroidBackup?.loadComparisonProfile?.(item.id.slice(9))}
+    else sharedWanted.delete(item.id);
+    redraw();
+   }));
+  }target.append(opts);
+  const refresh=button('↻ Actualiser les profils partagés',false,()=>{
+   const selected=[...sharedWanted].filter(id=>id.startsWith('received:'));
+   if(!selected.length){sharedState='Choisis au moins un ami à comparer.';redraw();return}
+   sharedState='Actualisation des profils choisis…';
+   for(const id of selected)window.AndroidBackup?.loadComparisonProfile?.(id.slice(9));
+   redraw();
+  });
+  target.append(refresh);
+  if(sharedState)target.append(node('p','advanced-help',sharedState));
+  controls(target,[['Poids réel',metric==='weight',()=>{metric='weight';redraw()}],['Kg perdus',metric==='loss',()=>{metric='loss';redraw()}],['% du poids initial',metric==='initial',()=>{metric='initial';redraw()}],['% de l’objectif',metric==='goal',()=>{metric='goal';redraw()}]]);
+  const selected=[{id:unifiedCurrent,p:current()}];
+  for(const id of sharedWanted){
+   if(id.startsWith('local:'))selected.push({id,p:clean((data.profiles||[]).find(p=>'local:'+p.id===id))});
+   else selected.push({id,p:clean(sharedMap.get(id.slice(9)))});
+  }
+  const series=[];let idx=0;
+  for(const {p} of selected){
+   if(!validComparison(p))continue;
+   const first=p.rows[0],goalRange=first.weight-p.goal;
+   if(metric==='goal'&&goalRange<=0)continue;
+   const points=p.rows.map(r=>{
+    let y=r.weight;if(metric==='loss')y=first.weight-r.weight;
+    else if(metric==='initial')y=100*(first.weight-r.weight)/first.weight;
+    else if(metric==='goal')y=100*(first.weight-r.weight)/goalRange;
+    return {x:days(first.date,r.date),y};
+   });
+   series.push({label:p.name,color:colors[idx++%colors.length],points});
+  }
+  if(series.length)graph(target,series,{title:'Comparaison des profils : '+metric,zeroY:metric!=='weight'});
+  else target.append(node('p','advanced-help','Aucune courbe comparable disponible. Vérifie les mesures et actualise les profils partagés.'));
+  target.append(node('p','advanced-help','Les profils reçus restent en lecture seule. Leurs mesures servent uniquement à l’affichage de ce graphique et ne sont pas enregistrées dans ton profil personnel.'));
+ }
+ function redraw(friendArea){
+  const p=current();
+  const target=friendArea||((typeof unifiedCurrent==='string'&&unifiedCurrent.startsWith('received:'))?$('chart').querySelector('.friend-view #advanced-friend-graphs'):panel);
+  if(!target)return;
+  target.replaceChildren();
+  if(!p){target.append(node('p','advanced-help','Sélectionne un profil puis charge ses mesures pour afficher les graphiques.'));return;}
+  controls(target,[['Poids',view==='weight',()=>{view='weight';redraw()}],['Progression',view==='progress',()=>{view='progress';redraw()}],['Comparaison',view==='compare',()=>{view='compare';redraw()}]]);
+  if(view==='weight')primaryGraph(target,p);
+  else if(view==='progress')progressGraph(target,p);
+  else compareTarget(target);
+  if(view!=='compare')metrics(target,p);
+ }
+ // For shared profiles, insert the same graphs in the read-only friend view
+ // instead of the old static SVG copied into the friend panel.
+ window.onFriendChartView=section=>{
+  section.querySelectorAll('.card').forEach(e=>e.remove());
+  const area=node('div','');area.id='advanced-friend-graphs';section.append(area);
+  redraw(area);
+ };
+ const oldLoaded=window.sharedLoaded;
+ window.sharedLoaded=function(encoded,key){
+  try{
+   const bytes=Uint8Array.from(atob(encoded),c=>c.charCodeAt(0));
+   const doc=JSON.parse(new TextDecoder().decode(bytes));
+   if(doc.format==='mon-evolution-lecture-seule'&&doc.version===1&&doc.profile&&typeof key==='string')sharedMap.set(key,{name:doc.profile.name,height:doc.profile.height,goal:doc.profile.goal,entries:doc.profile.entries});
+  }catch(e){/* Only validated data is displayed by oldLoaded. */}
+  const result=oldLoaded(encoded,key);
+  if(!$('chart').hidden)redraw();
+  return result;
+ };
+ // Background reading of other authorized shared profiles, without changing
+ // the selected profile. The backend returns only permitted weight measurements.
+ window.comparisonProfileLoaded=function(key,base64){
+  try{
+   const text=new TextDecoder().decode(Uint8Array.from(atob(base64),c=>c.charCodeAt(0)));
+   const p=JSON.parse(text);
+   if(!/^[a-f0-9-]{36}$/.test(key)||!clean(p))throw Error('invalid');
+   sharedMap.set(key,p);sharedState='Profils partagés actualisés.';
+  }catch(e){sharedState='Données de comparaison indisponibles.'}
+  if(!$('chart').hidden)redraw();
+ };
+ window.comparisonProfileFailed=function(key){
+  sharedState='Impossible de lire un profil partagé. Vérifie son lien Drive et son code.';
+  if(!$('chart').hidden)redraw();
+ };
+ const originalRender=render;
+ render=function(){originalRender();if(!$('chart').hidden&&!(unifiedCurrent||'').startsWith('received:'))redraw()};
+ const chartButton=document.querySelector('[data-tab="chart"]');
+ if(chartButton)chartButton.addEventListener('click',()=>{
+  if(!(unifiedCurrent||'').startsWith('received:'))redraw();
+ });
+ // The visual profile switcher calls selectUnified and nav updates; leave the
+ // underlying profile selection mechanisms intact.
+ redraw();
+})();
+
+</script>
+
+<style>
+.profile-tools-toggle{display:flex;justify-content:space-between;align-items:center;text-align:left;width:100%;font-weight:650;padding:14px 16px}
+.profile-tools-toggle .chevron{transition:transform .16s ease}
+.profile-tools-toggle[aria-expanded="true"] .chevron{transform:rotate(180deg)}
+.profile-tools-body{margin-top:12px;display:grid;gap:10px}
+.profile-tools-body button{width:100%!important;margin:0!important}
+.profile-tools-body[hidden]{display:none!important}
+.profile-tools-danger{border-top:1px solid #466276;padding-top:12px;margin-top:4px}
+.profile-tools-status{font-size:12px;color:#a4c8d7;line-height:1.45;margin:6px 0}
+</style>
+<script>
+(function(){
+ const profiles=$('profiles');
+ if(!profiles)return;
+ function makeMenu(title,description){
+  const shell=document.createElement('div');
+  const toggle=document.createElement('button');
+  toggle.type='button';toggle.className='secondary profile-tools-toggle';
+  toggle.setAttribute('aria-expanded','false');
+  const text=document.createElement('span');text.textContent=title;
+  const chevron=document.createElement('span');chevron.className='chevron';chevron.textContent='⌄';
+  chevron.setAttribute('aria-hidden','true');
+  toggle.append(text,chevron);
+  const body=document.createElement('div');
+  body.className='profile-tools-body';body.hidden=true;
+  const id='profile-tools-'+title.toLowerCase().replace(/[^a-z]/g,'-');
+  body.id=id;toggle.setAttribute('aria-controls',id);
+  if(description) {
+   const info=document.createElement('p');info.className='profile-tools-status';
+   info.textContent=description;body.append(info);
+  }
+  toggle.onclick=()=>{
+   const open=body.hidden;
+   body.hidden=!open;toggle.setAttribute('aria-expanded',String(open));
+  };
+  shell.append(toggle,body);
+  return {shell,body};
+ }
+ const exportButton=$('export-weights');
+ const profileCard=exportButton?.closest('.card');
+ if(!profileCard)return;
+ const profileMenu=makeMenu('Gestion du profil','Exporter tes données ou supprimer un profil. Les suppressions demandent une confirmation.');
+ for(const id of ['export-weights','export-profile']){
+  const element=$(id);if(element)profileMenu.body.append(element);
+ }
+ const danger=document.createElement('div');danger.className='profile-tools-body profile-tools-danger';
+ for(const id of ['delete-profile','delete-drive-profile']){
+  const element=$(id);if(element)danger.append(element);
+ }
+ profileMenu.body.append(danger);profileCard.append(profileMenu.shell);
+ const driveState=$('drive-state');
+ const driveCard=driveState?.closest('.card');
+ if(!driveCard)return;
+ const driveMenu=makeMenu('Options Google Drive','Gérer la sauvegarde, restaurer ou déconnecter le fichier relié.');
+ for(const id of ['backup','backup-relink','restore','disconnect']){
+  const element=$(id);if(element)driveMenu.body.append(element);
+ }
+ // Keep the live backup status visible without opening the menu.
+ driveCard.append(driveMenu.shell);
+ // Hide verbose guidance in the collapsed section but preserve it for review.
+ for(const p of [...driveCard.querySelectorAll(':scope > p.notice')]){
+  if(p!==driveState)driveMenu.body.append(p);
+ }
+})();
+</script>
+
+<style>
+#outgoing-share-wrapper{margin:18px 0}
+#outgoing-share-wrapper>summary{list-style:none;cursor:pointer;padding:18px 20px;border-radius:16px;background:#1d465d;border:1px solid #3d667c;font-weight:750}
+#outgoing-share-wrapper>summary::-webkit-details-marker{display:none}
+#outgoing-share-wrapper>summary:after{content:"⌄";float:right}
+#outgoing-share-wrapper[open]>summary:after{content:"⌃"}
+#outgoing-share-wrapper .card{margin-top:12px}
+#outgoing-advanced{margin-top:14px;border-top:1px solid #365c70;padding-top:14px}
+#outgoing-advanced summary{cursor:pointer;color:#bddce7;padding:12px 0}
+</style>
+<script>
+(function(){
+ const sharing=document.querySelector('#create-share')?.closest('.card');
+ const shared=$('shared');
+ if(!sharing||!shared)return;
+ // Move the existing DOM controls, never clone them: native JavaScript listeners,
+ // the stored Drive URI and all confirmation dialogs remain unchanged.
+ const outer=document.createElement('details');outer.id='outgoing-share-wrapper';
+ const summary=document.createElement('summary');
+ summary.textContent='🔗 Partager mon profil personnel';
+ const info=document.createElement('p');info.className='notice';
+ info.textContent='Créer, mettre à jour ou envoyer le profil personnel choisi. Les profils reçus restent en lecture seule.';
+ sharing.prepend(info);
+ const current=document.createElement('p');current.className='notice';current.id='outgoing-personal-name';
+ sharing.prepend(current);
+ function refreshName(){
+  const p=profile();
+  current.textContent='Profil que tu partages : '+(p?.name||'aucun');
+ }
+ sharing.addEventListener('click',refreshName);
+ outer.append(summary,sharing);
+ // Friend cards are inserted at the start of Shared; place this section after
+ // them, before the URL/manual import card.
+ const cards=Array.from(shared.children).filter(x=>x.classList?.contains('card'));
+ const lookup=cards.find(x=>x.querySelector('#shared-public-url'));
+ shared.insertBefore(outer,lookup||null);
+ const advanced=document.createElement('details');advanced.id='outgoing-advanced';
+ const advancedTitle=document.createElement('summary');advancedTitle.textContent='⚙ Gestion avancée du partage';
+ advanced.append(advancedTitle);
+ for(const id of ['stop-share','delete-active-share','manage-drive-share']){
+  const control=$(id);if(control)advanced.append(control);
+ }
+ const notices=Array.from(sharing.children).filter(el=>el.matches('p.notice') &&
+  el.textContent.includes('Pour lui retirer'));
+ for(const notice of notices)advanced.append(notice);
+ const unused=$('open-share');
+ if(unused){unused.hidden=true;unused.style.display='none'}
+ sharing.append(advanced);
+ summary.addEventListener('click',()=>{refreshName();if(typeof shareStatus==='function')shareStatus()});
+ const profileSelect=$('profile-picker');
+ if(profileSelect)profileSelect.addEventListener('change',refreshName);
+ refreshName();
+})();
+</script>
+
+<style>
+#friends-auto-sync-status,#release-auto-check-status{font-size:10px;line-height:1.3;color:#b5d3dc;margin:2px 0!important}
+#release-auto-check-status.available{color:#a8f5cb;text-decoration:underline;cursor:pointer}
+</style>
+<script>
+(function(){
+ const chooser=$('visual-profile-picker');
+ const sync=document.createElement('p');sync.id='friends-auto-sync-status';sync.setAttribute('role','status');sync.setAttribute('aria-live','polite');
+ const update=document.createElement('p');update.id='release-auto-check-status';update.setAttribute('role','status');update.setAttribute('aria-live','polite');
+ if(chooser){chooser.insertAdjacentElement('afterend',sync);sync.insertAdjacentElement('afterend',update)}
+ const fmtDate=timestamp=>new Date(timestamp).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+ const store=(key,value)=>{try{localStorage.setItem(key,JSON.stringify(value))}catch(e){}};
+ const load=key=>{try{return JSON.parse(localStorage.getItem(key)||'null')}catch(e){return null}};
+ const oldSync=load('last-friends-sync-v1');
+ const oldUpdate=load('last-release-check-v1');
+ if(oldSync?.at)sync.textContent='Amis · '+oldSync.status+' · '+fmtDate(oldSync.at);
+ if(oldUpdate?.at)update.textContent='Version · '+oldUpdate.status+' · '+fmtDate(oldUpdate.at);
+ let syncStarted=false,updateStarted=false;
+ const oldFriendsUpdated=window.friendsOverviewUpdated;
+ window.friendsOverviewUpdated=function(){
+  if(typeof oldFriendsUpdated==='function')oldFriendsUpdated();
+  // Only the final native callback may finish a sync; per-friend progress
+  // callbacks must not claim completion.
+ };
+ window.friendsOverviewSyncFinished=function(success,fail){
+  success=Number(success)||0;fail=Number(fail)||0;
+  const now=Date.now();
+  let status;
+  if(fail===0)status='Terminé ('+success+' sur '+success+')';
+  else if(success)status='Partiel ('+success+' réussis, '+fail+' en erreur)';
+  else status='Erreur ('+fail+' profil'+(fail>1?'s':'')+')';
+  sync.textContent='Amis · '+status+' · '+fmtDate(now);
+  store('last-friends-sync-v1',{status,at:now});
+ };
+ const oldReceived=window.receiveUpdateVersion;
+ window.receiveUpdateVersion=function(version){
+  if(typeof oldReceived==='function')oldReceived(version);
+  const latest=String(version||''),installed='1.6.31';
+  const pieces=v=>v.split('.').map(Number);
+  const a=pieces(latest),b=pieces(installed);
+  const newer=/^\d+(?:\.\d+){1,3}$/.test(latest)&&a.some((x,i)=>x>(b[i]||0)&&a.slice(0,i).every((n,j)=>n===(b[j]||0)));
+  const status=newer?'Nouvelle v'+latest+' disponible':'À jour (v'+installed+')';
+  const now=Date.now();
+  update.textContent='Version · '+status+' · '+fmtDate(now);
+  update.classList.toggle('available',newer);
+  if(newer){
+   const url='https://github.com/TheDwarfy01/mon-evolution/releases/tag/v'+latest;
+   update.onclick=()=>window.AndroidBackup?.openOfficialUrl?.(url);
+   update.setAttribute('role','button');update.tabIndex=0;
+   update.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();update.click()}};
+  } else {update.onclick=null;update.removeAttribute('role');update.removeAttribute('tabindex');update.onkeydown=null}
+  store('last-release-check-v1',{status,at:now});
+ };
+ const oldFailed=window.updateVersionFailed;
+ window.updateVersionFailed=function(){
+  if(typeof oldFailed==='function')oldFailed();
+  const now=Date.now(),status='Erreur de vérification';
+  update.textContent='Version · '+status+' · '+fmtDate(now);
+  update.classList.remove('available');update.onclick=null;
+  store('last-release-check-v1',{status,at:now});
+ };
+ function start(){
+  if(!syncStarted){
+   syncStarted=true;
+   const count=getReceivedList().length;
+   if(count&&window.AndroidBackup?.refreshFriendsOverview){
+    sync.textContent='Amis · Synchronisation en cours · '+fmtDate(Date.now());
+    AndroidBackup.refreshFriendsOverview();
+   }else if(!count)sync.textContent='Amis · Aucun profil partagé';
+  }
+  if(!updateStarted){
+   updateStarted=true;
+   if(window.AndroidBackup?.checkLatestVersion){
+    update.textContent='Version · Vérification en cours · '+fmtDate(Date.now());
+    AndroidBackup.checkLatestVersion();
+   }else update.textContent='Version · Vérification indisponible';
+  }
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});
+ else start();
+})();
+</script>
+
+<style>
+/* Compact home only: other tabs and shared read-only views stay unchanged. */
+.brand-hello{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.brand-hello h1{font-size:23px;line-height:1.12;margin:0;white-space:nowrap;letter-spacing:-.03em}
+.header-greeting{font-size:14px;color:#e8fbf8;font-weight:600;white-space:nowrap}
+header{padding:13px 14px 0}
+header .upper{font-size:9px;letter-spacing:.12em;margin-bottom:4px}
+header .profile-global{margin-top:8px!important}
+#visual-profile-picker{padding:5px 0 7px;gap:10px;min-height:0}
+.profile-portrait-choice{min-width:65px;max-width:77px;padding:2px}
+.profile-portrait-circle{width:46px;height:46px;margin-bottom:3px;font-size:19px}
+.profile-portrait-name{font-size:11px}
+.profile-portrait-kind{font-size:9px;margin-top:1px}
+#visual-profile-picker-label{font-size:11px;margin-top:2px}
+#friends-auto-sync-status:empty{display:none}
+#friends-auto-sync-status{font-size:10px!important;margin:0!important}
+#unified-add-received{padding:3px 0 4px!important;font-size:11px!important}
+header .nav{margin-top:6px}
+header .nav button{font-size:10.5px;padding:9px 1px}
+main{padding:10px 12px 40px}
+#home>h2{display:none!important}
+#home>#header-avatar{display:none!important}
+#home>#today{font-size:11px;line-height:1.2;margin:0 0 8px;color:#a5c9d9}
+#home>.hero{margin-top:0;padding:13px 15px;border-radius:15px}
+#home .hero>.spread:first-child{font-size:13px}
+#home .weight{font-size:41px;line-height:1.1;margin:8px 0 3px}
+#home .weight small{font-size:16px}
+#home #last{font-size:11px;margin:3px 0 12px;line-height:1.25}
+#home .hero>.spread{font-size:12px}
+#home .bar{height:7px;margin-top:7px}
+#home .hero>.two{gap:8px;margin-top:7px}
+#home .tile{border-radius:10px;padding:9px 11px;margin:5px 0}
+#home .tile span{font-size:10px}
+#home .tile strong{font-size:18px;line-height:1.2;margin-top:4px}
+#home #add{padding:11px;font-size:13px;margin-top:7px;border-radius:11px}
+#home>.two{gap:8px;margin-top:7px}
+#home>.two .tile{margin:0;padding:10px 11px}
+#home .pill{font-size:10px;padding:5px 8px}
+@media (max-width:360px){
+ .brand-hello h1{font-size:20px}
+ .header-greeting{font-size:12px}
+ #home .tile strong{font-size:16px}
+ header .nav button{font-size:9px}
+}
+@media (max-height:760px){
+ header{padding-top:9px}
+ #home .weight{font-size:38px}
+ #home .hero{padding:11px 13px}
+ #home .tile{padding:8px}
+}
+</style>
+
+<style>
+.export-details{border:1px solid #355b70;border-radius:14px;background:#102b3c;margin-top:14px;overflow:hidden}
+.export-details>summary{cursor:pointer;padding:14px 16px;font-size:13px;font-weight:700;color:#def4f7;list-style:none;display:flex;justify-content:space-between;align-items:center}
+.export-details>summary::-webkit-details-marker{display:none}
+.export-details>summary:after{content:'⌄';font-size:19px}
+.export-details[open]>summary:after{content:'⌃'}
+.export-details .export-content{padding:0 15px 15px}
+.export-details .export-content button{width:100%}
+</style>
+<script>
+(function(){
+ function bottomExport(sectionId,buttonId,title,description){
+  const section=$(sectionId),button=$(buttonId);
+  if(!section||!button)return;
+  const details=document.createElement('details');details.className='export-details';
+  const summary=document.createElement('summary');summary.textContent=title;
+  const content=document.createElement('div');content.className='export-content';
+  const hint=document.createElement('p');hint.className='notice';hint.textContent=description;
+  content.append(hint,button);details.append(summary,content);
+  section.append(details);
+ }
+ // Move the existing buttons, preserving their original event handlers and PDFs.
+ bottomExport('home','export-progress-pdf','↓ Télécharger mon bilan complet',
+  'Bilan PDF de ton profil : évolution du poids, objectif et historique des pesées.');
+ bottomExport('meals','export-meals-pdf','↓ Télécharger le compte rendu mensuel',
+  'Compte rendu PDF des repas du mois affiché dans le calendrier.');
+ // Remove the now-empty card at the end of the meal journal.
+ const meals=$('meals');
+ const empty=[...meals.querySelectorAll(':scope > .card')].find(c=>
+  c.querySelector('h3')?.textContent==='Compte rendu mensuel' &&
+  !c.querySelector('button'));
+ if(empty)empty.remove();
+})();
+</script>
+
+<style>
+.meal-field{margin:10px 0!important}
+.meal-header-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:5px;min-height:38px}
+.meal-header-row>label{font-weight:650;flex:1;margin:0}
+.meal-photo-actions{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.meal-header-row .meal-camera-icon{width:40px;height:36px;padding:6px!important;margin:0!important;border-radius:10px;font-size:19px;line-height:1;display:flex;align-items:center;justify-content:center}
+.meal-camera-icon.has-photo{border-color:#78e3ca;color:#9cf1d9}
+.meal-header-row .meal-photo-remove{width:34px;height:36px;padding:5px!important;margin:0!important;border-radius:10px;font-size:18px;line-height:1}
+.meal-field textarea{margin-top:0!important;min-height:60px}
+</style>
+<script>
+(function(){
+ const original=renderMeals;
+ renderMeals=function(){
+  original();
+  for(const wrapper of document.querySelectorAll('#meal-inputs > .meal-field')){
+   const label=wrapper.querySelector(':scope > label');
+   const buttons=[...wrapper.children].filter(e=>e.tagName==='BUTTON');
+   if(!label||!buttons.length)continue;
+   const header=document.createElement('div');header.className='meal-header-row';
+   const actions=document.createElement('div');actions.className='meal-photo-actions';
+   const photo=buttons[0];
+   const hasPhoto=!!wrapper.querySelector(':scope > img');
+   photo.textContent='📷';
+   photo.classList.add('meal-camera-icon');
+   if(hasPhoto)photo.classList.add('has-photo');
+   photo.setAttribute('aria-label',hasPhoto?'Remplacer la photo du '+label.textContent:'Ajouter une photo du '+label.textContent);
+   photo.title=hasPhoto?'Remplacer la photo':'Prendre une photo ou choisir dans la galerie';
+   actions.append(photo);
+   const remove=buttons[1];
+   if(remove){
+    remove.textContent='✕';
+    remove.classList.add('meal-photo-remove');
+    remove.setAttribute('aria-label','Retirer la photo du '+label.textContent);
+    remove.title='Retirer la photo';
+    actions.append(remove);
+   }
+   header.append(label,actions);
+   wrapper.prepend(header);
+  }
+ };
+ renderMeals();
+})();
+</script>
+
+<style>
+#summary-pdf-reports{margin-top:18px}
+#summary-pdf-reports>h3{font-size:15px;color:#d6eef4;margin-bottom:6px}
+#summary-pdf-reports>.export-details{margin-top:8px}
+#summary-report-month{font-size:14px;max-width:100%;margin:8px 0 13px}
+</style>
+<script>
+(function(){
+ const home=$('home'),meals=$('meals');
+ const full=$('export-progress-pdf')?.closest('.export-details');
+ const food=$('export-meals-pdf')?.closest('.export-details');
+ if(!home||!meals||!full||!food)return;
+ // Move existing nodes, not clones. This preserves the original PDF export
+ // handlers and the meal selection made in the calendar.
+ const reports=document.createElement('div');
+ reports.id='summary-pdf-reports';
+ const label=document.createElement('h3');label.textContent='📄 Mes bilans PDF';
+ reports.append(label,full,food);
+ home.append(reports);
+ const content=food.querySelector('.export-content');
+ const hint=content?.querySelector('.notice');
+ if(hint)hint.textContent='Choisis le mois à exporter, puis télécharge le compte rendu de tes repas.';
+ const monthLabel=document.createElement('label');
+ monthLabel.className='field';monthLabel.textContent='Mois du compte rendu';
+ const selector=document.createElement('input');
+ selector.id='summary-report-month';selector.type='month';selector.setAttribute('aria-label','Mois du compte rendu des repas');
+ selector.value=mealMonth;
+ selector.onchange=()=>{
+  if(!/^\d{4}-\d{2}$/.test(selector.value))return;
+  mealMonth=selector.value;
+  // Keep the meal calendar and the exported PDF on the same selected month.
+  mealDate=mealMonth+'-01';
+  renderMeals();
+ };
+ monthLabel.append(selector);
+ if(content){content.insertBefore(monthLabel,$('export-meals-pdf'))}
+ // Synchronize the month selector if the user browses the meal calendar.
+ const previousRenderMeals=renderMeals;
+ renderMeals=function(){
+  previousRenderMeals();
+  if(selector.value!==mealMonth)selector.value=mealMonth;
+ };
+})();
+</script>
+
+<style>
+#shared-manual-import{margin:12px 0 18px}
+#shared-manual-import>summary{cursor:pointer;list-style:none;font-size:13px;color:#cce7f2;background:#1b3b51;border:1px solid #355b73;padding:13px 16px;border-radius:12px}
+#shared-manual-import>summary::-webkit-details-marker{display:none}
+#shared-manual-import>summary:after{content:'⌄';float:right}
+#shared-manual-import[open]>summary:after{content:'⌃'}
+#shared-manual-import>.card{margin-top:9px}
+</style>
+<script>
+(function(){
+ const input=$('shared-public-url');
+ const section=$('shared');
+ const panel=input?.closest('.card');
+ if(!section||!panel||!section.contains(panel))return;
+ const details=document.createElement('details');details.id='shared-manual-import';
+ const summary=document.createElement('summary');summary.textContent='⚙ Importation manuelle (avancé)';
+ details.append(summary);
+ // Move (never duplicate) the existing card to retain URL import, private
+ // Drive file selection, refresh and original click handlers and permissions.
+ section.insertBefore(details,panel);
+ details.append(panel);
+})();
+</script>
+<style>
+#personal-reminder-card .reminder-row{border-top:1px solid #36546b;padding:12px 0}
+#personal-reminder-card .reminder-main{display:flex;justify-content:space-between;align-items:center;gap:12px}
+#personal-reminder-card .reminder-main label{font-size:14px;color:#e3f7ff;flex:1}
+#personal-reminder-card .reminder-main input[type=checkbox]{margin:0;width:22px;height:22px;accent-color:#7be1cd;flex-shrink:0}
+#personal-reminder-card .reminder-schedule{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding-top:9px}
+#personal-reminder-card .reminder-schedule input,#personal-reminder-card .reminder-schedule select{min-width:0;width:auto;padding:9px;margin:0;font-size:13px}
+#personal-reminder-card .reminder-schedule select{max-width:150px}
+#personal-reminder-card .reminder-schedule small{color:#afcadb}
+#personal-reminder-card .reminder-schedule[hidden]{display:none}
+#personal-reminder-card .reminder-profile{color:#a6eddf;font-size:12px}
+#personal-reminder-card .reminder-disclaimer{font-size:11px;line-height:1.5;color:#a6bdcd}
+#visual-profile-picker .profile-portrait-add .profile-portrait-circle{border-style:dashed;color:#9cf1d9;font-size:29px}
+#unified-add-received{display:none!important}
+</style>
+<script>
+(function(){
+ const section=$('profiles');
+ if(!section)return;
+ const legacy=typeof reminderCard!=='undefined'?reminderCard:null;
+ const avatar=typeof avatarCard!=='undefined'?avatarCard:null;
+ const picker=$('profile-picker')?.closest('.card');
+ const edit=$('save-profile')?.closest('.card');
+ const drive=$('drive-state')?.closest('.card');
+ const about=typeof aboutCard!=='undefined'?aboutCard:null;
+ if(legacy){legacy.hidden=true;legacy.style.display='none'}
+ const card=document.createElement('div');card.className='card';card.id='personal-reminder-card';
+ const heading=document.createElement('h3');heading.textContent='🔔 Rappels personnalisés';
+ const selected=document.createElement('p');selected.className='reminder-profile';selected.id='reminder-profile-title';
+ const intro=document.createElement('p');intro.className='notice';
+ intro.textContent='Active les notifications souhaitées pour chaque personne. Les rappels sont enregistrés sur ce téléphone.';
+ card.append(heading,selected,intro);
+ const definitions=[
+  ['meals','📝 Journal alimentaire','quotidien','20:00'],
+  ['photos','📷 Photos des repas','quotidien','20:30'],
+  ['breakfast','🥐 Petit-déjeuner','quotidien','08:00'],
+  ['lunch','🍽️ Déjeuner','quotidien','13:00'],
+  ['dinner','🌙 Dîner','quotidien','20:00'],
+  ['weight','⚖️ Pesée','hebdomadaire','09:00'],
+  ['injection','💉 Injection (si prescrite)','hebdomadaire','19:00']
+ ];
+ const controls={};
+ for(const [type,label,frequency,defaultTime] of definitions){
+  const row=document.createElement('div');row.className='reminder-row';
+  const main=document.createElement('div');main.className='reminder-main';
+  const text=document.createElement('label');text.textContent=label;
+  const toggle=document.createElement('input');toggle.type='checkbox';toggle.setAttribute('aria-label','Activer le rappel '+label);
+  main.append(text,toggle);
+  const schedule=document.createElement('div');schedule.className='reminder-schedule';
+  const explanation=document.createElement('small');explanation.textContent=frequency==='quotidien'?'Chaque jour':'Chaque semaine';
+  const time=document.createElement('input');time.type='time';time.value=defaultTime;time.setAttribute('aria-label','Heure de '+label);
+  schedule.append(explanation);
+  let day=null;
+  if(frequency==='hebdomadaire'){
+   day=document.createElement('select');day.setAttribute('aria-label','Jour de '+label);
+   for(const [value,dayName] of [['2','Lundi'],['3','Mardi'],['4','Mercredi'],['5','Jeudi'],['6','Vendredi'],['7','Samedi'],['1','Dimanche']]){
+    const o=document.createElement('option');o.value=value;o.textContent=dayName;day.append(o);
+   }
+   schedule.append(day);
+  }
+  schedule.append(time);row.append(main,schedule);card.append(row);
+  toggle.onchange=()=>{schedule.hidden=!toggle.checked};
+  controls[type]={toggle,time,day,defaultTime};
+ }
+ const disclaimer=document.createElement('p');disclaimer.className='reminder-disclaimer';
+ disclaimer.textContent='Les rappels d’injection sont facultatifs et ne constituent pas une consigne médicale. Respecte uniquement la prescription et vérifie l’horaire avec ton professionnel de santé. Android peut décaler certaines notifications ; elles ne garantissent pas une alerte à la minute.';
+ const saveButton=document.createElement('button');saveButton.className='primary';saveButton.textContent='Enregistrer les rappels';
+ card.append(disclaimer,saveButton);
+ function activeProfile(){return (data.profiles||[]).find(p=>p.id===data.active)||null}
+ function loadPersonalReminders(){
+  const p=activeProfile();
+  selected.textContent=p?'Rappels pour '+p.name:'Sélectionne un profil personnel';
+  saveButton.disabled=!p;
+  let settings={};
+  if(p)try{settings=JSON.parse(window.AndroidBackup?.personalReminderSettings?.(p.id)||'{}')}catch(e){}
+  for(const [type,,frequency] of definitions){
+   const c=controls[type],v=settings[type]||{};
+   c.toggle.checked=!!v.enabled;
+   const fallback=c.defaultTime.split(':');
+   c.time.value=String(v.hour??Number(fallback[0])).padStart(2,'0')+':'+String(v.minute??Number(fallback[1])).padStart(2,'0');
+   if(c.day)c.day.value=String(v.weekday||2);
+   c.toggle.dispatchEvent(new Event('change'));
+  }
+ }
+ saveButton.onclick=()=>{
+  const p=activeProfile();if(!p||!window.AndroidBackup?.setPersonalReminder)return message('Rappels disponibles sur Android');
+  for(const [type] of definitions){
+   const c=controls[type],time=c.time.value.split(':').map(Number);
+   if(time.length!==2||!Number.isInteger(time[0])||!Number.isInteger(time[1]))return message('Vérifie les horaires');
+   AndroidBackup.setPersonalReminder(p.id,p.name,type,c.toggle.checked,time[0],time[1],Number(c.day?.value||2));
+  }
+  message('Rappels de '+p.name+' enregistrés ✓');
+ };
+ if(edit)edit.insertAdjacentElement('afterend',card);
+ else section.append(card);
+ // Personal identity and daily reminders come before technical settings.
+ const order=[picker,avatar,edit,card,drive,about,legacy];
+ for(const item of order){if(item&&section.contains(item))section.append(item)}
+ const originalPicker=document.getElementById('profile-picker');
+ originalPicker?.addEventListener('change',loadPersonalReminders);
+ const olderRender=render;
+ render=function(){olderRender();if(!section.hidden)loadPersonalReminders()};
+ loadPersonalReminders();
+
+ // A single circular plus button shares the portrait strip and opens the
+ // existing received-profile invitation workflow. No second row is consumed.
+ const bar=$('visual-profile-picker');
+ const oldAdd=$('unified-add-received');
+ if(bar&&oldAdd){
+  const button=document.createElement('button');button.type='button';
+  button.className='profile-portrait-choice profile-portrait-add';
+  button.id='portrait-add-shared';  button.setAttribute('aria-label','Ajouter un profil personnel ou partagé');
+  const circle=document.createElement('span');circle.className='profile-portrait-circle';circle.textContent='+';
+  const text=document.createElement('span');text.className='profile-portrait-name';text.textContent='Ajouter';
+  const kind=document.createElement('span');kind.className='profile-portrait-kind';kind.textContent='Partagé';
+  button.append(circle,text,kind);
+  const chooser=document.createElement('dialog');
+  chooser.id='add-profile-chooser';
+  chooser.style.cssText='border-radius:18px;background:#122e43;color:#f1f8ff;border:1px solid #476d81;padding:22px;max-width:min(92vw,400px);width:90%';
+  const title=document.createElement('h3');title.textContent='Ajouter un profil';
+  const personal=document.createElement('button');personal.type='button';personal.className='primary';
+  personal.textContent='＋ Créer un profil personnel';
+  personal.onclick=()=>{chooser.close();$('new-profile')?.click()};
+  const friend=document.createElement('button');friend.type='button';friend.className='secondary';
+  friend.style.cssText='display:block;width:100%;margin-top:12px';
+  friend.textContent='♧ Ajouter un profil partagé';
+  friend.onclick=()=>{chooser.close();oldAdd.click()};
+  const cancel=document.createElement('button');cancel.type='button';cancel.className='secondary';
+  cancel.style.cssText='display:block;width:100%;margin-top:12px';
+  cancel.textContent='Annuler';cancel.onclick=()=>chooser.close();
+  chooser.append(title,personal,friend,cancel);document.body.append(chooser);
+  button.onclick=()=>chooser.showModal();
+  const mount=()=>{
+   if(bar.lastElementChild!==button)bar.append(button);
+  };
+  const observer=new MutationObserver(mount);
+  observer.observe(bar,{childList:true});
+  mount();
+ }
+})();
+</script></body></html>
