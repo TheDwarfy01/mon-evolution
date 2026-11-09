@@ -1,0 +1,1 @@
+v1.6.26 : boutons photos en petites icônes à droite des six noms de repas. Exports PDF conservés en bas.
