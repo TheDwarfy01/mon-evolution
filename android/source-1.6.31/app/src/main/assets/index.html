@@ -409,7 +409,7 @@ $('save-reminders').onclick=()=>{
 // Portrait individuel : sauvegarde locale + sauvegarde Drive des profils.
 // Le portrait du profil choisi est inclus dans le document partagé chiffré.
 const avatarCard=document.createElement('div');avatarCard.className='card';
-avatarCard.innerHTML='<h3>📷 Photo du profil</h3><div id="avatar-display"></div><div class="avatar-actions"><button class="secondary" id="avatar-choose">Choisir une photo</button><button class="secondary" id="avatar-remove">Supprimer la photo</button></div><p class="notice">La photo est propre à ce profil. Elle est incluse dans ta sauvegarde privée et dans le partage chiffré de ce seul profil.</p>';
+avatarCard.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h3 style="margin:0">📷 Photo du profil</h3><div class="avatar-actions" style="display:flex;gap:7px;margin:0"><button class="secondary" id="avatar-choose" type="button" title="Choisir ou changer la photo" aria-label="Choisir ou changer la photo" style="width:36px;height:36px;padding:4px;font-size:18px">📷</button><button class="secondary" id="avatar-remove" type="button" title="Supprimer la photo" aria-label="Supprimer la photo" style="width:36px;height:36px;padding:4px;font-size:18px">🗑</button></div></div><div id="avatar-display"></div><p class="notice">Photo propre à ce profil, incluse dans la sauvegarde et son partage chiffré.</p>';
 $('profiles').insertBefore(avatarCard,$('profiles').children[1]);
 const headerAvatar=document.createElement('div');headerAvatar.id='header-avatar';headerAvatar.style.margin='16px auto 0';
 $('home').insertBefore(headerAvatar,$('home').children[1]);
@@ -2238,6 +2238,27 @@ main{padding:10px 12px 40px}
   toggle.onchange=()=>{schedule.hidden=!toggle.checked};
   controls[type]={toggle,time,day,defaultTime};
  }
+ // Hydratation : plusieurs rappels quotidiens, uniquement entre les heures choisies.
+ const waterRow=document.createElement('div');waterRow.className='reminder-row';
+ const waterMain=document.createElement('div');waterMain.className='reminder-main';
+ const waterLabel=document.createElement('label');waterLabel.textContent='💧 Boire de l’eau';
+ const waterToggle=document.createElement('input');waterToggle.type='checkbox';waterToggle.setAttribute('aria-label','Activer les rappels pour boire de l’eau');
+ waterMain.append(waterLabel,waterToggle);
+ const waterSchedule=document.createElement('div');waterSchedule.className='reminder-schedule';
+ const waterStart=document.createElement('input');waterStart.type='time';waterStart.value='08:00';waterStart.setAttribute('aria-label','Début des rappels hydratation');
+ const waterEnd=document.createElement('input');waterEnd.type='time';waterEnd.value='20:00';waterEnd.setAttribute('aria-label','Fin des rappels hydratation');
+ const waterEvery=document.createElement('select');waterEvery.setAttribute('aria-label','Fréquence des rappels hydratation');
+ for(const [value,label] of [['60','Chaque heure'],['120','Toutes les 2 h'],['180','Toutes les 3 h']]){
+  const option=document.createElement('option');option.value=value;option.textContent=label;waterEvery.append(option);
+ }
+ waterEvery.value='120';
+ const startLabel=document.createElement('small');startLabel.textContent='De';const endLabel=document.createElement('small');endLabel.textContent='à';
+ waterSchedule.append(startLabel,waterStart,endLabel,waterEnd,waterEvery);
+ waterRow.append(waterMain,waterSchedule);card.append(waterRow);
+ waterToggle.onchange=()=>{waterSchedule.hidden=!waterToggle.checked};
+ const waterSlots=24;
+ const minutes=t=>{const match=/^(\\d{2}):(\\d{2})$/.exec(t);return match?Number(match[1])*60+Number(match[2]):-1};
+ const clock=total=>String(Math.floor(total/60)).padStart(2,'0')+':'+String(total%60).padStart(2,'0');
  const disclaimer=document.createElement('p');disclaimer.className='reminder-disclaimer';
  disclaimer.textContent='Les rappels d’injection sont facultatifs et ne constituent pas une consigne médicale. Respecte uniquement la prescription et vérifie l’horaire avec ton professionnel de santé. Android peut décaler certaines notifications ; elles ne garantissent pas une alerte à la minute.';
  const saveButton=document.createElement('button');saveButton.className='primary';saveButton.textContent='Enregistrer les rappels';
@@ -2249,6 +2270,15 @@ main{padding:10px 12px 40px}
   saveButton.disabled=!p;
   let settings={};
   if(p)try{settings=JSON.parse(window.AndroidBackup?.personalReminderSettings?.(p.id)||'{}')}catch(e){}
+  const slots=Array.from({length:waterSlots},(_,i)=>settings['water'+i]).filter(v=>v?.enabled);
+  waterToggle.checked=slots.length>0;
+  if(slots.length){
+   const ts=slots.map(v=>v.hour*60+v.minute).sort((a,b)=>a-b);
+   waterStart.value=clock(ts[0]);waterEnd.value=clock(ts[ts.length-1]);
+   const interval=ts.length>1?ts[1]-ts[0]:120;
+   waterEvery.value=['60','120','180'].includes(String(interval))?String(interval):'120';
+  }else{waterStart.value='08:00';waterEnd.value='20:00';waterEvery.value='120'}
+  waterToggle.dispatchEvent(new Event('change'));
   for(const [type,,frequency] of definitions){
    const c=controls[type],v=settings[type]||{};
    c.toggle.checked=!!v.enabled;
@@ -2260,6 +2290,15 @@ main{padding:10px 12px 40px}
  }
  saveButton.onclick=()=>{
   const p=activeProfile();if(!p||!window.AndroidBackup?.setPersonalReminder)return message('Rappels disponibles sur Android');
+  const first=minutes(waterStart.value),last=minutes(waterEnd.value),step=Number(waterEvery.value);
+  if(waterToggle.checked&&(first<0||last<0||first>last||![60,120,180].includes(step)))return message('Vérifie la plage horaire pour boire de l’eau');
+  const schedule=[];
+  if(waterToggle.checked)for(let t=first;t<=last;t+=step)schedule.push(t);
+  if(schedule.length>waterSlots)return message('Réduis la plage horaire des rappels d’eau');
+  for(let i=0;i<waterSlots;i++){
+   const t=schedule[i]??480;
+   AndroidBackup.setPersonalReminder(p.id,p.name,'water'+i,i<schedule.length,Math.floor(t/60),t%60,2);
+  }
   for(const [type] of definitions){
    const c=controls[type],time=c.time.value.split(':').map(Number);
    if(time.length!==2||!Number.isInteger(time[0])||!Number.isInteger(time[1]))return message('Vérifie les horaires');
