@@ -1,0 +1,126 @@
+<style>
+#personal-reminder-card .reminder-row{border-top:1px solid #36546b;padding:12px 0}
+#personal-reminder-card .reminder-main{display:flex;justify-content:space-between;align-items:center;gap:12px}
+#personal-reminder-card .reminder-main label{font-size:14px;color:#e3f7ff;flex:1}
+#personal-reminder-card .reminder-main input[type=checkbox]{margin:0;width:22px;height:22px;accent-color:#7be1cd;flex-shrink:0}
+#personal-reminder-card .reminder-schedule{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding-top:9px}
+#personal-reminder-card .reminder-schedule input,#personal-reminder-card .reminder-schedule select{min-width:0;width:auto;padding:9px;margin:0;font-size:13px}
+#personal-reminder-card .reminder-schedule select{max-width:150px}
+#personal-reminder-card .reminder-schedule small{color:#afcadb}
+#personal-reminder-card .reminder-schedule[hidden]{display:none}
+#personal-reminder-card .reminder-profile{color:#a6eddf;font-size:12px}
+#personal-reminder-card .reminder-disclaimer{font-size:11px;line-height:1.5;color:#a6bdcd}
+#visual-profile-picker .profile-portrait-add .profile-portrait-circle{border-style:dashed;color:#9cf1d9;font-size:29px}
+#unified-add-received{display:none!important}
+</style>
+<script>
+(function(){
+ const section=$('profiles');
+ if(!section)return;
+ const legacy=typeof reminderCard!=='undefined'?reminderCard:null;
+ const avatar=typeof avatarCard!=='undefined'?avatarCard:null;
+ const picker=$('profile-picker')?.closest('.card');
+ const edit=$('save-profile')?.closest('.card');
+ const drive=$('drive-state')?.closest('.card');
+ const about=typeof aboutCard!=='undefined'?aboutCard:null;
+ if(legacy){legacy.hidden=true;legacy.style.display='none'}
+ const card=document.createElement('div');card.className='card';card.id='personal-reminder-card';
+ const heading=document.createElement('h3');heading.textContent='🔔 Rappels personnalisés';
+ const selected=document.createElement('p');selected.className='reminder-profile';selected.id='reminder-profile-title';
+ const intro=document.createElement('p');intro.className='notice';
+ intro.textContent='Active les notifications souhaitées pour chaque personne. Les rappels sont enregistrés sur ce téléphone.';
+ card.append(heading,selected,intro);
+ const definitions=[
+  ['meals','📝 Journal alimentaire','quotidien','20:00'],
+  ['photos','📷 Photos des repas','quotidien','20:30'],
+  ['breakfast','🥐 Petit-déjeuner','quotidien','08:00'],
+  ['lunch','🍽️ Déjeuner','quotidien','13:00'],
+  ['dinner','🌙 Dîner','quotidien','20:00'],
+  ['weight','⚖️ Pesée','hebdomadaire','09:00'],
+  ['injection','💉 Injection (si prescrite)','hebdomadaire','19:00']
+ ];
+ const controls={};
+ for(const [type,label,frequency,defaultTime] of definitions){
+  const row=document.createElement('div');row.className='reminder-row';
+  const main=document.createElement('div');main.className='reminder-main';
+  const text=document.createElement('label');text.textContent=label;
+  const toggle=document.createElement('input');toggle.type='checkbox';toggle.setAttribute('aria-label','Activer le rappel '+label);
+  main.append(text,toggle);
+  const schedule=document.createElement('div');schedule.className='reminder-schedule';
+  const explanation=document.createElement('small');explanation.textContent=frequency==='quotidien'?'Chaque jour':'Chaque semaine';
+  const time=document.createElement('input');time.type='time';time.value=defaultTime;time.setAttribute('aria-label','Heure de '+label);
+  schedule.append(explanation);
+  let day=null;
+  if(frequency==='hebdomadaire'){
+   day=document.createElement('select');day.setAttribute('aria-label','Jour de '+label);
+   for(const [value,dayName] of [['2','Lundi'],['3','Mardi'],['4','Mercredi'],['5','Jeudi'],['6','Vendredi'],['7','Samedi'],['1','Dimanche']]){
+    const o=document.createElement('option');o.value=value;o.textContent=dayName;day.append(o);
+   }
+   schedule.append(day);
+  }
+  schedule.append(time);row.append(main,schedule);card.append(row);
+  toggle.onchange=()=>{schedule.hidden=!toggle.checked};
+  controls[type]={toggle,time,day,defaultTime};
+ }
+ const disclaimer=document.createElement('p');disclaimer.className='reminder-disclaimer';
+ disclaimer.textContent='Les rappels d’injection sont facultatifs et ne constituent pas une consigne médicale. Respecte uniquement la prescription et vérifie l’horaire avec ton professionnel de santé. Android peut décaler certaines notifications ; elles ne garantissent pas une alerte à la minute.';
+ const saveButton=document.createElement('button');saveButton.className='primary';saveButton.textContent='Enregistrer les rappels';
+ card.append(disclaimer,saveButton);
+ function activeProfile(){return (data.profiles||[]).find(p=>p.id===data.active)||null}
+ function loadPersonalReminders(){
+  const p=activeProfile();
+  selected.textContent=p?'Rappels pour '+p.name:'Sélectionne un profil personnel';
+  saveButton.disabled=!p;
+  let settings={};
+  if(p)try{settings=JSON.parse(window.AndroidBackup?.personalReminderSettings?.(p.id)||'{}')}catch(e){}
+  for(const [type,,frequency] of definitions){
+   const c=controls[type],v=settings[type]||{};
+   c.toggle.checked=!!v.enabled;
+   const fallback=c.defaultTime.split(':');
+   c.time.value=String(v.hour??Number(fallback[0])).padStart(2,'0')+':'+String(v.minute??Number(fallback[1])).padStart(2,'0');
+   if(c.day)c.day.value=String(v.weekday||2);
+   c.toggle.dispatchEvent(new Event('change'));
+  }
+ }
+ saveButton.onclick=()=>{
+  const p=activeProfile();if(!p||!window.AndroidBackup?.setPersonalReminder)return message('Rappels disponibles sur Android');
+  for(const [type] of definitions){
+   const c=controls[type],time=c.time.value.split(':').map(Number);
+   if(time.length!==2||!Number.isInteger(time[0])||!Number.isInteger(time[1]))return message('Vérifie les horaires');
+   AndroidBackup.setPersonalReminder(p.id,p.name,type,c.toggle.checked,time[0],time[1],Number(c.day?.value||2));
+  }
+  message('Rappels de '+p.name+' enregistrés ✓');
+ };
+ if(edit)edit.insertAdjacentElement('afterend',card);
+ else section.append(card);
+ // Personal identity and daily reminders come before technical settings.
+ const order=[picker,avatar,edit,card,drive,about,legacy];
+ for(const item of order){if(item&&section.contains(item))section.append(item)}
+ const originalPicker=document.getElementById('profile-picker');
+ originalPicker?.addEventListener('change',loadPersonalReminders);
+ const olderRender=render;
+ render=function(){olderRender();if(!section.hidden)loadPersonalReminders()};
+ loadPersonalReminders();
+
+ // A single circular plus button shares the portrait strip and opens the
+ // existing received-profile invitation workflow. No second row is consumed.
+ const bar=$('visual-profile-picker');
+ const oldAdd=$('unified-add-received');
+ if(bar&&oldAdd){
+  const button=document.createElement('button');button.type='button';
+  button.className='profile-portrait-choice profile-portrait-add';
+  button.id='portrait-add-shared';button.setAttribute('aria-label','Ajouter un profil partagé');
+  const circle=document.createElement('span');circle.className='profile-portrait-circle';circle.textContent='+';
+  const text=document.createElement('span');text.className='profile-portrait-name';text.textContent='Ajouter';
+  const kind=document.createElement('span');kind.className='profile-portrait-kind';kind.textContent='Partagé';
+  button.append(circle,text,kind);
+  button.onclick=()=>oldAdd.click();
+  const mount=()=>{
+   if(bar.lastElementChild!==button)bar.append(button);
+  };
+  const observer=new MutationObserver(mount);
+  observer.observe(bar,{childList:true});
+  mount();
+ }
+})();
+</script>
