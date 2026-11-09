@@ -1,0 +1,160 @@
+name: Construire Mon Evolution IMC 1.6.29 (correctif profils partages)
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'android/release-trigger-v1.6.29.txt'
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Préparer les sources 1.6.29 à partir de 1.6.5
+        run: |
+          set -euo pipefail
+          rm -rf android/source-1.6.6 android/source-1.6.7 android/source-1.6.8 android/source-1.6.9 android/source-1.6.10 android/source-1.6.11 android/source-1.6.12 android/source-1.6.13 android/source-1.6.14 android/source-1.6.15 android/source-1.6.16 android/source-1.6.17 android/source-1.6.18 android/source-1.6.19 android/source-1.6.20 android/source-1.6.21 android/source-1.6.22 android/source-1.6.23 android/source-1.6.24 android/source-1.6.25 android/source-1.6.26 android/source-1.6.27 android/source-1.6.28 android/source-1.6.29
+          cp -R android/source-1.6.5 android/source-1.6.6
+          python3 android/patches/auto-invite-v1.6.6.py
+          cp -R android/source-1.6.6 android/source-1.6.7
+          python3 android/patches/encrypt-share-v1.6.7.py
+          cp -R android/source-1.6.7 android/source-1.6.8
+          python3 android/patches/pin-six-digits-v1.6.8.py
+          python3 android/patches/received-summary-v1.6.8.py
+          cp -R android/source-1.6.8 android/source-1.6.9
+          python3 android/patches/friends-overview-v1.6.9.py
+          cp -R android/source-1.6.9 android/source-1.6.10
+          python3 android/patches/camera-and-drive-v1.6.10.py
+          cp -R android/source-1.6.10 android/source-1.6.11
+          python3 android/patches/samsung-camera-v1.6.11.py
+          cp -R android/source-1.6.11 android/source-1.6.12
+          python3 android/patches/meal-photo-width-v1.6.12.py
+          cp -R android/source-1.6.12 android/source-1.6.13
+          python3 android/patches/meal-photo-size-v1.6.13.py
+          cp -R android/source-1.6.13 android/source-1.6.14
+          python3 android/patches/meal-photo-preview-v1.6.14.py
+          cp -R android/source-1.6.14 android/source-1.6.15
+          python3 android/patches/high-quality-camera-v1.6.15.py
+          cp -R android/source-1.6.15 android/source-1.6.16
+          python3 android/patches/received-tab-navigation-v1.6.16.py
+          cp -R android/source-1.6.16 android/source-1.6.17
+          python3 android/patches/friend-meal-calendar-v1.6.17.py
+          cp -R android/source-1.6.17 android/source-1.6.18
+          python3 android/patches/remove-received-from-list-v1.6.18.py
+          cp -R android/source-1.6.18 android/source-1.6.19
+          python3 android/patches/profile-avatar-switcher-v1.6.19.py
+          cp -R android/source-1.6.19 android/source-1.6.20
+          python3 android/patches/advanced-weight-graphs-v1.6.20.py
+          cp -R android/source-1.6.20 android/source-1.6.21
+          python3 android/patches/compact-profile-actions-v1.6.21.py
+          cp -R android/source-1.6.21 android/source-1.6.22
+          python3 android/patches/move-share-to-shared-v1.6.22.py
+          cp -R android/source-1.6.22 android/source-1.6.23
+          python3 android/patches/auto-sync-friends-on-start-v1.6.23.py
+          cp -R android/source-1.6.23 android/source-1.6.24
+          python3 android/patches/compact-summary-v1.6.24.py
+          cp -R android/source-1.6.24 android/source-1.6.25
+          python3 android/patches/bottom-pdf-exports-v1.6.25.py
+          cp -R android/source-1.6.25 android/source-1.6.26
+          python3 android/patches/inline-meal-camera-v1.6.26.py
+          cp -R android/source-1.6.26 android/source-1.6.27
+          python3 android/patches/reports-in-summary-v1.6.27.py
+          cp -R android/source-1.6.27 android/source-1.6.28
+          python3 android/patches/collapse-manual-shared-import-v1.6.28.py
+          cp -R android/source-1.6.28 android/source-1.6.29
+          python3 android/patches/startup-status-and-updates-v1.6.29.py
+          grep -q 'PHOTO_CAMERA' android/source-1.6.29/app/src/main/java/fr/monevolution/app/MainActivity.java
+          grep -q 'height:210px' android/source-1.6.29/app/src/main/assets/index.html
+          grep -q 'friend-view-active' android/source-1.6.29/app/src/main/assets/index.html
+          grep -q 'has-friend-meals' android/source-1.6.29/app/src/main/assets/index.html
+          grep -q 'Retirer ce partage' android/source-1.6.29/app/src/main/assets/index.html
+          grep -q 'renderFriendMealCalendar' android/source-1.6.29/app/src/main/assets/index.html
+          grep -q 'CameraPhotoProvider' android/source-1.6.29/app/src/main/AndroidManifest.xml
+          grep -q '1000f' android/source-1.6.29/app/src/main/java/fr/monevolution/app/MainActivity.java
+          grep -q 'sharedSyncNeedsPassword' android/source-1.6.29/app/src/main/assets/index.html
+          grep -q 'Mes amis' android/source-1.6.29/app/src/main/assets/index.html
+          grep -q 'refreshFriendsOverview' android/source-1.6.29/app/src/main/java/fr/monevolution/app/MainActivity.java
+          grep -q 'profile-portrait-choice' android/source-1.6.29/app/src/main/assets/index.html
+          grep -q 'receivedAvatar' android/source-1.6.29/app/src/main/java/fr/monevolution/app/MainActivity.java
+          grep -q 'profile-tools-toggle' android/source-1.6.29/app/src/main/assets/index.html
+          grep -q 'Options Google Drive' android/source-1.6.29/app/src/main/assets/index.html
+          grep -q 'outgoing-share-wrapper' android/source-1.6.29/app/src/main/assets/index.html
+          grep -q 'outgoing-advanced' android/source-1.6.29/app/src/main/assets/index.html
+          grep -q 'syncReceivedOnLaunch' android/source-1.6.29/app/src/main/assets/index.html
+          grep -q 'refreshFriendsOverview' android/source-1.6.29/app/src/main/assets/index.html
+          grep -q 'brand-hello' android/source-1.6.29/app/src/main/assets/index.html
+          grep -q 'header-greeting' android/source-1.6.29/app/src/main/assets/index.html
+          grep -q 'export-details' android/source-1.6.29/app/src/main/assets/index.html
+          grep -q 'bottomExport' android/source-1.6.29/app/src/main/assets/index.html
+          grep -q 'meal-header-row' android/source-1.6.29/app/src/main/assets/index.html
+          grep -q 'meal-camera-icon' android/source-1.6.29/app/src/main/assets/index.html
+          grep -q 'summary-pdf-reports' android/source-1.6.29/app/src/main/assets/index.html
+          grep -q 'summary-report-month' android/source-1.6.29/app/src/main/assets/index.html
+          grep -q 'shared-manual-import' android/source-1.6.29/app/src/main/assets/index.html
+          grep -q 'friendsOverviewSyncFinished' android/source-1.6.29/app/src/main/java/fr/monevolution/app/MainActivity.java
+          grep -q 'last-friends-sync-v1' android/source-1.6.29/app/src/main/assets/index.html
+          grep -q 'last-release-check-v1' android/source-1.6.29/app/src/main/assets/index.html
+          grep -q 'versionCode 45' android/source-1.6.29/app/build.gradle
+          grep -q 'advanced-weight-panel' android/source-1.6.29/app/src/main/assets/index.html
+          grep -q 'loadComparisonProfile' android/source-1.6.29/app/src/main/java/fr/monevolution/app/MainActivity.java
+          grep -q 'onFriendChartView' android/source-1.6.29/app/src/main/assets/index.html
+          grep -Fq 'AES/GCM/NoPadding' android/source-1.6.29/app/src/main/java/fr/monevolution/app/MainActivity.java
+      - name: Tests de non-régression (données et partage)
+        run: |
+          set -euo pipefail
+          sed 's/source-1.6.4/source-1.6.29/g;s/1\.6\.4/1.6.29/g;s/versionCode 20/versionCode 45/g;s/loadSharedPublic?\./loadSharedPublicPassword?./g' android/tests/validate-1.6.4.py > /tmp/validate-1.6.29.py
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('/tmp/validate-1.6.29.py')
+          s=p.read_text()
+          s=s.replace('assert "window.AndroidBackup.openShared()" in html', 'assert "openSharedPassword" in html')
+          p.write_text(s)
+          PY
+          python3 /tmp/validate-1.6.29.py
+          grep -q 'PBKDF2WithHmacSHA256' android/source-1.6.29/app/src/main/java/fr/monevolution/app/MainActivity.java
+          grep -q 'mon-evolution-chiffre' android/source-1.6.29/app/src/main/java/fr/monevolution/app/MainActivity.java
+      - name: Installer SDK Android
+        run: |
+          set -euo pipefail
+          sdkmanager_bin="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager -print -quit)"
+          echo "$(dirname "$sdkmanager_bin")" >> "$GITHUB_PATH"
+          "$sdkmanager_bin" --install "platforms;android-35" "build-tools;35.0.0"
+      - name: Compiler l'application
+        working-directory: android/source-1.6.29
+        run: gradle --no-daemon :app:assembleRelease
+      - name: Signer l'APK avec la clé existante
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          test -n "$KEYSTORE_B64" && test -n "$KEYSTORE_PASS" && test -n "$KEY_PASS" && test -n "$KEY_ALIAS"
+          printf '%s' "$KEYSTORE_B64" | base64 -d > /tmp/mon-evolution.jks
+          mkdir -p downloads
+          "$ANDROID_HOME/build-tools/35.0.0/zipalign" -p -f 4 \
+            android/source-1.6.29/app/build/outputs/apk/release/app-release-unsigned.apk \
+            /tmp/mon-evolution-aligned.apk
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign \
+            --ks /tmp/mon-evolution.jks --ks-key-alias "$KEY_ALIAS" \
+            --ks-pass env:KEYSTORE_PASS --key-pass env:KEY_PASS \
+            --out downloads/Mon_Evolution_IMC_v1.6.29.apk /tmp/mon-evolution-aligned.apk
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose downloads/Mon_Evolution_IMC_v1.6.29.apk
+          rm -f /tmp/mon-evolution.jks
+      - name: Publier la version 1.6.29
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release create v1.6.29 downloads/Mon_Evolution_IMC_v1.6.29.apk \
+            --title "Mon Évolution IMC 1.6.29 — correction des profils partagés" \
+            --notes "Contrôle automatique de mise à jour GitHub au lancement et synchronisation des amis avec statuts précis (en cours, terminée, erreur ou partiel) et dates/heures des tentatives. Résumés et portraits conservés hors ligne. Les invitations directes restent le parcours principal. Bilans PDF regroupés dans Résumé. Les six boutons photo restent des icônes en ligne près des titres des repas. Les téléchargements PDF restent en bas des pages Résumé et Repas, dans deux volets repliables. Résumé compact, synchronisation et fonctionnalités précédentes conservés. Synchronisation automatique des amis conservée. Rafraîchissement en arrière-plan, en conservant les anciennes données si Drive inaccessible. Interface et partage de la version précédente conservés. Gestion du profil et sauvegarde privée inchangées. Graphiques avancés et fonctionnalités précédentes conservés. Calendrier partagé et navigation en lecture seule conservés. Correction caméra Samsung conservée. Correctif Drive 1.6.10 conservé. Liste des amis conservée. Code de partage à dix caractères et chiffrement AES-256-GCM conservés. Lecture des anciens partages conservée. Lien inchangé et données privées préservées. Profils personnels, suivi, sauvegardes et partage en lecture seule conservés. Installer par-dessus la 1.6.9."
