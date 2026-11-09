@@ -124,6 +124,9 @@ jobs:
             echo 'Refus de publier : fichier potentiellement sensible.' >&2
             exit 1
           fi
+          # Le projet de base contient des caches Gradle déjà compilés : ne publier que les sources.
+          rm -rf android/source-1.6.31/.gradle android/source-1.6.31/app/build
+          printf '/.gradle/\n/app/build/\n/local.properties\n*.jks\n*.keystore\n' > android/source-1.6.31/.gitignore
           cat > android/source-1.6.31/README.md <<'EOF'
           # Mon Évolution IMC — sources Android v1.6.31
 
@@ -141,11 +144,12 @@ jobs:
           fichiers `local.properties`. La signature des APK officiels est gérée
           par les secrets de GitHub Actions, hors de ce dossier.
           EOF
-          git add -f android/source-1.6.31
+          git add -A android/source-1.6.31
+          git add -f android/source-1.6.31/.gitignore
           echo "Fichiers ajoutés :"
           git diff --cached --name-only | tee /tmp/source-files.txt
           test "$(wc -l < /tmp/source-files.txt)" -ge 8
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Publier les sources Android complètes v1.6.31"
+          git commit -m "Nettoyer et publier uniquement les sources Android v1.6.31"
           git push origin HEAD:main
