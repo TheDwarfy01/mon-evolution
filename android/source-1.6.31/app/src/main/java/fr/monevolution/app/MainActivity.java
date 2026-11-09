@@ -751,6 +751,28 @@ public class MainActivity extends Activity {
         @JavascriptInterface public boolean isLinked() {
             return getPreferences(MODE_PRIVATE).contains(BACKUP_URI);
         }
+        // Android Storage Access Framework : l’utilisateur choisit librement un fournisseur
+        // installé (Drive, Dropbox, OneDrive, stockage local ou NAS exposé par Android).
+        @JavascriptInterface public String backupProviderLabel() {
+            String stored=getPreferences(MODE_PRIVATE).getString(BACKUP_URI,null);
+            if(stored==null)return "";
+            try {
+                Uri uri=Uri.parse(stored);
+                android.content.pm.PackageManager pm=getPackageManager();
+                android.content.pm.ProviderInfo info=pm.resolveContentProvider(uri.getAuthority(),0);
+                if(info!=null){
+                    CharSequence label=info.loadLabel(pm);
+                    if(label!=null && label.length()>0)return label.toString();
+                }
+                String authority=uri.getAuthority();
+                if(authority==null)return "Stockage Android";
+                if(authority.contains("drive"))return "Google Drive";
+                if(authority.contains("dropbox"))return "Dropbox";
+                if(authority.contains("onedrive")||authority.contains("skydrive"))return "OneDrive";
+                if(authority.contains("documents"))return "Stockage Android";
+                return "Fournisseur de fichiers";
+            }catch(Exception ignored){return "Stockage Android";}
+        }
         @JavascriptInterface public String backupStatus() {
             SharedPreferences prefs = getPreferences(MODE_PRIVATE);
             return (prefs.contains(BACKUP_URI) ? "1" : "0") + "|" + prefs.getLong(BACKUP_TIME, 0);
