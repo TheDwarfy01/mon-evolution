@@ -1763,6 +1763,7 @@ if(initialUnified.startsWith('received:'))selectUnified(initialUnified);
 </script>
 
 <style>
+.profile-tools-corner > .profile-tools-toggle{position:absolute;top:13px;right:16px;width:36px;height:36px;padding:4px;display:flex;justify-content:center;align-items:center;font-size:21px;border-radius:11px}.profile-tools-corner > .profile-tools-body{margin-top:14px}
 .profile-tools-toggle{display:flex;justify-content:space-between;align-items:center;text-align:left;width:100%;font-weight:650;padding:14px 16px}
 .profile-tools-toggle .chevron{transition:transform .16s ease}
 .profile-tools-toggle[aria-expanded="true"] .chevron{transform:rotate(180deg)}
@@ -1811,7 +1812,18 @@ if(initialUnified.startsWith('received:'))selectUnified(initialUnified);
  for(const id of ['delete-profile','delete-drive-profile']){
   const element=$(id);if(element)danger.append(element);
  }
- profileMenu.body.append(danger);profileCard.append(profileMenu.shell);
+ profileMenu.body.append(danger);
+ profileCard.style.position='relative';
+ const profileTitle=profileCard.querySelector('h3');
+ if(profileTitle)profileTitle.style.paddingRight='47px';
+ profileMenu.shell.classList.add('profile-tools-corner');
+ const profileToggle=profileMenu.shell.querySelector('.profile-tools-toggle');
+ if(profileToggle){
+  profileToggle.textContent='⚙';
+  profileToggle.title='Gestion du profil';
+  profileToggle.setAttribute('aria-label','Gestion du profil');
+ }
+ profileCard.append(profileMenu.shell);
  const driveState=$('drive-state');
  const driveCard=driveState?.closest('.card');
  if(!driveCard)return;
