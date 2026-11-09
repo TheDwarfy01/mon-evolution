@@ -676,7 +676,7 @@ public class MainActivity extends Activity {
             SharedPreferences p=getSharedPreferences("reminders",MODE_PRIVATE);
             JSONObject result=new JSONObject();
             try {
-                for(String type:new String[]{"meals","photos","breakfast","lunch","dinner","weight","injection"}){
+                for(String type:new String[]{"meals","photos","breakfast","lunch","dinner","weight","injection","water0","water1","water2","water3","water4","water5","water6","water7","water8","water9","water10","water11","water12","water13","water14","water15","water16","water17","water18","water19","water20","water21","water22","water23"}){
                     String prefix="v2_"+id+"|"+type;
                     JSONObject item=new JSONObject();
                     item.put("enabled",p.getBoolean(prefix+"_enabled",false));
