@@ -1,0 +1,1 @@
+v1.6.28 : importation manuelle de liens de partage masquée dans un menu avancé. Invitation automatique inchangée.
