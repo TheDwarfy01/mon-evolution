@@ -1,0 +1,1 @@
+v1.6.27 : bilans PDF poids et repas regroupés en bas de Résumé avec choix du mois, icônes photo repas conservées.
