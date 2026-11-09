@@ -270,6 +270,14 @@ public class MainActivity extends Activity {
             if (id == null || !id.matches("[a-zA-Z0-9_-]{1,75}")) return false;
             return getPreferences(MODE_PRIVATE).getBoolean("share_photos_" + id, false);
         }
+        @JavascriptInterface public boolean shareAvatarEnabled(String id) {
+            if (id == null || !id.matches("[a-zA-Z0-9_-]{1,75}")) return false;
+            return getPreferences(MODE_PRIVATE).getBoolean("share_avatar_" + id, true);
+        }
+        @JavascriptInterface public void setShareAvatar(String id, boolean enabled) {
+            if (id == null || !id.matches("[a-zA-Z0-9_-]{1,75}")) return;
+            getPreferences(MODE_PRIVATE).edit().putBoolean("share_avatar_" + id, enabled).apply();
+        }
         @JavascriptInterface public void setSharePhotos(String id, boolean enabled) {
             if (id == null || !id.matches("[a-zA-Z0-9_-]{1,75}")) return;
             getPreferences(MODE_PRIVATE).edit().putBoolean("share_photos_" + id, enabled).apply();
@@ -1124,7 +1132,8 @@ public class MainActivity extends Activity {
         profile.put("entries",entries);
         // Include only this profile's chosen portrait, never any other profile.
         String avatar=input.optString("avatar","");
-        if(avatar.startsWith("data:image/jpeg;base64,") && avatar.length()<250000)
+        if(getPreferences(MODE_PRIVATE).getBoolean("share_avatar_"+id,true)
+            && avatar.startsWith("data:image/jpeg;base64,") && avatar.length()<250000)
             profile.put("avatar",avatar);
         // Whitelist: no other profiles or backup private metadata.
         JSONObject filteredMeals=new JSONObject();
