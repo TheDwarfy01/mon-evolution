@@ -2388,6 +2388,35 @@ main{padding:10px 12px 40px}
  }
 })();
 </script><style>
+#about-info-trigger{flex:0 0 auto;width:23px;height:23px;border-radius:50%;border:1px solid #8bb9c8;background:transparent;color:#d3ecf6;font-size:15px;font-weight:700;padding:0;line-height:1;display:grid;place-items:center;margin-left:auto}
+#about-info-dialog{max-width:min(94vw,450px);max-height:82dvh;overflow-y:auto;padding:16px;border-radius:18px}
+#about-info-dialog .card{margin:0;border:0;padding:10px;background:none}
+#about-info-dialog .about-close{display:block;margin-left:auto;background:transparent;color:#d5edf7;border:0;font-size:24px;padding:0 5px}
+</style>
+<script>
+(function(){
+ // Déplacer les informations existantes : ne rien dupliquer ni casser les contrôles GitHub.
+ const row=document.getElementById('friends-release-status-row');
+ const version=document.getElementById('release-auto-check-status');
+ if(!row||!version||typeof aboutCard==='undefined')return;
+ const trigger=document.createElement('button');
+ trigger.id='about-info-trigger';trigger.type='button';trigger.textContent='i';
+ trigger.title='À propos de Mon Évolution IMC';
+ trigger.setAttribute('aria-label','À propos de Mon Évolution IMC');
+ const dialog=document.createElement('dialog');dialog.id='about-info-dialog';
+ dialog.setAttribute('aria-label','À propos de Mon Évolution IMC');
+ const close=document.createElement('button');close.className='about-close';
+ close.type='button';close.textContent='×';close.setAttribute('aria-label','Fermer');
+ close.onclick=()=>dialog.close();
+ dialog.append(close);
+ dialog.append(aboutCard);
+ document.body.append(dialog);
+ row.insertBefore(trigger,version);
+ trigger.onclick=()=>dialog.showModal();
+ dialog.addEventListener('click',event=>{if(event.target===dialog)dialog.close()});
+})();
+</script>
+<style>
 /* Badge de progression compact à droite du poids actuel. */
 #home .weight-and-rank{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0}
 #home .weight-and-rank .weight{min-width:0;white-space:nowrap}
