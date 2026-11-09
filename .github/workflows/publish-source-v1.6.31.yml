@@ -1,0 +1,151 @@
+name: Publier les sources Android v1.6.31
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'android/source-publication-trigger-v1.6.31.txt'
+permissions:
+  contents: write
+jobs:
+  publish-source:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Préparer les sources 1.6.31 à partir de 1.6.5
+        run: |
+          set -euo pipefail
+          rm -rf android/source-1.6.6 android/source-1.6.7 android/source-1.6.8 android/source-1.6.9 android/source-1.6.10 android/source-1.6.11 android/source-1.6.12 android/source-1.6.13 android/source-1.6.14 android/source-1.6.15 android/source-1.6.16 android/source-1.6.17 android/source-1.6.18 android/source-1.6.19 android/source-1.6.20 android/source-1.6.21 android/source-1.6.22 android/source-1.6.23 android/source-1.6.24 android/source-1.6.25 android/source-1.6.26 android/source-1.6.27 android/source-1.6.28 android/source-1.6.29 android/source-1.6.30 android/source-1.6.31
+          cp -R android/source-1.6.5 android/source-1.6.6
+          python3 android/patches/auto-invite-v1.6.6.py
+          cp -R android/source-1.6.6 android/source-1.6.7
+          python3 android/patches/encrypt-share-v1.6.7.py
+          cp -R android/source-1.6.7 android/source-1.6.8
+          python3 android/patches/pin-six-digits-v1.6.8.py
+          python3 android/patches/received-summary-v1.6.8.py
+          cp -R android/source-1.6.8 android/source-1.6.9
+          python3 android/patches/friends-overview-v1.6.9.py
+          cp -R android/source-1.6.9 android/source-1.6.10
+          python3 android/patches/camera-and-drive-v1.6.10.py
+          cp -R android/source-1.6.10 android/source-1.6.11
+          python3 android/patches/samsung-camera-v1.6.11.py
+          cp -R android/source-1.6.11 android/source-1.6.12
+          python3 android/patches/meal-photo-width-v1.6.12.py
+          cp -R android/source-1.6.12 android/source-1.6.13
+          python3 android/patches/meal-photo-size-v1.6.13.py
+          cp -R android/source-1.6.13 android/source-1.6.14
+          python3 android/patches/meal-photo-preview-v1.6.14.py
+          cp -R android/source-1.6.14 android/source-1.6.15
+          python3 android/patches/high-quality-camera-v1.6.15.py
+          cp -R android/source-1.6.15 android/source-1.6.16
+          python3 android/patches/received-tab-navigation-v1.6.16.py
+          cp -R android/source-1.6.16 android/source-1.6.17
+          python3 android/patches/friend-meal-calendar-v1.6.17.py
+          cp -R android/source-1.6.17 android/source-1.6.18
+          python3 android/patches/remove-received-from-list-v1.6.18.py
+          cp -R android/source-1.6.18 android/source-1.6.19
+          python3 android/patches/profile-avatar-switcher-v1.6.19.py
+          cp -R android/source-1.6.19 android/source-1.6.20
+          python3 android/patches/advanced-weight-graphs-v1.6.20.py
+          cp -R android/source-1.6.20 android/source-1.6.21
+          python3 android/patches/compact-profile-actions-v1.6.21.py
+          cp -R android/source-1.6.21 android/source-1.6.22
+          python3 android/patches/move-share-to-shared-v1.6.22.py
+          cp -R android/source-1.6.22 android/source-1.6.23
+          python3 android/patches/auto-sync-friends-on-start-v1.6.23.py
+          cp -R android/source-1.6.23 android/source-1.6.24
+          python3 android/patches/compact-summary-v1.6.24.py
+          cp -R android/source-1.6.24 android/source-1.6.25
+          python3 android/patches/bottom-pdf-exports-v1.6.25.py
+          cp -R android/source-1.6.25 android/source-1.6.26
+          python3 android/patches/inline-meal-camera-v1.6.26.py
+          cp -R android/source-1.6.26 android/source-1.6.27
+          python3 android/patches/reports-in-summary-v1.6.27.py
+          cp -R android/source-1.6.27 android/source-1.6.28
+          python3 android/patches/collapse-manual-shared-import-v1.6.28.py
+          cp -R android/source-1.6.28 android/source-1.6.29
+          python3 android/patches/startup-status-and-updates-v1.6.29.py
+          cp -R android/source-1.6.29 android/source-1.6.30
+          python3 android/patches/personal-reminders-v1.6.30.py
+          cp -R android/source-1.6.30 android/source-1.6.31
+          python3 android/patches/plus-personal-or-shared-v1.6.31.py
+          grep -q 'PHOTO_CAMERA' android/source-1.6.31/app/src/main/java/fr/monevolution/app/MainActivity.java
+          grep -q 'height:210px' android/source-1.6.31/app/src/main/assets/index.html
+          grep -q 'friend-view-active' android/source-1.6.31/app/src/main/assets/index.html
+          grep -q 'has-friend-meals' android/source-1.6.31/app/src/main/assets/index.html
+          grep -q 'Retirer ce partage' android/source-1.6.31/app/src/main/assets/index.html
+          grep -q 'renderFriendMealCalendar' android/source-1.6.31/app/src/main/assets/index.html
+          grep -q 'CameraPhotoProvider' android/source-1.6.31/app/src/main/AndroidManifest.xml
+          grep -q '1000f' android/source-1.6.31/app/src/main/java/fr/monevolution/app/MainActivity.java
+          grep -q 'sharedSyncNeedsPassword' android/source-1.6.31/app/src/main/assets/index.html
+          grep -q 'Mes amis' android/source-1.6.31/app/src/main/assets/index.html
+          grep -q 'refreshFriendsOverview' android/source-1.6.31/app/src/main/java/fr/monevolution/app/MainActivity.java
+          grep -q 'profile-portrait-choice' android/source-1.6.31/app/src/main/assets/index.html
+          grep -q 'receivedAvatar' android/source-1.6.31/app/src/main/java/fr/monevolution/app/MainActivity.java
+          grep -q 'profile-tools-toggle' android/source-1.6.31/app/src/main/assets/index.html
+          grep -q 'Options Google Drive' android/source-1.6.31/app/src/main/assets/index.html
+          grep -q 'outgoing-share-wrapper' android/source-1.6.31/app/src/main/assets/index.html
+          grep -q 'outgoing-advanced' android/source-1.6.31/app/src/main/assets/index.html
+          grep -q 'friendsOverviewSyncFinished' android/source-1.6.31/app/src/main/assets/index.html
+          grep -q 'refreshFriendsOverview' android/source-1.6.31/app/src/main/assets/index.html
+          grep -q 'brand-hello' android/source-1.6.31/app/src/main/assets/index.html
+          grep -q 'header-greeting' android/source-1.6.31/app/src/main/assets/index.html
+          grep -q 'export-details' android/source-1.6.31/app/src/main/assets/index.html
+          grep -q 'bottomExport' android/source-1.6.31/app/src/main/assets/index.html
+          grep -q 'meal-header-row' android/source-1.6.31/app/src/main/assets/index.html
+          grep -q 'meal-camera-icon' android/source-1.6.31/app/src/main/assets/index.html
+          grep -q 'summary-pdf-reports' android/source-1.6.31/app/src/main/assets/index.html
+          grep -q 'summary-report-month' android/source-1.6.31/app/src/main/assets/index.html
+          grep -q 'shared-manual-import' android/source-1.6.31/app/src/main/assets/index.html
+          grep -q 'friendsOverviewSyncFinished' android/source-1.6.31/app/src/main/java/fr/monevolution/app/MainActivity.java
+          grep -q 'last-friends-sync-v1' android/source-1.6.31/app/src/main/assets/index.html
+          grep -q 'last-release-check-v1' android/source-1.6.31/app/src/main/assets/index.html
+          grep -q 'personal-reminder-card' android/source-1.6.31/app/src/main/assets/index.html
+          grep -q 'portrait-add-shared' android/source-1.6.31/app/src/main/assets/index.html
+          grep -q 'setPersonalReminder' android/source-1.6.31/app/src/main/java/fr/monevolution/app/MainActivity.java
+          grep -q 'configurePersonal' android/source-1.6.31/app/src/main/java/fr/monevolution/app/ReminderReceiver.java
+          grep -q 'add-profile-chooser' android/source-1.6.31/app/src/main/assets/index.html
+          grep -q 'versionCode 47' android/source-1.6.31/app/build.gradle
+          grep -q 'advanced-weight-panel' android/source-1.6.31/app/src/main/assets/index.html
+          grep -q 'loadComparisonProfile' android/source-1.6.31/app/src/main/java/fr/monevolution/app/MainActivity.java
+          grep -q 'onFriendChartView' android/source-1.6.31/app/src/main/assets/index.html
+          grep -Fq 'AES/GCM/NoPadding' android/source-1.6.31/app/src/main/java/fr/monevolution/app/MainActivity.java
+      - name: Vérifier et publier uniquement les sources complètes 1.6.31
+        run: |
+          set -euo pipefail
+          test -f android/source-1.6.31/settings.gradle
+          test -f android/source-1.6.31/app/build.gradle
+          test -f android/source-1.6.31/app/src/main/AndroidManifest.xml
+          test -f android/source-1.6.31/app/src/main/java/fr/monevolution/app/MainActivity.java
+          test -f android/source-1.6.31/app/src/main/java/fr/monevolution/app/ReminderReceiver.java
+          test -f android/source-1.6.31/app/src/main/assets/index.html
+          if find android/source-1.6.31 -type f \( -name '*.jks' -o -name '*.keystore' -o -name '*.pem' -o -name 'local.properties' \) | grep -q .; then
+            echo 'Refus de publier : fichier potentiellement sensible.' >&2
+            exit 1
+          fi
+          cat > android/source-1.6.31/README.md <<'EOF'
+          # Mon Évolution IMC — sources Android v1.6.31
+
+          Ce dossier contient **l'intégralité des sources Android v1.6.31**,
+          reconstruites à partir de `android/source-1.6.5` et des correctifs successifs
+          dans `android/patches/`. Elles correspondent à l'APK publié sous
+          [v1.6.31](https://github.com/TheDwarfy01/mon-evolution/releases/tag/v1.6.31).
+
+          Point de départ conseillé pour toutes les nouvelles modifications :
+          `android/source-1.6.31/`. Ce dossier peut être ouvert directement
+          comme projet Android (Gradle). Pour compiler, utiliser JDK 17 et un
+          environnement Android SDK avec la plateforme Android 35.
+
+          Ne pas publier de clés de signature, mots de passe, profils privés ou
+          fichiers `local.properties`. La signature des APK officiels est gérée
+          par les secrets de GitHub Actions, hors de ce dossier.
+          EOF
+          git add -f android/source-1.6.31
+          echo "Fichiers ajoutés :"
+          git diff --cached --name-only | tee /tmp/source-files.txt
+          test "$(wc -l < /tmp/source-files.txt)" -ge 8
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Publier les sources Android complètes v1.6.31"
+          git push origin HEAD:main
