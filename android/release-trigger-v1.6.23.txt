@@ -1,0 +1,1 @@
+Mon Evolution IMC 1.6.23 : actualisation automatique des profils partagés et de leurs portraits au lancement.
