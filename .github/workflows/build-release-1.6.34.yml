@@ -39,6 +39,8 @@ jobs:
           assert 'waterSlots=24' in source
           assert 'id="avatar-choose"' in source
           assert 'Choisir une photo</button>' not in source
+          assert 'profile-save-icon' in source
+          assert 'profile-tools-corner' in source
           source=source.replace('1.6.31','1.6.34')
           html.write_text(source)
           PY
@@ -84,4 +86,4 @@ jobs:
           set -euo pipefail
           gh release create v1.6.34 downloads/Mon_Evolution_IMC_v1.6.34.apk \
             --title "Mon Évolution IMC 1.6.34 — hydratation et photo compacte" \
-            --notes "Ajout des rappels d’eau par profil, avec horaires de début et de fin et fréquence réglable (1, 2 ou 3 heures). Les notifications sont planifiées sur Android et restent facultatives. Remplacement des deux grands boutons photo par des icônes en haut à droite de la fiche. Toutes les améliorations v1.6.33, le partage chiffré, les sauvegardes, le suivi des poids et les rappels existants sont préservés. Installer sans désinstaller la version précédente."
+            --notes "Ajout des rappels d’eau par profil, avec horaires de début et de fin et fréquence réglable (1, 2 ou 3 heures). Les notifications sont planifiées sur Android et restent facultatives. Remplacement des deux grands boutons photo par des icônes en haut à droite de la fiche. Les actions Gestion du profil et Enregistrer sont aussi regroupées sous deux petites icônes en haut à droite du cadre Modifier le profil. Toutes les améliorations v1.6.33, le partage chiffré, les sauvegardes, le suivi des poids et les rappels existants sont préservés. Installer sans désinstaller la version précédente."
