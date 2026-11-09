@@ -6,7 +6,7 @@
 .checkline{display:flex;align-items:center;gap:9px;margin:12px 0;color:#dcecf5}.checkline input{width:19px;height:19px;margin:0;accent-color:#7de3cf}
 body.needs-setup header,body.needs-setup main{display:none}#setup-screen{display:none;min-height:100dvh;padding:30px 20px;background:linear-gradient(160deg,#102f46,#081522)}body.needs-setup #setup-screen{display:flex;align-items:center;justify-content:center}.setup-inner{width:min(100%,440px);text-align:center}.setup-logo{font-size:65px;color:#76decc}.setup-inner h1{font-size:28px;margin:14px 0}.setup-inner h2{margin-top:40px}.setup-inner p{color:#bfd3df;line-height:1.6}.setup-inner button{width:100%;margin:10px 0}.setup-inner small{display:block;color:#9cb7c9;margin:24px 0}body.needs-setup dialog{z-index:10}
 </style></head><body class="needs-setup">
-<div id="setup-screen" role="region" aria-label="Première utilisation"><div class="setup-inner"><div class="setup-logo">✦</div><h1>Mon Évolution IMC</h1><p>Votre suivi du poids et des repas, en toute simplicité.</p><h2>Bienvenue !</h2><p>Comment souhaitez-vous commencer ?</p><button class="primary" id="setup-create" type="button">＋ Créer mon profil</button><button class="secondary" id="setup-restore" type="button">☁ Restaurer une sauvegarde Google Drive</button>
+<div id="setup-screen" role="region" aria-label="Première utilisation"><div class="setup-inner"><div class="setup-logo">✦</div><h1>Mon Évolution IMC</h1><p>Votre suivi du poids et des repas, en toute simplicité.</p><h2>Bienvenue !</h2><p>Comment souhaitez-vous commencer ?</p><button class="primary" id="setup-create" type="button">＋ Créer mon profil</button><button class="secondary" id="setup-restore" type="button">☁ Restaurer une sauvegarde (Drive, Dropbox, OneDrive…)</button>
 <button class="secondary" id="setup-received" type="button">♧ Consulter un profil partagé</button><small>Aucune donnée personnelle n’est préchargée.</small></div></div>
 <header><div class="upper">TON PARCOURS, À TON RYTHME</div><div class="brand-hello"><h1>Mon Évolution ✦</h1><span class="header-greeting">Bonjour 👋</span></div>
 <div class="profile-global" style="margin-top:16px">
@@ -20,7 +20,7 @@ body.needs-setup header,body.needs-setup main{display:none}#setup-screen{display
 <section id="history" hidden><h2>Historique</h2><div class="card" id="entries"></div><button class="primary" style="margin-top:16px" id="add2">＋ Ajouter une pesée</button></section>
 <section id="meals" hidden><h2>Journal alimentaire</h2><p class="muted">Choisis un jour pour noter les repas du profil actif.</p><div class="card"><div class="calendar-head"><button id="previous-month" aria-label="Mois précédent">‹</button><h3 id="meal-month" style="margin:0"></h3><button id="next-month" aria-label="Mois suivant">›</button></div><div id="meal-calendar" class="calendar-grid"></div></div><div class="card"><h3 id="meal-day-title">Repas du jour</h3><div id="meal-inputs"></div><div class="meal-actions"><button class="primary" id="save-meals">Enregistrer les repas du jour</button><button class="secondary" id="clear-meals">Effacer les repas du jour</button></div></div><div class="card"><h3>Compte rendu mensuel</h3><p class="notice">Télécharge le détail des repas du mois affiché au format PDF.</p><button class="primary" id="export-meals-pdf">↓ Télécharger le PDF du mois</button></div></section>
 <section id="profiles" hidden><h2>Mes profils</h2><p class="muted">Choisis un profil pour consulter ses mesures.</p><div class="card"><label class="field">Profil actif<select id="profile-picker"></select></label><button class="secondary" id="new-profile">＋ Créer un profil</button></div><div class="card"><h3>Modifier le profil</h3><label class="field">Prénom<input id="edit-name"></label><div class="two"><label class="field">Taille (cm)<input id="edit-height" type="number" min="80" max="250"></label><label class="field">Objectif (kg)<input id="edit-goal" type="number" min="25" max="400" step=".1"></label></div><button class="primary" id="save-profile">Enregistrer</button><button class="secondary" style="margin-top:12px;width:100%" id="export-weights">Exporter les pesées (CSV)</button><button class="secondary" style="margin-top:10px;width:100%" id="export-profile">Exporter ce profil (JSON privé)</button><button class="secondary" style="margin-top:12px;width:100%" id="delete-profile">Supprimer le profil local</button><button class="secondary" style="margin-top:10px;width:100%" id="delete-drive-profile">Supprimer ce profil de la sauvegarde Drive</button></div>
-<div class="card"><h3>Google Drive — sauvegardes</h3><p class="notice" id="drive-state">Aucun fichier de sauvegarde relié.</p><p class="notice">La première fois, choisis Google Drive comme destination. Les modifications suivantes seront enregistrées automatiquement dans ce fichier. Google Drive synchronisera les changements lorsque le téléphone sera connecté.</p><button class="primary" id="backup">☁ Relier / enregistrer sur Drive</button><button class="secondary" style="width:100%;margin-top:12px" id="backup-relink">↗ Relier une sauvegarde déjà présente sur Drive</button><button class="secondary" style="width:100%;margin-top:12px" id="restore">↥ Charger une sauvegarde</button><button class="secondary" style="width:100%;margin-top:12px" id="disconnect">Déconnecter la sauvegarde</button><p class="notice">Pour supprimer un profil uniquement sur Drive, utilise le bouton situé dans Modifier le profil. L'application demandera une double confirmation.</p><p class="notice">Le chargement remplace les profils présents après confirmation. Une même sauvegarde ouverte sur plusieurs téléphones ne se fusionne pas automatiquement : le dernier enregistrement peut remplacer l'autre.</p></div></section>
+<div class="card"><h3>☁ Sauvegarde et synchronisation</h3><p class="notice" id="drive-state">Aucun fichier de sauvegarde relié.</p><p class="notice">Choisis où conserver ton fichier : Google Drive, OneDrive, Dropbox, stockage local ou autre fournisseur accessible depuis le sélecteur de fichiers Android. Installe et connecte l’application du fournisseur si elle n’apparaît pas. Le suivi automatique nécessite un accès durable en lecture et écriture au fichier ; sinon seule la sauvegarde manuelle est disponible.</p><button class="primary" id="backup">☁ Choisir un emplacement de sauvegarde</button><button class="secondary" style="width:100%;margin-top:12px" id="backup-relink">↗ Relier une sauvegarde existante (tout fournisseur)</button><button class="secondary" style="width:100%;margin-top:12px" id="restore">↥ Charger une sauvegarde</button><button class="secondary" style="width:100%;margin-top:12px" id="disconnect">Déconnecter la sauvegarde</button><p class="notice">Pour supprimer un profil uniquement sur Drive, utilise le bouton situé dans Modifier le profil. L'application demandera une double confirmation.</p><p class="notice">Le chargement remplace les profils présents après confirmation. Une même sauvegarde ouverte sur plusieurs téléphones ne se fusionne pas automatiquement : le dernier enregistrement peut remplacer l'autre.</p></div></section>
 </main>
 <dialog id="measure-dialog"><form id="measure-form"><h2>Nouvelle pesée</h2><label class="field">Poids (kg)<input id="weight-input" type="number" min="25" max="400" step=".1" required></label><label class="field">Date<input id="date-input" type="date" required></label><label class="field">Note<input id="note-input" maxlength="120" placeholder="Facultatif"></label><div class="two" style="margin-top:20px"><button class="secondary" type="button" id="cancel-measure">Annuler</button><button class="primary">Enregistrer</button></div></form></dialog>
 <dialog id="edit-weight-dialog"><form id="edit-weight-form"><h2>Corriger une pesée</h2><label class="field">Poids (kg)<input id="edit-weight-input" type="number" min="25" max="400" step=".1" required></label><label class="field">Date<input id="edit-weight-date" type="date" required></label><label class="field">Note<input id="edit-weight-note" maxlength="120"></label><div class="two" style="margin-top:20px"><button class="secondary" type="button" id="cancel-edit-weight">Annuler</button><button class="primary">Enregistrer</button></div></form></dialog>
@@ -137,24 +137,25 @@ function refreshDriveState() {
   const linked = !!(window.AndroidBackup && AndroidBackup.isLinked());
   const status=window.AndroidBackup?.backupStatus?.()||'0|0';
   const time=Number(status.split('|')[1]);
+  const provider=window.AndroidBackup?.backupProviderLabel?.()||'Stockage Android';
   document.getElementById('drive-state').textContent = linked
-    ? '✓ Sauvegarde automatique reliée'+(time?' · Dernier enregistrement : '+new Date(time).toLocaleString('fr-FR'):'')
-    : 'Aucun fichier relié. Choisis Google Drive à la première sauvegarde.';
+    ? '✓ Sauvegarde reliée · '+provider+(time?' · Dernier enregistrement : '+new Date(time).toLocaleString('fr-FR'):'')
+    : 'Aucun fichier relié. Choisis un stockage compatible dans le sélecteur Android.';
   document.getElementById('disconnect').style.display = linked ? 'block' : 'none';
   document.getElementById('backup-relink').style.display = linked ? 'none' : 'block';
   document.getElementById('delete-drive-profile').disabled=!linked;
   document.getElementById('backup').textContent = linked
-    ? '↻ Mettre à jour la sauvegarde Drive'
-    : '☁ Créer une sauvegarde (une seule fois)';
+    ? '↻ Enregistrer dans le stockage choisi'
+    : '☁ Choisir où enregistrer (une seule fois)';
 }
 document.getElementById('backup').onclick = () => {
   if (!window.AndroidBackup) return message('Cette option nécessite l’application Android');
-  if (AndroidBackup.isLinked()) message('Mise à jour du fichier Drive existant…');
-  else if (!confirm('Un fichier mon-evolution-profils.json existe-t-il déjà sur Drive ? Si oui, annule et utilise « Relier une sauvegarde déjà présente » pour éviter un doublon.')) return;
+  if (AndroidBackup.isLinked()) message('Mise à jour du fichier de sauvegarde existant…');
+  else if (!confirm('As-tu déjà un fichier mon-evolution-profils.json sur ton stockage ? Si oui, annule et choisis « Relier une sauvegarde existante » pour éviter un doublon.')) return;
   AndroidBackup.save(backupPayload());
 };
 document.getElementById('backup-relink').onclick = () => {
-  if (!window.AndroidBackup?.linkExistingBackup) return message('Liaison Drive indisponible');
+  if (!window.AndroidBackup?.linkExistingBackup) return message('Liaison de stockage indisponible');
   if (!confirm('Choisir la sauvegarde existante à réutiliser ? Le fichier ne sera pas modifié immédiatement. Les prochaines modifications synchronisées pourront remplacer son contenu.')) return;
   AndroidBackup.linkExistingBackup();
 };
@@ -1864,7 +1865,7 @@ if(initialUnified.startsWith('received:'))selectUnified(initialUnified);
  const driveState=$('drive-state');
  const driveCard=driveState?.closest('.card');
  if(!driveCard)return;
- const driveMenu=makeMenu('Options Google Drive','Gérer la sauvegarde, restaurer ou déconnecter le fichier relié.');
+ const driveMenu=makeMenu('Options de sauvegarde','Gérer la sauvegarde, restaurer ou déconnecter le fichier relié, quel que soit le stockage choisi.');
  for(const id of ['backup','backup-relink','restore','disconnect']){
   const element=$(id);if(element)driveMenu.body.append(element);
  }
