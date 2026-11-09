@@ -1,1 +1,3 @@
 v1.6.29 : synchronisation amis horodatée et contrôle automatique des mises à jour GitHub au lancement.
+
+Reconstruction après correction des contrôles de non-régression.
