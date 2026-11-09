@@ -1,1 +1,78 @@
-<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="Mon Évolution IMC : application Android de suivi du poids et journal alimentaire."><meta name="theme-color" content="#081629"><title>Accueil | Mon Évolution IMC</title><link rel="icon" href="logo.png" type="image/png"><link rel="stylesheet" href="style.css"></head><body><header class="container nav"><a class="brand" href="index.html"><img src="logo.png" alt="Icône Mon Évolution IMC"> Mon Évolution IMC</a><nav class="links" aria-label="Navigation"><a href="index.html">Accueil</a><a href="confidentialite.html">Confidentialité</a><a href="conditions.html">Conditions</a></nav></header><main class="container"><section class="hero"><div><div class="eyebrow">Suivi personnel du poids</div><h1>Votre évolution, à votre rythme.</h1><p class="lead">Mon Évolution IMC est une application Android de suivi du poids et de journal alimentaire. Retrouvez vos mesures, vos repas et votre progression dans une interface claire.</p><p><a class="button" href="https://github.com/TheDwarfy01/mon-evolution/releases/tag/v1.6.5">Télécharger Mon Évolution IMC v1.6.5 (page GitHub)</a></p><p><a href="https://github.com/TheDwarfy01/mon-evolution/releases/download/v1.6.5/Mon_Evolution_IMC_v1.6.5.apk">Téléchargement APK direct (alternative)</a></p><p class="note">Conseil pour les téléphones Samsung : si Chrome bloque le téléchargement de l’APK, ouvre la page GitHub Releases dans Firefox ou DuckDuckGo. Les deux ont été testés avec succès sur Samsung.</p><p class="note">Version 1.6.5 : correction du chargement des profils partagés via les liens Google Drive publics, prise en charge des clés de partage et messages d'erreur détaillés. Les invitations et téléchargements Firefox ou DuckDuckGo sont conservés.</p><p><a class="button" href="confidentialite.html">Comment sont protégées les données ?</a></p></div><img src="logo.png" alt="Logo Mon Évolution IMC"></section><div class="cardgrid"><section class="card"><h2>Suivi du poids</h2><p>Pesées datées, objectif, indice de masse corporelle et graphiques d'évolution.</p></section><section class="card"><h2>Journal des repas</h2><p>Un calendrier pour noter les repas et collations, avec export mensuel au format PDF.</p></section><section class="card"><h2>Sauvegarde Drive</h2><p>Une sauvegarde dans un fichier Google Drive choisi par l'utilisateur. L'intégration de la connexion Google est en développement.</p></section><section class="card"><h2>Partage privé</h2><p>Partage d'un profil en lecture seule, avec contrôle des destinataires : fonction en cours de développement.</p></section></div><p class="note">Mon Évolution IMC est un outil de suivi personnel et ne fournit pas de diagnostic ni de conseil médical. Certaines fonctionnalités présentées sont en cours de développement.</p></main><footer><div class="container">© 2026 Mon Évolution IMC · Application indépendante de suivi personnel. <a href="confidentialite.html">Confidentialité</a> <a href="conditions.html">Conditions</a></div></footer></body></html>
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Mon Évolution IMC : suivi du poids, graphiques, repas et photos, rappels, profils partagés chiffrés, sauvegardes Google Drive. Application Android.">
+  <meta name="theme-color" content="#091827">
+  <meta property="og:title" content="Mon Évolution IMC — Votre progression, simplement">
+  <meta property="og:description" content="Votre poids, vos repas et vos objectifs réunis dans une application Android privée.">
+  <title>Mon Évolution IMC — Suivi du poids et des repas sur Android</title>
+  <link rel="icon" href="logo.png" type="image/png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <a class="skip" href="#contenu">Aller au contenu</a>
+  <header class="container site-header">
+    <a class="brand" href="index.html"><img src="logo.png" alt=""> <span>Mon Évolution <b>IMC</b></span></a>
+    <nav class="links" aria-label="Navigation principale">
+      <a href="#fonctionnalites">Fonctionnalités</a>
+      <a href="#installation">Installation</a>
+      <a href="confidentialite.html">Confidentialité</a>
+      <a href="https://github.com/TheDwarfy01/mon-evolution" target="_blank" rel="noopener noreferrer">GitHub</a>
+    </nav>
+  </header>
+
+  <main id="contenu" class="container">
+    <section class="hero">
+      <div class="hero-copy">
+        <div class="eyebrow"><span class="pulse" aria-hidden="true"></span> Application Android · Suivi personnel</div>
+        <h1>Votre évolution.<br><em>À votre rythme.</em></h1>
+        <p class="lead">Suivez votre poids, vos repas et vos objectifs au même endroit. Une interface pensée pour rester claire, avec des profils personnels et des partages en lecture seule.</p>
+        <div class="cta-row">
+          <a class="button" id="download-apk" href="https://github.com/TheDwarfy01/mon-evolution/releases/latest">↓ Télécharger pour Android</a>
+          <a class="button outline" id="download-release" href="https://github.com/TheDwarfy01/mon-evolution/releases/latest">Voir la dernière version</a>
+        </div>
+        <p class="version-status" id="latest-version" aria-live="polite">Dernière version : <a href="https://github.com/TheDwarfy01/mon-evolution/releases/latest">consulter GitHub Releases</a></p>
+        <p class="muted">Installation par APK · Android 7.0 ou version ultérieure · Mise à jour par-dessus l'application existante.</p>
+      </div>
+      <div class="app-preview" aria-label="Présentation de l’application Mon Évolution">
+        <div class="preview-top"><img src="logo.png" alt="Logo Mon Évolution IMC"><span>MON ÉVOLUTION</span><span class="preview-tag">IMC</span></div>
+        <div class="preview-eyebrow">Un aperçu des fonctionnalités</div>
+        <div class="preview-metric"><span>Votre poids</span><strong>Suivez vos progrès</strong><small>Pesées · objectif · IMC</small></div>
+        <div class="preview-progress"><div></div></div>
+        <div class="preview-grid"><div>⌁ <b>Courbes</b><span>Tendances</span></div><div>◷ <b>Repas</b><span>Photos & calendrier</span></div><div>♧ <b>Partages</b><span>Lecture seule</span></div><div>🔔 <b>Rappels</b><span>Personnalisés</span></div></div>
+        <small class="preview-disclaimer">Illustration fonctionnelle, pas une capture réelle de l’application.</small>
+      </div>
+    </section>
+
+    <section class="section-intro" id="fonctionnalites">
+      <span class="eyebrow">Tout au même endroit</span>
+      <h2>Conçu pour votre quotidien</h2>
+      <p class="muted">Des fonctionnalités utiles, sans multiplier les écrans ni les manipulations.</p>
+    </section>
+    <div class="cardgrid">
+      <section class="card"><div class="card-icon">⚖️</div><h3>Poids & objectifs</h3><p>Pesées datées, IMC, progression, statistiques et courbes avancées avec tendances et comparaisons.</p></section>
+      <section class="card"><div class="card-icon">📷</div><h3>Journal alimentaire</h3><p>Calendrier des repas, descriptions et photos avec aperçu agrandi. Retrouvez vos journées d’un coup d’œil.</p></section>
+      <section class="card"><div class="card-icon">♧</div><h3>Profils partagés</h3><p>Invitez un proche par lien, consultez son évolution en lecture seule et actualisez automatiquement ses données au lancement.</p></section>
+      <section class="card"><div class="card-icon">🔒</div><h3>Confidentialité</h3><p>Partage chiffré AES-256-GCM, code transmis séparément et contrôle des accès par Google Drive.</p></section>
+      <section class="card"><div class="card-icon">☁️</div><h3>Sauvegardes Drive</h3><p>Reliez un fichier de sauvegarde Google Drive, restaurez vos données et gérez les sauvegardes depuis l’application.</p></section>
+      <section class="card"><div class="card-icon">🔔</div><h3>Rappels & bilans</h3><p>Rappels personnalisables par profil, pesées, repas, photos et injections si prescrites. Bilans PDF du poids et des repas.</p></section>
+    </div>
+
+    <section class="download-panel" id="installation">
+      <div>
+        <span class="eyebrow">Commencer facilement</span>
+        <h2>Installez Mon Évolution sur Android</h2>
+        <p>L’application est distribuée depuis les publications officielles du projet sur GitHub. Pour la mettre à jour, installez la nouvelle version <strong>sans désinstaller l’ancienne</strong> afin de conserver les données du téléphone.</p>
+        <p class="muted">Sur certains Samsung, si Chrome empêche de télécharger l’APK, ouvrez GitHub Releases avec Firefox ou DuckDuckGo. Android peut demander d’autoriser l’installation depuis le navigateur choisi.</p>
+      </div>
+      <div class="download-actions"><a class="button" id="download-apk-bottom" href="https://github.com/TheDwarfy01/mon-evolution/releases/latest">↓ Télécharger l’application</a><a href="https://github.com/TheDwarfy01/mon-evolution/releases" target="_blank" rel="noopener noreferrer">Consulter toutes les versions</a></div>
+    </section>
+    <p class="disclaimer">Mon Évolution IMC est un outil personnel de suivi et ne remplace ni un avis médical, ni une prescription ou un diagnostic. Les rappels médicaux restent facultatifs.</p>
+  </main>
+  <footer><div class="container footer-row"><span>© 2026 Mon Évolution IMC · Projet indépendant</span><div><a href="confidentialite.html">Confidentialité</a><a href="conditions.html">Conditions</a><a href="https://github.com/TheDwarfy01/mon-evolution">Code & versions</a></div></div></footer>
+
+  <script src="version.js" defer></script>
+</body>
+</html>
