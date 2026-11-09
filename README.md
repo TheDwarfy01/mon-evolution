@@ -26,6 +26,14 @@
 
 Si un navigateur bloque le téléchargement sur Samsung, essayez Firefox ou DuckDuckGo. Android peut demander d'autoriser l'installation depuis le navigateur utilisé.
 
+## Code source Android complet
+
+📂 **[Sources Android v1.6.31 — dossier de référence](android/source-1.6.31/)**
+
+Le dossier `android/source-1.6.31/` contient le projet Gradle Android complet (activité principale, rappels, ressources et interface WebView) **sans fichiers compilés ni clés privées**. Il peut être ouvert directement depuis Android Studio ou utilisé comme base commune par les différentes conversations et contributeurs.
+
+Les correctifs historiques sont conservés dans `android/patches/`, mais **il n'est pas nécessaire de les rejouer** pour travailler sur la v1.6.31. Les nouvelles évolutions peuvent partir de ce dossier versionné.
+
 ## Publication et versions
 
 Les APK signés sont publiés dans **[GitHub Releases](https://github.com/TheDwarfy01/mon-evolution/releases)**. Le site officiel consulte automatiquement l'API GitHub Releases pour présenter la dernière version disponible et son APK officiel. Le bouton « Dernière version » de ce README utilise aussi une URL permanente : aucune référence à un ancien numéro de version.
