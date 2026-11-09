@@ -1,0 +1,1 @@
+Déclenchement publication APK signé v1.6.33, avec suppression des panneaux répétés dans Partagés et corbeille en haut à droite.
