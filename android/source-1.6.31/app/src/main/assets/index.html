@@ -1623,7 +1623,7 @@ if(initialUnified.startsWith('received:'))selectUnified(initialUnified);
   target.append(info);
  }
 function healthReferenceGraph(target,p){
-  const ageOn=date=>p.birthDate&&/^\\d{4}-\\d{2}-\\d{2}$/.test(p.birthDate)?(utc(date)-utc(p.birthDate))/DAY/30.4375:null;
+  const ageOn=date=>p.birthDate&&/^\d{4}-\d{2}-\d{2}$/.test(p.birthDate)?(utc(date)-utc(p.birthDate))/DAY/30.4375:null;
   const age=ageOn(p.rows.at(-1).date);
   const child=age!==null&&age>=0&&age<216;
   const tall=r=>Number(r.heightCm)>=45&&Number(r.heightCm)<=250?Number(r.heightCm):null;
