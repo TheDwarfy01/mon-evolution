@@ -1,0 +1,1 @@
+v1.6.30 : rappels personnalisés par profil, ordre des réglages, bouton plus à droite des portraits.
