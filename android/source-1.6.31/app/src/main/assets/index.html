@@ -1763,6 +1763,7 @@ if(initialUnified.startsWith('received:'))selectUnified(initialUnified);
 </script>
 
 <style>
+.profile-save-icon{position:absolute;top:13px;right:60px;width:36px!important;height:36px;padding:4px!important;border-radius:11px;font-size:19px;line-height:1;display:flex;align-items:center;justify-content:center}
 .profile-tools-corner > .profile-tools-toggle{position:absolute;top:13px;right:16px;width:36px;height:36px;padding:4px;display:flex;justify-content:center;align-items:center;font-size:21px;border-radius:11px}.profile-tools-corner > .profile-tools-body{margin-top:14px}
 .profile-tools-toggle{display:flex;justify-content:space-between;align-items:center;text-align:left;width:100%;font-weight:650;padding:14px 16px}
 .profile-tools-toggle .chevron{transition:transform .16s ease}
@@ -1815,7 +1816,14 @@ if(initialUnified.startsWith('received:'))selectUnified(initialUnified);
  profileMenu.body.append(danger);
  profileCard.style.position='relative';
  const profileTitle=profileCard.querySelector('h3');
- if(profileTitle)profileTitle.style.paddingRight='47px';
+ if(profileTitle)profileTitle.style.paddingRight='95px';
+ const saveProfile=$('save-profile');
+ if(saveProfile){
+  saveProfile.classList.add('profile-save-icon');
+  saveProfile.textContent='💾';
+  saveProfile.title='Enregistrer les modifications du profil';
+  saveProfile.setAttribute('aria-label','Enregistrer les modifications du profil');
+ }
  profileMenu.shell.classList.add('profile-tools-corner');
  const profileToggle=profileMenu.shell.querySelector('.profile-tools-toggle');
  if(profileToggle){
