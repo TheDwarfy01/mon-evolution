@@ -1,0 +1,1 @@
+Déclenchement de la compilation et publication Android v1.6.32 à partir de android/source-1.6.31, avec les améliorations d'interface validées.
