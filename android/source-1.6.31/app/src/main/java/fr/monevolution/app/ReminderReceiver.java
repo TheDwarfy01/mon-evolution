@@ -17,7 +17,7 @@ import java.util.Calendar;
 public class ReminderReceiver extends BroadcastReceiver {
     private static final String CHANNEL = "mon_evolution_reminders";
     private static final String[] TYPES = {"meals","photos","breakfast","lunch","dinner","weight","injection"};
-    private static boolean valid(String t) {for(String s:TYPES)if(s.equals(t))return true;return false;}
+    private static boolean valid(String t) {if(t!=null&&t.matches("water(?:[0-9]|1[0-9]|2[0-3])"))return true;for(String s:TYPES)if(s.equals(t))return true;return false;}
     private static boolean weekly(String t){return "weight".equals(t)||"injection".equals(t);}
     private static String token(String id,String type){return id+"|"+type;}
     private static SharedPreferences prefs(Context c){return c.getSharedPreferences("reminders",Context.MODE_PRIVATE);}
@@ -101,7 +101,8 @@ public class ReminderReceiver extends BroadcastReceiver {
         if(manager==null)return;
         if(Build.VERSION.SDK_INT>=26)manager.createNotificationChannel(new NotificationChannel(CHANNEL,"Rappels Mon Évolution",NotificationManager.IMPORTANCE_DEFAULT));
         String[] labels;
-        switch(type){
+        if(type!=null && type.startsWith("water"))labels=new String[]{"💧 Pause hydratation","Pense à boire un peu d’eau si tu en as envie."};
+        else switch(type){
             case "weight":labels=new String[]{"Jour de pesée","Pense à enregistrer ton poids."};break;
             case "injection":labels=new String[]{"Rappel de ton injection","Vérifie ton traitement prescrit et ton calendrier."};break;
             case "photos":labels=new String[]{"Photos des repas","Pense à ajouter les photos de tes repas."};break;
