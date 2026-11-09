@@ -1149,6 +1149,14 @@ public class MainActivity extends Activity {
         profile.put("name",name);
         profile.put("height",input.getDouble("height"));
         profile.put("goal",input.getDouble("goal"));
+        // Birth date and growth-reference sex are shared only with this
+        // explicitly selected profile, never with other private profiles.
+        String birth=input.optString("birthDate","");
+        String sex=input.optString("sex","");
+        if(birth.matches("\\d{4}-\\d{2}-\\d{2}") && ("male".equals(sex)||"female".equals(sex))){
+            profile.put("birthDate",birth);
+            profile.put("sex",sex);
+        }
         JSONArray entries=input.getJSONArray("entries");
         if(entries.length()==0 || entries.length()>20000) throw new Exception("Pesées manquantes");
         profile.put("entries",entries);
@@ -1493,8 +1501,8 @@ public class MainActivity extends Activity {
         String name=p.getString("name");
         if(name.trim().isEmpty() || name.length()>100)throw new Exception("Nom invalide");
         double height=p.getDouble("height"),goal=p.getDouble("goal");
-        if(!Double.isFinite(height) || height<80 || height>250 ||
-            !Double.isFinite(goal) || goal<25 || goal>400)
+        if(!Double.isFinite(height) || height<45 || height>250 ||
+            !Double.isFinite(goal) || goal<1 || goal>400)
             throw new Exception("Données du profil invalides");
         String avatar=p.optString("avatar","");
         if(!avatar.isEmpty() &&
@@ -1506,7 +1514,7 @@ public class MainActivity extends Activity {
         for(int i=0;i<entries.length();i++){
             JSONObject e=entries.getJSONObject(i);
             double w=e.getDouble("weight");
-            if(!Double.isFinite(w)||w<25||w>400||
+            if(!Double.isFinite(w)||w<1||w>400||
                 !e.getString("date").matches("\\d{4}-\\d{2}-\\d{2}"))
                 throw new Exception("Pesée invalide");
         }
