@@ -457,8 +457,10 @@ aboutCard.insertAdjacentHTML('beforeend','<div style="margin-top:15px;border-top
 const shareCard=document.createElement('div');shareCard.className='card';
 shareCard.innerHTML=`<h3>🔗 Partage en lecture seule</h3>
  <p class="notice">Publie uniquement ce profil : poids, objectif, progression et journal des repas. Le destinataire ne peut rien modifier.</p>
+ <label class="checkline"><input type="checkbox" id="share-avatar"> 🖼️ Partager la photo du profil</label>
+ <p class="notice" id="share-avatar-status" aria-live="polite"></p>
  <label class="checkline"><input type="checkbox" id="share-photos"> Autoriser aussi les photos des repas</label>
- <p class="notice">Les photos de repas sont exclues par défaut. Seule la photo de ce profil est incluse dans le partage chiffré; aucun autre profil n’est envoyé.</p>
+ <p class="notice">Le portrait et les photos des repas se règlent séparément pour ce profil. Les autres profils ne sont jamais inclus.</p>
  <p id="share-state" class="notice"></p>
  <button class="primary" id="create-share">Créer le fichier partagé sur Drive</button><button class="secondary" style="width:100%;margin-top:10px" id="share-relink">↗ Relier un fichier partagé existant</button>
  <div id="share-link-panel" style="display:none;margin-top:15px;border-top:1px solid #38576b;padding-top:15px">
@@ -516,6 +518,9 @@ function shareStatus(){
  $('share-link-copy').disabled=!invitation;
  $('share-link-send').disabled=!invitation;
  $('share-photos').checked=!!window.AndroidBackup?.sharePhotosEnabled?.(id);
+ $('share-avatar').checked=window.AndroidBackup?.shareAvatarEnabled?.(id)!==false;
+ const hasPortrait=typeof profile().avatar==='string' && /^data:image\/jpeg;base64,/.test(profile().avatar) && profile().avatar.length<250000;
+ $('share-avatar-status').textContent=hasPortrait?($('share-avatar').checked?'✓ Portrait présent : inclus à la prochaine synchronisation du partage':'Portrait présent, mais exclu du partage'):'Aucune photo de profil enregistrée : ajoute un portrait dans Profils pour le partager.';
 }
 $('share-open-drive').onclick=()=>window.AndroidBackup?.openDrive?.();
 $('share-link-save').onclick=()=>{
@@ -528,6 +533,13 @@ $('share-link-save').onclick=()=>{
 };
 $('share-link-copy').onclick=()=>window.AndroidBackup?.copyShareLink?.(profile().id);
 $('share-link-send').onclick=()=>window.AndroidBackup?.sendShareLink?.(profile().id);
+$('share-avatar').onchange=()=>{
+ if(!window.AndroidBackup?.setShareAvatar)return message('Option réservée à Android');
+ AndroidBackup.setShareAvatar(profile().id,$('share-avatar').checked);
+ AndroidBackup.autoSave(backupPayload());
+ shareStatus();
+ message($('share-avatar').checked?'Photo de profil autorisée pour le partage':'Photo de profil exclue du partage');
+};
 $('share-photos').onchange=()=>{
  if(!window.AndroidBackup?.setSharePhotos)return message('Option réservée à Android');
  AndroidBackup.setSharePhotos(profile().id,$('share-photos').checked);
@@ -1058,6 +1070,9 @@ if(initialUnified.startsWith('received:'))selectUnified(initialUnified);
     details.textContent='Résumé non synchronisé. Actualise les résumés pour afficher ses mesures.';
    }
    div.append(details);
+   const photoState=document.createElement('p');photoState.className='notice';
+   photoState.textContent=thumb?'✓ Photo de profil reçue':'Photo absente du partage reçu';
+   div.append(photoState);
    const remove=document.createElement('button');
    remove.type='button';
    remove.className='secondary';
