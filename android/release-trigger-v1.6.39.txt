@@ -1,0 +1,1 @@
+Déclencher compilation et publication APK v1.6.39 : choix du stockage de sauvegarde via Android SAF (Google Drive, Dropbox, OneDrive et fournisseurs compatibles).
