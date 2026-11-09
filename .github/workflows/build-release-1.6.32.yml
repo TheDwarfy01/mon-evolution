@@ -1,0 +1,80 @@
+name: Construire et publier Mon Evolution IMC 1.6.32
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'android/release-trigger-v1.6.32.txt'
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Preparer la version 1.6.32 depuis les sources communes 1.6.31
+        run: |
+          set -euo pipefail
+          cp -R android/source-1.6.31 android/source-1.6.32
+          python3 - <<'PY'
+          from pathlib import Path
+          app=Path('android/source-1.6.32/app/build.gradle')
+          gradle=app.read_text()
+          assert "versionCode 47" in gradle and "versionName '1.6.31'" in gradle
+          app.write_text(gradle.replace('versionCode 47','versionCode 48').replace("versionName '1.6.31'","versionName '1.6.32'"))
+          html=Path('android/source-1.6.32/app/src/main/assets/index.html')
+          source=html.read_text()
+          assert 'friends-release-status-row' in source
+          assert 'update-compact-line' in source
+          assert 'Consulter le profil complet' not in source
+          assert "remove.textContent='🗑'" in source
+          source=source.replace('1.6.31','1.6.32')
+          html.write_text(source)
+          PY
+          grep -q 'versionCode 48' android/source-1.6.32/app/build.gradle
+          grep -q 'friendsOverviewSyncFinished' android/source-1.6.32/app/src/main/java/fr/monevolution/app/MainActivity.java
+          grep -q 'PBKDF2WithHmacSHA256' android/source-1.6.32/app/src/main/java/fr/monevolution/app/MainActivity.java
+          grep -Fq 'AES/GCM/NoPadding' android/source-1.6.32/app/src/main/java/fr/monevolution/app/MainActivity.java
+      - name: Installer SDK Android
+        run: |
+          set -euo pipefail
+          sdkmanager_bin="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager -print -quit)"
+          echo "$(dirname "$sdkmanager_bin")" >> "$GITHUB_PATH"
+          "$sdkmanager_bin" --install "platforms;android-35" "build-tools;35.0.0"
+      - name: Compiler l'application
+        working-directory: android/source-1.6.32
+        run: gradle --no-daemon :app:assembleRelease
+      - name: Signer l'APK avec la cle officielle existante
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          test -n "$KEYSTORE_B64" && test -n "$KEYSTORE_PASS" && test -n "$KEY_PASS" && test -n "$KEY_ALIAS"
+          printf '%s' "$KEYSTORE_B64" | base64 -d > /tmp/mon-evolution.jks
+          mkdir -p downloads
+          "$ANDROID_HOME/build-tools/35.0.0/zipalign" -p -f 4 \
+            android/source-1.6.32/app/build/outputs/apk/release/app-release-unsigned.apk \
+            /tmp/mon-evolution-aligned.apk
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign \
+            --ks /tmp/mon-evolution.jks --ks-key-alias "$KEY_ALIAS" \
+            --ks-pass env:KEYSTORE_PASS --key-pass env:KEY_PASS \
+            --out downloads/Mon_Evolution_IMC_v1.6.32.apk /tmp/mon-evolution-aligned.apk
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose downloads/Mon_Evolution_IMC_v1.6.32.apk
+          rm -f /tmp/mon-evolution.jks
+      - name: Publier la version 1.6.32
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release create v1.6.32 downloads/Mon_Evolution_IMC_v1.6.32.apk \
+            --title "Mon Évolution IMC 1.6.32 — interface compacte" \
+            --notes "Interface compacte : états de synchronisation et de version regroupés sur une ligne, vérification des mises à jour par icône, textes raccourcis et suppression du bouton redondant Consulter le profil complet. Retrait d'un partage par icône avec confirmation. Contrôle automatique des versions, données locales, rappels, profils partagés, sauvegarde et autres fonctions conservés. Installer par-dessus la version précédente sans désinstallation."
