@@ -3,3 +3,5 @@ Publication signée v1.6.47 : profils reçus stables en navigation, statuts indi
 Relance après correction du placement des méthodes Java de synchronisation des profils reçus.
 
 Relance : correction compilation Java des états de synchronisation.
+
+Relance compilation avec fonctions de synchronisation désormais disponibles dans MainActivity.
