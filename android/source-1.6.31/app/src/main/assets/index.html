@@ -1680,7 +1680,7 @@ if(initialUnified.startsWith('received:'))selectUnified(initialUnified);
  const days=(a,b)=>(utc(b)-utc(a))/DAY;
  const dateAt=(a,d)=>new Date(utc(a)+d*DAY).toISOString().slice(0,10);
  const colors=['#78e4cf','#f7d77c','#8caeff','#f5a5c4','#ffb47d','#b5e68b','#c9a8ff'];
- let view='weight',period='all',reference=.5,trend=true,projection=true,referenceBand=false,metric='loss',healthReference=false,healthMetric='weight';
+ let view='weight',period='90',reference=.5,trend=true,projection=true,referenceBand=false,metric='loss',healthReference=false,healthMetric='weight',chartOptionsOpen=false,graphPlotSerial=0;
  let sharedMap=new Map(), sharedWanted=new Set(), sharedState='';
  let activeData=null;
  const personalChart=$('chart').querySelector(':scope > .card');
@@ -1701,6 +1701,27 @@ if(initialUnified.startsWith('received:'))selectUnified(initialUnified);
   const box=node('div','advanced-controls');
   for(const item of items)box.append(button(item[0],item[1],item[2]));
   target.append(box);return box;
+ }
+ function stepper(target,label,value,onLess,onMore,lessDisabled=false,moreDisabled=false){
+  const row=node('div','advanced-stepper');
+  row.style.cssText='display:flex;align-items:center;justify-content:space-between;gap:12px;margin:12px 0;flex-wrap:wrap';
+  const title=node('span','',label);title.style.cssText='color:#cde6ef;font-size:13px;font-weight:600';
+  const group=node('div','');group.style.cssText='display:flex;align-items:center;gap:9px';
+  const minus=button('−',false,onLess),plus=button('+',false,onMore);
+  for(const b of [minus,plus]){b.style.cssText='width:42px;height:42px;padding:0;font-size:25px;border-radius:13px;border:1px solid #4b7388;background:#244b5f;color:#e8fff8'}
+  minus.disabled=lessDisabled;plus.disabled=moreDisabled;
+  minus.setAttribute('aria-label','Moins : '+label);plus.setAttribute('aria-label','Plus : '+label);
+  const shown=node('strong','',value);shown.style.cssText='min-width:72px;text-align:center;font-size:14px;color:#e8fefa';
+  group.append(minus,shown,plus);row.append(title,group);target.append(row);return row;
+ }
+ function toggleChartOptions(target){
+  const detail=document.createElement('details');detail.className='advanced-chart-options';
+  detail.open=chartOptionsOpen;
+  const summary=document.createElement('summary');summary.textContent='⚙ Options de la courbe';
+  summary.style.cssText='cursor:pointer;color:#b9dae7;font-size:13px;padding:10px 0;user-select:none';
+  detail.append(summary);
+  detail.addEventListener('toggle',()=>{chartOptionsOpen=detail.open});
+  target.append(detail);return detail;
  }
  function checkbox(label,checked,fn){
   const row=node('label','advanced-check');const input=document.createElement('input');
@@ -1781,6 +1802,8 @@ if(initialUnified.startsWith('received:'))selectUnified(initialUnified);
   const pts=series.flatMap(s=>s.points||[]).filter(p=>Number.isFinite(p.x)&&Number.isFinite(p.y));
   if(!pts.length){target.append(node('p','advanced-help','Pas assez de mesures pour dessiner cette courbe.'));return;}
   let minX=Math.min(...pts.map(p=>p.x)),maxX=Math.max(...pts.map(p=>p.x));
+  if(Number.isFinite(opts.xMin))minX=opts.xMin;
+  if(Number.isFinite(opts.xMax))maxX=opts.xMax;
   let minY=Math.min(...pts.flatMap(p=>Number.isFinite(p.y2)?[p.y,p.y2]:[p.y])),maxY=Math.max(...pts.flatMap(p=>Number.isFinite(p.y2)?[p.y,p.y2]:[p.y]));
   if(opts.zeroY){minY=Math.min(0,minY);maxY=Math.max(0,maxY)}
   if(maxX-minX<1){maxX=minX+1}if(maxY-minY<.1){maxY=minY+1}
@@ -1788,6 +1811,11 @@ if(initialUnified.startsWith('received:'))selectUnified(initialUnified);
   const X=v=>left+(v-minX)/(maxX-minX)*(width-left-right);
   const Y=v=>height-bottom-(v-minY)/(maxY-minY)*(height-top-bottom);
   const root=svg('svg',{viewBox:'0 0 640 290',class:'advanced-graph',role:'img','aria-label':opts.title||'Graphique du poids'},target);
+  const clipId='advanced-graph-clip-'+(++graphPlotSerial);
+  const defs=svg('defs',{},root);
+  const clip=svg('clipPath',{id:clipId},defs);
+  svg('rect',{x:left,y:top,width:width-left-right,height:height-top-bottom},clip);
+  const drawing=svg('g',{'clip-path':'url(#'+clipId+')'},root);
   // Fond de référence : bandes colorées placées sous la grille et sous les mesures.
   if(Array.isArray(opts.yBands)){
    const yClip=v=>Math.max(minY,Math.min(maxY,v));
@@ -1819,13 +1847,13 @@ if(initialUnified.startsWith('received:'))selectUnified(initialUnified);
    if(!pp.length)continue;
    if(s.band){
     const polygon=pp.map(p=>X(p.x)+','+Y(p.y)).join(' ')+' '+pp.slice().reverse().map(p=>X(p.x)+','+Y(p.y2)).join(' ');
-    svg('polygon',{points:polygon,fill:s.color,'fill-opacity':.14,stroke:'none'},root);continue;
+    svg('polygon',{points:polygon,fill:s.color,'fill-opacity':.14,stroke:'none'},drawing);continue;
    }
-   if(pp.length>1)svg('polyline',{points:pp.map(p=>X(p.x)+','+Y(p.y)).join(' '),fill:'none',stroke:s.color||colors[0],'stroke-width':s.thin?2:3,'stroke-dasharray':s.dashed?'8 6':'none','stroke-linecap':'round','stroke-linejoin':'round'},root);
-   if(pp.length===1)svg('circle',{cx:X(pp[0].x),cy:Y(pp[0].y),r:5,fill:s.color||colors[0]},root);
+   if(pp.length>1)svg('polyline',{points:pp.map(p=>X(p.x)+','+Y(p.y)).join(' '),fill:'none',stroke:s.color||colors[0],'stroke-width':s.thin?2:3,'stroke-dasharray':s.dashed?'8 6':'none','stroke-linecap':'round','stroke-linejoin':'round'},drawing);
+   if(pp.length===1)svg('circle',{cx:X(pp[0].x),cy:Y(pp[0].y),r:5,fill:s.color||colors[0]},drawing);
    if(s.notes){
     for(const p of pp.filter(p=>p.note)){
-     const c=svg('circle',{cx:X(p.x),cy:Y(p.y),r:4,fill:'#fff0ac',stroke:'#142f43','stroke-width':1},root);
+     const c=svg('circle',{cx:X(p.x),cy:Y(p.y),r:4,fill:'#fff0ac',stroke:'#142f43','stroke-width':1},drawing);
      svg('title',{},c,String(p.note).slice(0,120));
     }
    }
@@ -1979,8 +2007,16 @@ function healthReferenceGraph(target,p){
  
  function primaryGraph(target,p){
   target.append(sectionTitle('Évolution du poids'));
-  controls(target,[['30 j',period==='30',()=>{period='30';redraw()}],['90 j',period==='90',()=>{period='90';redraw()}],['1 an',period==='365',()=>{period='365';redraw()}],['Tout',period==='all',()=>{period='all';redraw()}]]);
-  controls(target,[['Réel + tendance',trend,()=>{trend=!trend;redraw()}],['Projection',projection,()=>{projection=!projection;redraw()}],['Repères types',referenceBand,()=>{referenceBand=!referenceBand;redraw()}]]);
+  const periods=['30','90','365','all'],labels={'30':'30 jours','90':'90 jours','365':'1 an',all:'Tout'};
+  const index=periods.indexOf(period);
+  stepper(target,'Période · zoom',labels[period]||'90 jours',
+   ()=>{period=periods[Math.min(periods.length-1,index+1)];redraw()},
+   ()=>{period=periods[Math.max(0,index-1)];redraw()},
+   index>=periods.length-1,index<=0);
+  const advanced=toggleChartOptions(target);
+  advanced.append(checkbox('Afficher la tendance',trend,v=>{trend=v;redraw()}));
+  advanced.append(checkbox('Afficher la projection',projection,v=>{projection=v;redraw()}));
+  advanced.append(checkbox('Repères types',referenceBand,v=>{referenceBand=v;redraw()}));
   const rows=rangeRows(p),origin=p.rows[0].date,last=p.rows.at(-1),wEnd=days(origin,last.date);
   const series=[{label:'Poids réel',color:colors[0],notes:true,points:rows.map(r=>({x:days(origin,r.date),y:r.weight,note:r.note}))},
    {label:'Objectif',color:'#f7d77c',dashed:true,thin:true,points:[{x:0,y:p.goal},{x:wEnd,y:p.goal}]}];
@@ -2003,9 +2039,16 @@ function healthReferenceGraph(target,p){
    const horizon=Math.min(365,Math.max(28,(p.goal-last.weight)/sl));
    series.push({label:'Projection (indicative)',color:'#c9a8ff',dashed:true,points:[{x:wEnd,y:last.weight},{x:wEnd+horizon,y:last.weight+sl*horizon}]});
   }
-  graph(target,series,{title:'Poids réel, tendance, objectif, repère et projection'});
-  target.append(node('p','advanced-help','Repères 0,25 à 1 kg/semaine : simples scénarios, pas une norme médicale. Les projections prolongent la tendance passée et ne prédisent pas les résultats futurs.'));
-  controls(target,[...([.25,.5,.75,1].map(value=>['Repère '+fmt1(value),reference===value,()=>{reference=value;redraw()}]))]);
+  const windowSize=period==='all'?null:Number(period);
+  const minWindow=windowSize===null?undefined:Math.max(0,wEnd-windowSize);
+  const maxWindow=windowSize===null?undefined:wEnd+Math.min(21,windowSize/4);
+  graph(target,series,{title:'Poids réel, tendance, objectif, repère et projection',xMin:minWindow,xMax:maxWindow});
+  const choices=[.25,.5,.75,1],referenceIndex=choices.indexOf(reference);
+  stepper(advanced,'Repère (kg/semaine)',fmt1(reference)+' kg/sem.',
+    ()=>{reference=choices[Math.max(0,referenceIndex-1)];redraw()},
+    ()=>{reference=choices[Math.min(choices.length-1,referenceIndex+1)];redraw()},
+    referenceIndex===0,referenceIndex===choices.length-1);
+  advanced.append(node('p','advanced-help','Repères 0,25 à 1 kg/semaine : simples scénarios, pas une norme médicale. Les projections prolongent la tendance passée et ne prédisent pas les résultats futurs.'));
  }
  function progressGraph(target,p){
   target.append(sectionTitle('Progression et évolution hebdomadaire'));
@@ -2097,7 +2140,11 @@ function healthReferenceGraph(target,p){
   if(!target)return;
   target.replaceChildren();
   if(!p){target.append(node('p','advanced-help','Sélectionne un profil puis charge ses mesures pour afficher les graphiques.'));return;}
-  controls(target,[['Poids',view==='weight',()=>{view='weight';redraw()}],['Progression',view==='progress',()=>{view='progress';redraw()}],['Comparaison',view==='compare',()=>{view='compare';redraw()}]]);
+  const views=['weight','progress','compare'],viewLabels={weight:'Poids',progress:'Progression',compare:'Comparaison'};
+  const viewIndex=views.indexOf(view);
+  stepper(target,'Type de graphique',viewLabels[view],
+   ()=>{view=views[(viewIndex+views.length-1)%views.length];redraw()},
+   ()=>{view=views[(viewIndex+1)%views.length];redraw()});
   if(view==='weight'){
    target.append(checkbox('Afficher les références santé',healthReference,checked=>{healthReference=checked;redraw()}));
    if(healthReference){
