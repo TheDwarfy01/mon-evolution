@@ -2588,25 +2588,50 @@ main{padding:10px 12px 40px}
 #home .evolution-rank[data-rank="platinum"]{--rank:#a0e5db}
 #home .evolution-rank[data-rank="diamond"]{--rank:#83d6ff}
 @media(max-width:360px){#home .evolution-rank{min-width:88px;padding:7px 8px;gap:5px}#home .rank-emblem{font-size:23px}#home .rank-info strong{font-size:11px}#home .rank-info small{font-size:8px}}
+/* Médailles de rang distinctes : matières, ornements et éclat propres au rang. */
+#home .evolution-rank{position:relative;overflow:hidden;isolation:isolate;min-width:112px;box-shadow:inset 0 1px 0 rgba(255,255,255,.15),0 4px 12px rgba(0,0,0,.16);transition:border-color .2s ease,background .2s ease,box-shadow .2s ease}
+#home .evolution-rank::before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(112deg,transparent 7%,rgba(255,255,255,.12) 32%,transparent 48%,rgba(255,255,255,.05) 75%,transparent 95%);opacity:.8}
+#home .rank-emblem{position:relative;z-index:1;flex:0 0 39px;width:39px;height:39px;display:grid;place-items:center;border:1px solid rgba(255,255,255,.3);border-radius:50%;background:radial-gradient(circle at 28% 22%,rgba(255,255,255,.45),transparent 42%),linear-gradient(145deg,var(--rank),var(--rank-shadow));box-shadow:inset 0 1px 4px rgba(255,255,255,.33),inset 0 -3px 5px rgba(0,0,0,.18),0 2px 7px rgba(0,0,0,.25)}
+#home .rank-emblem svg{width:28px;height:28px;display:block;filter:drop-shadow(0 1px 1px rgba(0,0,0,.35))}
+#home .rank-info{position:relative;z-index:1}
+#home .rank-info strong{font-size:13px;letter-spacing:.1px;text-shadow:0 1px 2px rgba(0,0,0,.4)}
+#home .rank-info small{font-size:9px;color:#e4edf2}
+#home .evolution-rank[data-rank="iron"]{--rank:#9ca5ad;--rank-shadow:#47545f;background:linear-gradient(128deg,#4d5a66,#1a2e3f)}
+#home .evolution-rank[data-rank="bronze"]{--rank:#e7a46c;--rank-shadow:#794522;background:linear-gradient(128deg,#85502e,#342a29)}
+#home .evolution-rank[data-rank="silver"]{--rank:#edf5ff;--rank-shadow:#7f95ad;background:linear-gradient(128deg,#677e99,#24384b)}
+#home .evolution-rank[data-rank="gold"]{--rank:#ffe18a;--rank-shadow:#ac7726;background:linear-gradient(128deg,#ad7c23,#43351d);box-shadow:inset 0 1px 0 #ffdf9b77,0 0 12px #e9bd5930}
+#home .evolution-rank[data-rank="platinum"]{--rank:#bff7eb;--rank-shadow:#488fa6;background:linear-gradient(128deg,#467c8e,#203c4c);box-shadow:inset 0 1px 0 #d8ffff77,0 0 12px #a0e5db30}
+#home .evolution-rank[data-rank="diamond"]{--rank:#b3edff;--rank-shadow:#3b89d8;background:linear-gradient(128deg,#2c6b9b,#283464);box-shadow:inset 0 1px 0 #eefbff88,0 0 16px #83d6ff66}
+#home .evolution-rank[data-rank="diamond"]::before{background:linear-gradient(110deg,transparent,rgba(255,255,255,.3),transparent 55%,rgba(178,238,255,.18),transparent)}
+@media(max-width:360px){#home .evolution-rank{min-width:94px;padding:7px 6px;gap:5px}#home .rank-emblem{flex-basis:30px;width:30px;height:30px}#home .rank-emblem svg{width:23px;height:23px}#home .rank-info strong{font-size:11px}#home .rank-info small{font-size:8px}}
 </style>
 <script>
 // Six niveaux fondés sur la progression totale vers l'objectif configuré.
 function updateEvolutionRank(progress){
  const levels=[
-  {min:0,key:'iron',name:'Fer',symbol:'⬡'},
-  {min:10,key:'bronze',name:'Bronze',symbol:'⬟'},
-  {min:25,key:'silver',name:'Argent',symbol:'✦'},
-  {min:45,key:'gold',name:'Or',symbol:'★'},
-  {min:65,key:'platinum',name:'Platine',symbol:'✧'},
-  {min:85,key:'diamond',name:'Diamant',symbol:'◆'}
+  {min:0,key:'iron',name:'Fer'},
+  {min:10,key:'bronze',name:'Bronze'},
+  {min:25,key:'silver',name:'Argent'},
+  {min:45,key:'gold',name:'Or'},
+  {min:65,key:'platinum',name:'Platine'},
+  {min:85,key:'diamond',name:'Diamant'}
  ];
+ // SVG fixes, créés localement : un vrai blason différent pour chaque métal.
+ const icons={
+  iron:'<path d="M16 3 27 8v9c0 8-5 12-11 15C10 29 5 25 5 17V8Z" fill="#566574" stroke="#d1dce7" stroke-width="2"/><path d="M16 8v18M10 14h12" stroke="#e3eef8" stroke-width="3" stroke-linecap="round"/>',
+  bronze:'<circle cx="16" cy="16" r="12" fill="#a46136" stroke="#ffd09b" stroke-width="2.2"/><circle cx="16" cy="16" r="8" fill="none" stroke="#ffd4a2" stroke-width="1.5"/><path d="m16 8 2.6 5.3 5.8.8-4.2 4.1 1 5.7-5.2-2.8-5.2 2.8 1-5.7-4.2-4.1 5.8-.8Z" fill="#ffd39c"/>',
+  silver:'<path d="M8 4h16l5 10-13 15L3 14Z" fill="#889fb9" stroke="#f9fbff" stroke-width="2"/><path d="M3 14h26M8 4l8 10 8-10M16 14v15" fill="none" stroke="#f9fbff" stroke-width="1.6"/><path d="m16 9 2 5-2 5-2-5Z" fill="#ffffff"/>',
+  gold:'<path d="M4 11 10 17 16 7l6 10 6-6-2 15H6Z" fill="#f5bc49" stroke="#fff0af" stroke-width="2.2" stroke-linejoin="round"/><path d="M8 22h16M16 13v8" stroke="#fff4bd" stroke-width="2"/><circle cx="16" cy="7" r="2.5" fill="#fff4ba"/>',
+  platinum:'<path d="M16 2 28 9v14L16 30 4 23V9Z" fill="#6daec0" stroke="#edffff" stroke-width="2"/><path d="M16 7 24 16l-8 9-8-9Z" fill="#cbfff6" stroke="#ffffff" stroke-width="1.7"/><path d="M16 7v18M8 16h16" stroke="#4c9ea9" stroke-width="1.5"/>',
+  diamond:'<path d="M9 5h14l8 9-15 16L1 14Z" fill="#5aaef5" stroke="#e7fbff" stroke-width="2.3" stroke-linejoin="round"/><path d="M1 14h30M9 5l7 9 7-9M16 14v16M9 5l-4 9m18-9 4 9" fill="none" stroke="#e4faff" stroke-width="1.5"/><path d="m16 2 1.5 3.5L21 7l-3.5 1.5L16 12l-1.5-3.5L11 7l3.5-1.5Z" fill="#ffffff"/>'
+ };
  const pct=Math.max(0,Math.min(100,Number(progress)||0));
  const level=levels.slice().reverse().find(item=>pct>=item.min)||levels[0];
  const badge=document.getElementById('evolution-rank');
  if(!badge)return;
  badge.dataset.rank=level.key;
  badge.title=level.name+' · '+Math.round(pct)+' % de l’objectif atteint';
- document.getElementById('rank-emblem').textContent=level.symbol;
+ document.getElementById('rank-emblem').innerHTML='<svg viewBox="0 0 32 32" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">'+icons[level.key]+'</svg>';
  document.getElementById('rank-name').textContent=level.name;
  document.getElementById('rank-progress').textContent=Math.round(pct)+' % atteint';
 }
