@@ -50,6 +50,9 @@ public class MainActivity extends Activity {
     private String pendingInvitationResourceKey;
     private boolean appPageReady=false;
     private final ExecutorService io = Executors.newSingleThreadExecutor();
+    // Invalidate outdated background selections whenever a new invitation is loaded.
+    private final java.util.concurrent.atomic.AtomicLong receivedLoadEpoch =
+        new java.util.concurrent.atomic.AtomicLong();
     private static final String PREFS = "drive_backup";
     private static final String BACKUP_URI = "backup_uri";
     private static final String BACKUP_HASH = "backup_hash";
@@ -572,6 +575,104 @@ public class MainActivity extends Activity {
                 }catch(Exception e){js("driveProfileRemoveFailed()");}
             });
         }
+    private boolean isReceivedSaved(String key){
+        if(key==null || !key.matches("[a-f0-9-]{36}"))return false;
+        try{
+            JSONArray list=new JSONArray(getPreferences(MODE_PRIVATE)
+                .getString("received_profiles","[]"));
+            for(int i=0;i<list.length();i++)
+                if(key.equals(list.getJSONObject(i).optString("key")))return true;
+        }catch(Exception ignored){}
+        return false;
+    }
+    private String receivedErrorCode(Exception failure){
+        for(Throwable cur=failure;cur!=null;cur=cur.getCause()){
+            if(cur instanceof javax.crypto.AEADBadTagException)return "password";
+        }
+        String msg=failure==null?"":String.valueOf(failure.getMessage());
+        if(msg.contains("Mot de passe")||msg.contains("password")||msg.contains("Invalid secret"))
+            return "password";
+        if("forbidden".equals(msg))return "access";
+        if("notfound".equals(msg))return "missing";
+        if("network".equals(msg))return "network";
+        if("html".equals(msg))return "preview";
+        if("invalid_json".equals(msg)||msg.contains("Format")||msg.contains("invalide"))
+            return "format";
+        return "error";
+    }
+    private void recordReceivedSync(String key,String code) {
+        if(!isReceivedSaved(key))return;
+        try {
+            SharedPreferences prefs=getPreferences(MODE_PRIVATE);
+            JSONObject saved=new JSONObject(prefs.getString("received_sync_"+key,"{}"));
+            long now=System.currentTimeMillis();
+            saved.put("state",code);
+            saved.put("attemptAt",now);
+            if("ok".equals(code))saved.put("successAt",now);
+            prefs.edit().putString("received_sync_"+key,saved.toString()).apply();
+            js("friendSyncUpdated("+JSONObject.quote(key)+","+JSONObject.quote(code)+")");
+        }catch(Exception ignored){}
+    }
+    @JavascriptInterface public String receivedSyncInfo(String key){
+        if(!isReceivedSaved(key))return "{}";
+        return getPreferences(MODE_PRIVATE).getString("received_sync_"+key,"{}");
+    }
+    @JavascriptInterface public void updateReceivedPassword(String key,String password){
+        if(!isReceivedSaved(key)||password==null||password.length()<6||password.length()>512){
+            js("receivedPasswordUpdateFailed("+JSONObject.quote(key==null?"":key)+
+                ",'invalid')");return;
+        }
+        final String freshPassword=password;
+        io.execute(()->{
+            try{
+                JSONArray list=new JSONArray(getPreferences(MODE_PRIVATE)
+                    .getString("received_profiles","[]"));
+                JSONObject item=null;
+                for(int i=0;i<list.length();i++){
+                    JSONObject value=list.getJSONObject(i);
+                    if(key.equals(value.optString("key"))){item=value;break;}
+                }
+                if(item==null)return; // Removed in the meantime; do not resurrect.
+                String kind=item.getString("kind"),source=item.getString("source");
+                String raw;
+                if("public".equals(kind)){
+                    String fileId=driveFileId(source);
+                    if(fileId==null)throw new Exception("notfound");
+                    raw=new String(fetchPublicProfile(fileId,driveResourceKey(source)),
+                        StandardCharsets.UTF_8);
+                }else if("private".equals(kind))
+                    raw=readSafJson(Uri.parse(source),40_000_000);
+                else throw new Exception("format");
+                // Decrypt and validate *before* storing or replacing the previous password.
+                JSONObject doc=decodeShared(raw,freshPassword);
+                if(!isReceivedSaved(key))return;
+                saveSecret("receive_pass_"+key,freshPassword);
+                synchronized(MainActivity.this){
+                    JSONArray latest=new JSONArray(getPreferences(MODE_PRIVATE)
+                        .getString("received_profiles","[]"));
+                    for(int i=0;i<latest.length();i++){
+                        JSONObject entry=latest.getJSONObject(i);
+                        if(key.equals(entry.optString("key"))){
+                            fillFriendOverview(entry,doc);
+                            getPreferences(MODE_PRIVATE).edit()
+                                .putString("received_profiles",latest.toString()).apply();
+                            break;
+                        }
+                    }
+                }
+                recordReceivedSync(key,"ok");
+                js("receivedPasswordUpdateSucceeded("+JSONObject.quote(key)+")");
+            }catch(Exception e){
+                String code=receivedErrorCode(e);
+                if(isReceivedSaved(key)){
+                    recordReceivedSync(key,code);
+                    js("receivedPasswordUpdateFailed("+JSONObject.quote(key)+","+
+                        JSONObject.quote(code)+")");
+                }
+            }
+        });
+    }
+
     @JavascriptInterface public void refreshFriendsOverview() {
         io.execute(() -> {
             int succeeded=0,failed=0;
@@ -609,10 +710,15 @@ public class MainActivity extends Activity {
                             if(!found)throw new Exception("Share removed");
                         }
                         succeeded++;
+                        recordReceivedSync(id,"ok");
                         js("friendsOverviewUpdated()");
-                    }catch(Exception ignored){
+                    }catch(Exception e){
                         // Preserve previously saved data when offline or not authorized.
                         failed++;
+                        try{
+                            JSONObject failedItem=saved.getJSONObject(i);
+                            recordReceivedSync(failedItem.optString("key"),receivedErrorCode(e));
+                        }catch(Exception ignored){}
                     }
                 }
             }catch(Exception ignored){failed++;}
@@ -651,6 +757,7 @@ public class MainActivity extends Activity {
                         edit.remove("received_selected");
                     edit.remove("receive_pass_"+key);
                     edit.remove("friend_avatar_"+key);
+                    edit.remove("received_sync_"+key);
                     edit.apply();
                     // Never delete the source document or revoke the owner's sharing.
                     return true;
