@@ -1,0 +1,1 @@
+Déclencher tests et compilation APK signée v1.6.52 : 12 px entre perte de poids et badge dans le résumé.
