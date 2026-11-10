@@ -2061,6 +2061,12 @@ public class MainActivity extends Activity {
     }
 
     private void createProgressPdf(Uri uri,String reportJson) throws Exception {
+        try(OutputStream output=getContentResolver().openOutputStream(uri,"wt")){
+            if(output==null)throw new Exception("PDF destination unavailable");
+            createProgressPdf(output,reportJson);
+        }
+    }
+    private void createProgressPdf(OutputStream output,String reportJson) throws Exception {
         JSONObject report=new JSONObject(reportJson);
         JSONArray weights=report.getJSONArray("weights");
         if(weights.length()==0 || weights.length()>12000)throw new Exception("Invalid number of weights");
@@ -2117,14 +2123,17 @@ public class MainActivity extends Activity {
                 y+=17;
             }
             pdf.finishPage(page);
-            try(OutputStream out=getContentResolver().openOutputStream(uri,"wt")){
-                if(out==null)throw new Exception("PDF destination unavailable");
-                pdf.writeTo(out);
-            }
+            pdf.writeTo(output);
         }finally{pdf.close();}
     }
 
     private void createMealsPdf(Uri uri, String reportJson) throws Exception {
+        try(OutputStream output=getContentResolver().openOutputStream(uri,"wt")){
+            if(output==null)throw new Exception("Destination PDF inaccessible");
+            createMealsPdf(output,reportJson);
+        }
+    }
+    private void createMealsPdf(OutputStream output, String reportJson) throws Exception {
         JSONObject report = new JSONObject(reportJson);
         String name = report.optString("name", "Profil");
         String month = report.getString("month");
@@ -2222,10 +2231,7 @@ public class MainActivity extends Activity {
                 }
             }
             if (page != null) document.finishPage(page);
-            try (OutputStream output = getContentResolver().openOutputStream(uri, "wt")) {
-                if (output == null) throw new Exception("Destination PDF inaccessible");
-                document.writeTo(output);
-            }
+            document.writeTo(output);
         } finally {
             document.close();
         }
