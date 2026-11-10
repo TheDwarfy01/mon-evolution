@@ -1223,6 +1223,7 @@ if(initialUnified.startsWith('received:'))selectUnified(initialUnified);
    try{syncInfo=JSON.parse(window.AndroidBackup?.receivedSyncInfo?.(friend.key)||'{}')}catch(e){}
    const states={
     ok:['✓ Synchronisé','Dernière lecture réussie du fichier'],
+    pending:['↻ Synchronisation en cours','Vérification du fichier partagé et du mot de passe…'],
     password:['🔒 Mot de passe incorrect ou modifié','Les anciennes données restent affichées. Mets à jour le code communiqué par le propriétaire.'],
     access:['⚠ Accès Drive refusé','Le propriétaire doit vérifier les permissions Lecteur.'],
     missing:['⚠ Fichier introuvable','Vérifie le lien enregistré avec le propriétaire.'],
@@ -1235,8 +1236,8 @@ if(initialUnified.startsWith('received:'))selectUnified(initialUnified);
    const syncLine=document.createElement('p');
    syncLine.className='notice';
    syncLine.style.cssText='padding:9px 11px;border-radius:9px;background:'+
-    (syncInfo.state==='ok'?'#183e33':'#47352d')+';color:'+
-    (syncInfo.state==='ok'?'#b1f1d1':'#ffe4bf')+';margin:10px 0 6px';
+    (syncInfo.state==='ok'?'#183e33':syncInfo.state==='pending'?'#18384a':'#47352d')+';color:'+
+    (syncInfo.state==='ok'?'#b1f1d1':syncInfo.state==='pending'?'#b2dff2':'#ffe4bf')+';margin:10px 0 6px';
    const at=Number(syncInfo.state==='ok'?syncInfo.successAt:syncInfo.attemptAt);
    const stamp=Number.isFinite(at)&&at>0?' · '+new Date(at).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'';
    syncLine.textContent=state[0]+stamp;
@@ -1244,7 +1245,14 @@ if(initialUnified.startsWith('received:'))selectUnified(initialUnified);
    const syncDetail=document.createElement('p');syncDetail.className='notice';
    syncDetail.textContent=state[1];
    div.append(syncDetail);
-   if(syncInfo.state!=='ok'){
+   const lastSuccess=Number(syncInfo.successAt||0);
+   if(lastSuccess>0 && syncInfo.state!=='ok'){
+    const previous=document.createElement('p');previous.className='notice';
+    previous.textContent='Dernière synchronisation réussie : '+
+     new Date(lastSuccess).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    div.append(previous);
+   }
+   if(syncInfo.state!=='ok'&&syncInfo.state!=='pending'){
     const action=document.createElement('button');action.type='button';
     action.className='secondary';action.style.cssText='width:100%;margin-top:8px';
     action.textContent=syncInfo.state==='password'?'🔑 Mettre à jour le mot de passe':'↻ Vérifier la synchronisation';
@@ -1258,7 +1266,7 @@ if(initialUnified.startsWith('received:'))selectUnified(initialUnified);
       });
      }else{
       message('Vérification du partage de '+friend.name+'…');
-      window.AndroidBackup?.selectReceivedProfile?.(friend.key);
+      window.AndroidBackup?.refreshFriendOverview?.(friend.key);
      }
     };
     div.append(action);
@@ -1300,7 +1308,7 @@ if(initialUnified.startsWith('received:'))selectUnified(initialUnified);
  reload.style.cssText='width:100%;margin-top:10px';
  reload.textContent='↻ Actualiser les résumés des amis';
  reload.onclick=()=>{
-  status.textContent='Actualisation des résumés depuis Google Drive…';
+  status.textContent='↻ Synchronisation des amis en cours…';
   window.AndroidBackup?.refreshFriendsOverview?.();
  };
  card.append(reload);
@@ -1309,8 +1317,9 @@ if(initialUnified.startsWith('received:'))selectUnified(initialUnified);
   // Ne jamais naviguer automatiquement sur une réponse réseau.
   updateReceivedChoices();
   if(key && unifiedCurrent==='received:'+key && !$('shared').hidden){
-   const info=JSON.parse(window.AndroidBackup?.receivedSyncInfo?.(key)||'{}');
-   if(info.state==='password')$('shared-state').textContent='🔒 Mot de passe incorrect ou modifié : utilise « Mettre à jour le mot de passe » sur la fiche du profil.';
+   let info={};try{info=JSON.parse(window.AndroidBackup?.receivedSyncInfo?.(key)||'{}')}catch(e){}
+   if(info.state==='pending')$('shared-state').textContent='↻ Synchronisation en cours…';
+   else if(info.state==='password')$('shared-state').textContent='🔒 Mot de passe incorrect ou modifié : utilise « Mettre à jour le mot de passe » sur la fiche du profil.';
    else if(info.state==='ok')$('shared-state').textContent='✓ Profil synchronisé · '+new Date(info.successAt||Date.now()).toLocaleString('fr-FR');
   }
  };
