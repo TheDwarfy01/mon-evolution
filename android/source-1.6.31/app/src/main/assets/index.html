@@ -465,7 +465,15 @@ shareCard.innerHTML=`<h3>🔗 Partage en lecture seule</h3>
  <p class="notice">Le portrait et les photos des repas se règlent séparément pour ce profil. Les autres profils ne sont jamais inclus.</p>
  <p id="share-state" class="notice"></p>
  <button class="primary" id="create-share">Créer le fichier partagé sur Drive</button>
- <button class="secondary" style="width:100%;margin-top:10px;display:none" id="share-change-password">🔐 Changer le mot de passe du partage</button><button class="secondary" style="width:100%;margin-top:10px" id="share-relink">↗ Relier un fichier partagé existant</button>
+ <div id="share-password-actions" style="display:none;margin-top:12px;padding:14px;border-radius:14px;border:1px solid #345a70;background:#102a3e">
+ <h4 style="margin:0 0 8px">🔐 Mot de passe actuel du partage</h4>
+ <p class="notice" style="margin:0 0 10px">Un seul mot de passe pour ce fichier. Tu peux l’envoyer à un autre proche sans le changer. Il est conservé de manière chiffrée sur ce téléphone.</p>
+ <div class="two">
+  <button class="secondary" type="button" id="share-copy-current-password">📋 Copier le mot de passe actuel</button>
+  <button class="secondary" type="button" id="share-send-current-password">↗ Envoyer le mot de passe actuel</button>
+ </div>
+ <button class="secondary" type="button" style="width:100%;margin-top:10px" id="share-change-password">🔄 Changer le mot de passe</button>
+</div><button class="secondary" style="width:100%;margin-top:10px" id="share-relink">↗ Relier un fichier partagé existant</button>
  <div id="share-link-panel" style="display:none;margin-top:15px;border-top:1px solid #38576b;padding-top:15px">
    <h3>🔗 Envoyer mon profil à un proche</h3>
    <p class="notice">🔒 Fichier chiffré AES-256-GCM. Le lien ne change pas. Un mot de passe aléatoire de 16 caractères est généré automatiquement. Copie-le ou envoie-le séparément du lien de partage.</p>
@@ -511,7 +519,10 @@ function shareStatus(){
  $('stop-share').style.display=linked?'block':'none';
  $('delete-active-share').style.display=linked?'block':'none';
  $('manage-drive-share').style.display=linked?'block':'none';
- $('share-change-password').style.display=linked?'block':'none';
+ $('share-password-actions').style.display=linked?'block':'none';
+ $('share-copy-current-password').disabled=!linked||!window.AndroidBackup?.hasSharePassword?.(id);
+ $('share-send-current-password').disabled=!linked||!window.AndroidBackup?.hasSharePassword?.(id);
+ $('share-change-password').disabled=!linked||!window.AndroidBackup?.hasSharePassword?.(id);
  $('create-share').textContent=linked?'↻ Mettre à jour le partage Drive':'Créer le fichier partagé sur Drive';
  $('share-relink').textContent=linked?'Changer de fichier partagé relié':'↗ Relier un fichier partagé existant';
  $('share-link-panel').style.display=linked?'block':'none';
@@ -565,26 +576,88 @@ $('create-share').onclick=()=>{
  });
  if(linked)message('Actualisation du fichier partagé existant…');
 };
+// Les mots de passe existants ne passent jamais par le JavaScript : accès natif sécurisé.
+$('share-copy-current-password').onclick=()=>{
+ const id=profile().id;
+ if(!window.AndroidBackup?.copyCurrentSharePassword)return message('Copie du mot de passe indisponible.');
+ AndroidBackup.copyCurrentSharePassword(id);
+};
+$('share-send-current-password').onclick=()=>{
+ const id=profile().id;
+ if(!window.AndroidBackup?.sendCurrentSharePassword)return message('Envoi du mot de passe indisponible.');
+ AndroidBackup.sendCurrentSharePassword(id);
+};
+function shareCurrentPasswordUnavailable(){
+ showShareDialog('Mot de passe indisponible',
+  'Le mot de passe actuel ne peut pas être récupéré sur ce téléphone. Vérifie que le fichier est toujours relié à ce profil. Aucune donnée n’a été modifiée.',
+  'Compris');
+}
+// Fenêtre intégrée à Mon Évolution : plus d’en-tête « La page file:// indique ».
+function showShareDialog(title,description,confirmLabel='Continuer',onConfirm=null,options={}){
+ const dialog=document.createElement('dialog');
+ dialog.className='share-confirm-dialog';
+ dialog.style.cssText='box-sizing:border-box;width:min(92vw,490px);max-height:85vh;overflow:auto;background:#102e43;color:#f0fbff;border:1px solid #67a8b6;border-radius:18px;padding:22px;box-shadow:0 16px 45px #000a';
+ const heading=document.createElement('h3');heading.textContent=title;heading.style.cssText='font-size:19px;margin:0 0 12px';
+ const paragraph=document.createElement('p');paragraph.textContent=description;paragraph.style.cssText='white-space:pre-line;line-height:1.55;color:#d7eaf3';
+ dialog.append(heading,paragraph);
+ if(options.password){
+  const label=document.createElement('p');label.textContent='Nouveau mot de passe généré :';label.style.cssText='margin:10px 0 6px;font-weight:600';
+  const display=document.createElement('input');display.type='text';display.readOnly=true;display.value=options.password;
+  display.style.cssText='width:100%;box-sizing:border-box;padding:12px;border-radius:10px;background:#0c2437;color:white;font-size:17px';
+  dialog.append(label,display);
+  const shareButtons=document.createElement('div');shareButtons.style.cssText='display:flex;flex-wrap:wrap;gap:8px;margin:12px 0';
+  const copy=document.createElement('button');copy.type='button';copy.className='secondary';copy.style.width='auto';copy.textContent='📋 Copier';
+  copy.onclick=()=>window.AndroidBackup?.copySharePassword?.(options.password);
+  const send=document.createElement('button');send.type='button';send.className='secondary';send.style.width='auto';send.textContent='↗ Envoyer';
+  send.onclick=()=>window.AndroidBackup?.sendSharePassword?.(options.password);
+  shareButtons.append(copy,send);dialog.append(shareButtons);
+ }
+ let checkbox=null;
+ if(options.acknowledge){
+  const label=document.createElement('label');label.style.cssText='display:flex;align-items:start;gap:10px;margin:14px 0;color:#f0fbff;font-size:14px';
+  checkbox=document.createElement('input');checkbox.type='checkbox';checkbox.style.cssText='width:18px;min-width:18px;height:18px;margin-top:2px';
+  const text=document.createElement('span');text.textContent=options.acknowledge;
+  label.append(checkbox,text);dialog.append(label);
+ }
+ const row=document.createElement('div');row.style.cssText='display:flex;gap:10px;margin-top:20px;flex-wrap:wrap';
+ const cancel=document.createElement('button');cancel.type='button';cancel.className='secondary';cancel.style.cssText='flex:1;min-width:90px';cancel.textContent=onConfirm?'Annuler':'Fermer';
+ const ok=document.createElement('button');ok.type='button';ok.className='primary';ok.style.cssText='flex:1;min-width:120px';ok.textContent=confirmLabel;
+ if(!onConfirm)ok.style.display='none';
+ if(checkbox){ok.disabled=true;checkbox.onchange=()=>{ok.disabled=!checkbox.checked}};
+ cancel.onclick=()=>dialog.close();
+ ok.onclick=()=>{if(checkbox&&!checkbox.checked)return;dialog.close();onConfirm?.()};
+ dialog.addEventListener('close',()=>{dialog.remove()},{once:true});
+ row.append(cancel,ok);dialog.append(row);document.body.append(dialog);dialog.showModal();
+}
 $('share-change-password').onclick=()=>{
  const p=profile();
- if(!window.AndroidBackup?.rotateSharePassword || window.AndroidBackup?.sharedStatus?.(p.id)!=='1'){
-  return message('Un fichier de partage doit être relié pour changer le mot de passe.');
- }
- if(!confirm('⚠️ ATTENTION : changer le mot de passe rendra l’ancien code inutilisable pour lire le fichier partagé actuel. Tous les destinataires devront recevoir le nouveau mot de passe. Les copies déjà téléchargées restent accessibles. Continuer ?'))return;
- askCrypt('Nouveau mot de passe aléatoire du partage',true,next=>{
-  if(next===null)return;
-  if(!confirm('⚠️ DERNIÈRE CONFIRMATION : as-tu bien copié ou envoyé le nouveau mot de passe ? Une fois le fichier mis à jour, l’ancien ne fonctionnera plus. Confirmer le changement ?'))return;
-  message('Chiffrement du fichier existant avec le nouveau mot de passe…');
-  AndroidBackup.rotateSharePassword(p.id,next);
- });
+ if(!window.AndroidBackup?.rotateSharePassword||window.AndroidBackup?.sharedStatus?.(p.id)!=='1')
+  return showShareDialog('Partage non relié','Relie d’abord le fichier du profil pour pouvoir changer son mot de passe.');
+ showShareDialog('⚠️ Changer le mot de passe',
+  'Le fichier partagé sera rechiffré au même emplacement, sans modifier son lien.\n\nL’ancien code ne permettra plus d’ouvrir la version actuelle du fichier : tous les proches autorisés devront recevoir le nouveau.\n\nL’application ne prévient personne automatiquement. Les copies déjà téléchargées resteront accessibles.',
+  'Générer un nouveau mot de passe',()=>{
+    askCrypt('Nouveau mot de passe aléatoire du partage',true,next=>{
+     if(next===null)return;
+     showShareDialog('🔐 Confirmer le changement',
+      'Vérifie que tu as conservé le nouveau mot de passe. Après la mise à jour, l’ancien ne fonctionnera plus et tu devras envoyer ce nouveau code à tes proches.\n\nLe changement ne révoque pas leurs autorisations Drive.',
+      'Confirmer et rechiffrer',()=>{
+       message('Modification du mot de passe du fichier existant…');
+       AndroidBackup.rotateSharePassword(p.id,next);
+      },{password:next,acknowledge:'J’ai copié ou envoyé le nouveau mot de passe et je comprends que mes proches devront le recevoir.'});
+    });
+   });
 };
 function sharePasswordChanged(){
  shareStatus();
- alert('✓ Mot de passe modifié ! Le fichier et son lien sont conservés. Communique le nouveau mot de passe à tous les destinataires autorisés.');
+ showShareDialog('✓ Mot de passe modifié',
+  'Le fichier partagé a été rechiffré et son lien est resté identique. L’ancien mot de passe ne permet plus d’ouvrir le fichier actuel.\n\nUtilise « Copier le mot de passe actuel » ou « Envoyer le mot de passe actuel » pour communiquer le nouveau code. Aucun proche n’a été prévenu automatiquement.',
+  'Fermer');
 }
 function sharePasswordChangeFailed(reason){
  shareStatus();
- alert('Changement de mot de passe non confirmé : '+String(reason||'erreur inconnue')+'\nVérifie l’accès au fichier avant une nouvelle tentative.');
+ showShareDialog('⚠️ Changement non confirmé',
+  String(reason||'Erreur inconnue')+'\n\nVérifie l’accès au fichier avant de réessayer.',
+  'Fermer');
 }
 $('share-relink').onclick=()=>{
  if(!window.AndroidBackup?.linkExistingShare)return message('Liaison du partage indisponible');
