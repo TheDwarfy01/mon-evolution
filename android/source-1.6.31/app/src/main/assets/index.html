@@ -2151,7 +2151,10 @@ function healthReferenceGraph(target,p){
     const child=p.birthDate&&Number.isFinite(utc(p.birthDate))&&days(p.birthDate,p.rows.at(-1).date)<365.25*18;
     const options=child?[['Poids', 'weight'],['Taille','height'],['IMC','bmi']]:[['Poids','weight'],['IMC','bmi']];
     if(!options.some(v=>v[1]===healthMetric))healthMetric='weight';
-    controls(target,options.map(v=>[v[0],healthMetric===v[1],()=>{healthMetric=v[1];redraw()}]));
+    const currentIndex=options.findIndex(v=>v[1]===healthMetric);
+    stepper(target,'Mesure',options[currentIndex][0],
+     ()=>{healthMetric=options[(currentIndex+options.length-1)%options.length][1];redraw()},
+     ()=>{healthMetric=options[(currentIndex+1)%options.length][1];redraw()});
     healthReferenceGraph(target,p);
    }else primaryGraph(target,p);
   }
