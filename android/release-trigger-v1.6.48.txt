@@ -1,0 +1,1 @@
+Publication signée v1.6.48 : sélecteurs moins/plus pour graphique et période, liens manuels Drive en paramètres avancés, Copier/Partager au quotidien.
