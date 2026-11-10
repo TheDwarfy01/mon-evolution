@@ -992,6 +992,8 @@ $('forget-received').onclick=()=>{
 };
 window.onReceivedProfileLoaded=(key,name)=>{
  if(!key || !getReceivedList().some(p=>p.key===key))return;
+ // Ignore a late response if the user has already switched to a personal profile.
+ if($('shared').hidden && unifiedCurrent!=='received:'+key)return;
  unifiedCurrent='received:'+key;
  localStorage.setItem(unifiedStorageKey,unifiedCurrent);
  updateUnifiedPicker(unifiedCurrent);
@@ -1556,11 +1558,12 @@ if(initialUnified.startsWith('received:'))selectUnified(initialUnified);
   const sameProfile=unifiedCurrent==='received:'+key;
   if(typeof beforeLoaded==='function')beforeLoaded(key,name);
   if(!key||!getReceivedList().some(p=>p.key===key))return;
+  if(!listOpen && !sameProfile)return;
   unifiedCurrent='received:'+key;
   localStorage.setItem(unifiedStorageKey,unifiedCurrent);
   updateUnifiedPicker(unifiedCurrent);
   if(listOpen)return;
-  if(sameProfile && activeFriendTab)displayFriendTab(activeFriendTab);
+  if(activeFriendTab)displayFriendTab(activeFriendTab);
  };
  // Make the friend row activate the full profile including the top picker.
  const list=$('received-list-choices');
