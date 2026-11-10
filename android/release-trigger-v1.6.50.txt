@@ -1,1 +1,3 @@
 Compilation et publication signée v1.6.50. Tests de restauration, partage, sécurité, zoom, synchro amis, sauvegarde avant APK.
+
+Relance avec contrôle synchro actualisé.
