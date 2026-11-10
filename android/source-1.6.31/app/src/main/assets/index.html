@@ -918,6 +918,11 @@ if(initialUnified.startsWith('received:'))selectUnified(initialUnified);
  d.innerHTML='<h3 id="crypt-title">Mot de passe du partage</h3>'+
  '<p>Le lien reste inchangé. Envoie le code séparément. Choisis un code difficile à deviner et transmets-le séparément.</p>'+
  '<input id="crypt-input" type="password" autocomplete="off" style="padding:12px;width:100%;border-radius:8px">'+
+ '<div id="crypt-generate-actions" style="display:flex;flex-wrap:wrap;gap:7px;margin-top:10px">'+
+ '<button type="button" class="secondary" id="crypt-generate" style="width:auto">🎲 Générer</button>'+
+ '<button type="button" class="secondary" id="crypt-copy" style="width:auto">📋 Copier</button>'+
+ '<button type="button" class="secondary" id="crypt-send" style="width:auto">↗ Envoyer</button></div>'+
+ '<p id="crypt-generate-help" class="notice">Mot de passe aléatoire fort de 16 caractères. Copie ou envoie-le séparément du lien de partage.</p>'+
  '<p id="crypt-error" style="color:#ffbaba"></p>'+
  '<button type="button" class="primary" id="crypt-ok">Continuer</button>'+
  '<button type="button" class="secondary" id="crypt-cancel">Annuler</button>';
@@ -925,10 +930,28 @@ if(initialUnified.startsWith('received:'))selectUnified(initialUnified);
  window.askCrypt=(title,creating,callback)=>{
   $('crypt-title').textContent=title;
   $('crypt-error').textContent='';
-  const input=$('crypt-input');input.value='';
+  const input=$('crypt-input');input.value='';input.type='password';
   input.inputMode='text';
   input.maxLength=512;
   input.placeholder=creating?'6 caractères minimum, 1 majuscule et 1 symbole':'Mot de passe du fichier partagé';
+  $('crypt-generate-actions').hidden=!creating;
+  $('crypt-generate-help').hidden=!creating;
+  $('crypt-generate').onclick=()=>{
+   if(!window.AndroidBackup?.generateSharePassword){$('crypt-error').textContent='Génération sécurisée disponible sur Android uniquement.';return;}
+   const generated=AndroidBackup.generateSharePassword();
+   if(!generated || generated.length!==16){$('crypt-error').textContent='Impossible de générer le mot de passe.';return;}
+   input.value=generated;input.type='text';$('crypt-error').textContent='';
+  };
+  $('crypt-copy').onclick=()=>{
+   if(!input.value){$('crypt-error').textContent='Génère ou saisis d’abord un mot de passe.';return;}
+   if(window.AndroidBackup?.copySharePassword)AndroidBackup.copySharePassword(input.value);
+   else $('crypt-error').textContent='Copie disponible sur Android.';
+  };
+  $('crypt-send').onclick=()=>{
+   if(!input.value){$('crypt-error').textContent='Génère ou saisis d’abord un mot de passe.';return;}
+   if(window.AndroidBackup?.sendSharePassword)AndroidBackup.sendSharePassword(input.value);
+   else $('crypt-error').textContent='Envoi disponible sur Android.';
+  };
   $('crypt-ok').onclick=()=>{
    const pass=input.value;
    if(creating && !(pass.length>=6 && pass.length<=512 && /[A-Z]/.test(pass) && /[^A-Za-z0-9]/.test(pass))){
