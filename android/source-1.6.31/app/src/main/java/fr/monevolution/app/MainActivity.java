@@ -909,6 +909,41 @@ public class MainActivity extends Activity {
                 }
             });
         }
+        // Aperçu natif multi-pages : PDF temporaire dans le cache privé,
+        // jamais publié ni téléchargé pour une simple consultation.
+        @JavascriptInterface public void previewPdf(String kind,String reportJson){
+            if(!("progress".equals(kind)||"meals".equals(kind))
+               ||reportJson==null||reportJson.length()>15_000_000){
+                js("showMessage('Bilan PDF invalide')");
+                return;
+            }
+            io.execute(()->{
+                File temporary=null;
+                try{
+                    JSONObject doc=new JSONObject(reportJson);
+                    if("progress".equals(kind)){
+                        if(doc.getJSONArray("weights").length()<1
+                           ||doc.getJSONArray("weights").length()>12000)
+                            throw new Exception("Pas de pesées");
+                    }else{
+                        if(!doc.getString("month").matches("\\d{4}-\\d{2}"))
+                            throw new Exception("Mois invalide");
+                        if(doc.getJSONArray("days").length()>366)
+                            throw new Exception("Trop de jours");
+                    }
+                    temporary=File.createTempFile("mon-evolution-apercu-",".pdf",getCacheDir());
+                    try(OutputStream output=new FileOutputStream(temporary)){
+                        if("progress".equals(kind))createProgressPdf(output,reportJson);
+                        else createMealsPdf(output,reportJson);
+                    }
+                    File ready=temporary;
+                    runOnUiThread(()->showPdfPreview(ready));
+                }catch(Exception e){
+                    if(temporary!=null)temporary.delete();
+                    js("showMessage('Impossible de générer cet aperçu PDF')");
+                }
+            });
+        }
         @JavascriptInterface public void exportProgressPdf(String content) {
             if(content==null || content.length()>4_000_000){js("exportFailed()");return;}
             runOnUiThread(() -> {
@@ -2058,6 +2093,106 @@ public class MainActivity extends Activity {
         if(output.size()>180_000)throw new Exception("Photo trop volumineuse");
         return "data:image/jpeg;base64,"+android.util.Base64.encodeToString(
             output.toByteArray(),android.util.Base64.NO_WRAP);
+    }
+
+    private void showPdfPreview(File file) {
+        android.os.ParcelFileDescriptor handle=null;
+        android.graphics.pdf.PdfRenderer renderer=null;
+        try{
+            handle=android.os.ParcelFileDescriptor.open(file,
+                android.os.ParcelFileDescriptor.MODE_READ_ONLY);
+            renderer=new android.graphics.pdf.PdfRenderer(handle);
+            if(renderer.getPageCount()<1)throw new Exception("PDF vide");
+        }catch(Exception e){
+            if(renderer!=null)try{renderer.close();}catch(Exception ignored){}
+            if(handle!=null)try{handle.close();}catch(Exception ignored){}
+            file.delete();
+            js("showMessage('Aperçu PDF indisponible')");
+            return;
+        }
+        final android.graphics.pdf.PdfRenderer pdf=renderer;
+        final android.os.ParcelFileDescriptor descriptor=handle;
+        final int total=pdf.getPageCount();
+        final android.app.Dialog dialog=new android.app.Dialog(this);
+        final android.widget.LinearLayout layout=new android.widget.LinearLayout(this);
+        layout.setOrientation(android.widget.LinearLayout.VERTICAL);
+        layout.setPadding(12,12,12,12);
+        layout.setBackgroundColor(android.graphics.Color.rgb(12,32,47));
+        final android.widget.LinearLayout bar=new android.widget.LinearLayout(this);
+        bar.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        final android.widget.TextView title=new android.widget.TextView(this);
+        title.setText("Aperçu PDF");
+        title.setTextColor(android.graphics.Color.WHITE);
+        title.setTextSize(17f);
+        title.setTypeface(null,android.graphics.Typeface.BOLD);
+        bar.addView(title,new android.widget.LinearLayout.LayoutParams(0,-2,1));
+        final android.widget.Button close=new android.widget.Button(this);
+        close.setText("Fermer");
+        close.setOnClickListener(view->dialog.dismiss());
+        bar.addView(close);
+        layout.addView(bar);
+        final android.widget.ScrollView scroll=new android.widget.ScrollView(this);
+        final android.widget.ImageView preview=new android.widget.ImageView(this);
+        preview.setAdjustViewBounds(true);
+        preview.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
+        scroll.addView(preview,new android.widget.ScrollView.LayoutParams(
+            android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+            android.view.ViewGroup.LayoutParams.WRAP_CONTENT));
+        layout.addView(scroll,new android.widget.LinearLayout.LayoutParams(-1,0,1));
+        final android.widget.LinearLayout footer=new android.widget.LinearLayout(this);
+        footer.setGravity(android.view.Gravity.CENTER);
+        final android.widget.Button prev=new android.widget.Button(this);
+        prev.setText("‹ Précédent");
+        final android.widget.TextView pages=new android.widget.TextView(this);
+        pages.setGravity(android.view.Gravity.CENTER);
+        pages.setTextColor(android.graphics.Color.WHITE);
+        final android.widget.Button next=new android.widget.Button(this);
+        next.setText("Suivant ›");
+        footer.addView(prev,new android.widget.LinearLayout.LayoutParams(0,-2,1));
+        footer.addView(pages,new android.widget.LinearLayout.LayoutParams(0,-2,1));
+        footer.addView(next,new android.widget.LinearLayout.LayoutParams(0,-2,1));
+        layout.addView(footer);
+        final int[] current={0};
+        final Bitmap[] shown={null};
+        final Runnable renderPage=()->{
+            try{
+                android.graphics.pdf.PdfRenderer.Page page=pdf.openPage(current[0]);
+                Bitmap bitmap;
+                try{
+                    int targetWidth=Math.max(700,Math.min(1250,getResources()
+                       .getDisplayMetrics().widthPixels*2));
+                    int targetHeight=Math.max(1,
+                       (int)(targetWidth*(double)page.getHeight()/page.getWidth()));
+                    bitmap=Bitmap.createBitmap(targetWidth,targetHeight,
+                       Bitmap.Config.ARGB_8888);
+                    bitmap.eraseColor(Color.WHITE);
+                    page.render(bitmap,null,null,
+                       android.graphics.pdf.PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY);
+                }finally{page.close();}
+                preview.setImageBitmap(bitmap);
+                if(shown[0]!=null&&shown[0]!=bitmap)shown[0].recycle();
+                shown[0]=bitmap;
+                pages.setText((current[0]+1)+" / "+total);
+                prev.setEnabled(current[0]>0);
+                next.setEnabled(current[0]<total-1);
+                scroll.scrollTo(0,0);
+            }catch(Exception e){pages.setText("Page indisponible");}
+        };
+        prev.setOnClickListener(view->{if(current[0]>0){current[0]--;renderPage.run();}});
+        next.setOnClickListener(view->{if(current[0]<total-1){current[0]++;renderPage.run();}});
+        dialog.setContentView(layout);
+        dialog.setOnDismissListener(ignored->{
+            preview.setImageDrawable(null);
+            if(shown[0]!=null){shown[0].recycle();shown[0]=null;}
+            try{pdf.close();}catch(Exception ignoredClose){}
+            try{descriptor.close();}catch(Exception ignoredClose){}
+            file.delete();
+        });
+        dialog.show();
+        if(dialog.getWindow()!=null)dialog.getWindow().setLayout(
+            android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+            android.view.ViewGroup.LayoutParams.MATCH_PARENT);
+        renderPage.run();
     }
 
     private void createProgressPdf(Uri uri,String reportJson) throws Exception {
