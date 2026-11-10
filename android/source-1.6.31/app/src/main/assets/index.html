@@ -1912,6 +1912,7 @@ if(initialUnified.startsWith('received:'))selectUnified(initialUnified);
    const v=minX+(maxX-minX)*i/4,x=X(v);
    svg('text',{x,y:height-16,'font-size':12,fill:'#b7cddb','text-anchor':'middle'},root,opts.xLabel?opts.xLabel(v):String(Math.round(v))+' j');
   }
+  let activePointDetails=null;
   for(const s of series){
    const pp=(s.points||[]).filter(v=>Number.isFinite(v.x)&&Number.isFinite(v.y)).sort((a,b)=>a.x-b.x);
    if(!pp.length)continue;
@@ -1935,10 +1936,9 @@ if(initialUnified.startsWith('received:'))selectUnified(initialUnified);
      c.style.cursor='pointer';
      svg('title',{},c,label+(p.note?' · '+String(p.note).slice(0,80):''));
      const show=()=>{
-      const details=target.querySelector('.advanced-point-detail:last-child');
-      if(details){
-       details.textContent=label+(p.note?' · '+String(p.note).slice(0,120):'');
-       details.style.display='block';
+      if(activePointDetails){
+       activePointDetails.textContent=label+(p.note?' · '+String(p.note).slice(0,120):'');
+       activePointDetails.style.display='block';
       }
      };
      c.addEventListener('click',show);
@@ -1956,7 +1956,7 @@ if(initialUnified.startsWith('received:'))selectUnified(initialUnified);
    details.style.cssText='margin:9px 0 0;padding:10px 12px;border-radius:10px;background:#102a3f;border:1px solid #3b6175;font-size:12px;color:#d9eef6;line-height:1.5';
    details.setAttribute('role','status');
    details.setAttribute('aria-live','polite');
-   target.append(details);
+   target.append(details);activePointDetails=details;
   }
  }
  function weeklyRecords(p){
