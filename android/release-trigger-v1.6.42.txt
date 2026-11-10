@@ -1,0 +1,1 @@
+Publication signée v1.6.42 : règle mot de passe de partage chiffré (6 caractères minimum, 1 majuscule et 1 caractère spécial), compatibilité anciens mots de passe.
