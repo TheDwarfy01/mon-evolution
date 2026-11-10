@@ -1,3 +1,5 @@
 Publication signée v1.6.47 : profils reçus stables en navigation, statuts individuels de synchronisation, renouvellement mot de passe, erreur d'invitation correctement identifiée.
 
 Relance après correction du placement des méthodes Java de synchronisation des profils reçus.
+
+Relance : correction compilation Java des états de synchronisation.
