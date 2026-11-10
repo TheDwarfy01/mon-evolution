@@ -195,7 +195,7 @@ public class MainActivity extends Activity {
         }
         @JavascriptInterface public boolean saveSharePassword(String id,String pass) {
             if(id==null || !id.matches("[a-zA-Z0-9_-]{1,75}"))return false;
-            try{saveSecret("share_pass_"+id,pass);return true;}catch(Exception e){return false;}
+            try{if(!validNewSharePassword(pass))return false;saveSecret("share_pass_"+id,pass);return true;}catch(Exception e){return false;}
         }
         @JavascriptInterface public boolean hasSharePassword(String id){
             return id!=null && getPreferences(MODE_PRIVATE).contains("share_pass_"+id);
@@ -603,7 +603,7 @@ public class MainActivity extends Activity {
                     String source="https://drive.google.com/file/d/"+id+"/view"
                         +(resourceKey==null?"":"?resourcekey="+Uri.encode(resourceKey));
                     String key=registerReceived("public",source,doc);
-                    if(pass!=null && (validTenCode(pass) || pass.length()>=10))saveSecret("receive_pass_"+key,pass);
+                    if(pass!=null && pass.length()>=6 && pass.length()<=512)saveSecret("receive_pass_"+key,pass);
                     byte[] clear=doc.toString().getBytes(StandardCharsets.UTF_8);
                     String b64=android.util.Base64.encodeToString(clear,android.util.Base64.NO_WRAP);
                     getPreferences(MODE_PRIVATE).edit()
@@ -1242,7 +1242,7 @@ public class MainActivity extends Activity {
                 pendingReceivedPassword="";
                 JSONObject doc=decodeShared(raw,pass);
                 String key=registerReceived("private",uri.toString(),doc);
-                if(pass!=null && (validTenCode(pass) || pass.length()>=10))saveSecret("receive_pass_"+key,pass);
+                if(pass!=null && pass.length()>=6 && pass.length()<=512)saveSecret("receive_pass_"+key,pass);
                 raw=doc.toString();
                 getPreferences(MODE_PRIVATE).edit().putString("received_selected",key).apply();
                 String encoded=android.util.Base64.encodeToString(
@@ -1284,8 +1284,20 @@ public class MainActivity extends Activity {
         }
         return digits>=4 && uppercase>=1 && symbols>=1;
     }
+    // New outgoing share passwords: six characters, one uppercase and one symbol.
+    // Existing stored passwords remain compatible.
+    private boolean validNewSharePassword(String input) {
+        if(input==null || input.length()<6 || input.length()>512)return false;
+        boolean uppercase=false,special=false;
+        for(int i=0;i<input.length();i++){
+            char c=input.charAt(i);
+            if(c>='A' && c<='Z')uppercase=true;
+            if(!Character.isLetterOrDigit(c))special=true;
+        }
+        return uppercase && special;
+    }
     private void saveSecret(String name,String value) throws Exception {
-        if(value==null || !(validTenCode(value) || (value.length()>=10 && value.length()<=512)))
+        if(value==null || value.length()<6 || value.length()>512)
             throw new Exception("Invalid secret");
         javax.crypto.Cipher c=javax.crypto.Cipher.getInstance("AES/GCM/NoPadding");
         c.init(javax.crypto.Cipher.ENCRYPT_MODE,secretKey());
