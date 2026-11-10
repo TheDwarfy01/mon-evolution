@@ -1,0 +1,1 @@
+Déclencher compilation Android signée et publication v1.6.45 : bouton permanent copie/envoi mot de passe actuel, confirmations de rotation sans file://.
