@@ -70,7 +70,7 @@ jobs:
           assert 'J’ai copié ou envoyé le nouveau mot de passe' in source
           assert 'copyCurrentSharePassword' in Path('android/source-1.6.45/app/src/main/java/fr/monevolution/app/MainActivity.java').read_text()
           assert 'sendCurrentSharePassword' in Path('android/source-1.6.45/app/src/main/java/fr/monevolution/app/MainActivity.java').read_text()
-          assert 'DERNIÈRE CONFIRMATION' in source
+          assert 'Confirmer le changement' in source
           assert 'icons[level.key]' in source
           assert 'rank-emblem svg' in source
           assert 'const friendPortrait=' in source
