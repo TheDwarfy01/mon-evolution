@@ -178,8 +178,8 @@ function backupCompleted(linked) {
 }
 function backupFailed() { message('Sauvegarde Drive impossible : vérifie la connexion ou relie à nouveau le fichier'); }
 function backupConflict() { alert('Conflit de sauvegarde : le fichier Drive a changé sur un autre appareil. Les données locales sont conservées. Vérifie la sauvegarde avant de relier à nouveau Drive.'); }
-const backupStatusLine=document.createElement('p');backupStatusLine.id='backup-verified-state';
-backupStatusLine.className='notice';backupStatusLine.setAttribute('role','status');
+const backupStatusLine=document.createElement('div');backupStatusLine.id='backup-verified-state';
+backupStatusLine.className='backup-verified-summary';backupStatusLine.setAttribute('role','status');
 backupStatusLine.style.cssText='padding:8px 11px;border-radius:10px;background:#173344;margin-top:8px';
 const backupChecks=document.createElement('div');backupChecks.className='two';
 backupChecks.style.cssText='display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:8px';
@@ -2450,7 +2450,7 @@ function healthReferenceGraph(target,p){
  const everydayTitle=document.createElement('h3');everydayTitle.textContent='✉ Envoyer mon profil à un proche';
  everydayTitle.style.cssText='margin:0 0 7px';
  const everydayInfo=document.createElement('p');everydayInfo.className='notice';
- everydayInfo.textContent='Copie ton invitation ou partage-la directement. Envoie le mot de passe séparément.';
+ everydayInfo.textContent='1. Copie ou partage ton invitation. 2. Envoie le mot de passe séparément au destinataire.';
  everydayInfo.style.margin='0 0 12px';
  const btnRow=document.createElement('div');btnRow.className='two';
  btnRow.style.cssText='display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px';
@@ -2465,11 +2465,33 @@ function healthReferenceGraph(target,p){
   send.setAttribute('aria-label','Partager le lien d’invitation');
   btnRow.append(copy,send);
   if(oldRow && oldRow!==btnRow && !oldRow.children.length)oldRow.remove();
+  const oldCopy=copy.onclick,oldSend=send.onclick;
+  const validInvitation=()=>{
+   const id=profile()?.id;
+   if(!id||window.AndroidBackup?.sharedStatus?.(id)!=='1'){
+    message('Crée d’abord ton partage dans Paramètres avancés.');return false;
+   }
+   if(!window.AndroidBackup?.getInvitationLink?.(id)){
+    message('Enregistre d’abord le lien Drive dans Paramètres avancés.');return false;
+   }
+   if(!window.AndroidBackup?.hasSharePassword?.(id)){
+    message('Le mot de passe chiffré de ce partage est introuvable. Vérifie les paramètres.');return false;
+   }
+   return true;
+  };
+  copy.onclick=function(){if(validInvitation())oldCopy?.call(this)};
+  send.onclick=function(){if(validInvitation())oldSend?.call(this)};
  }
  const needSetup=document.createElement('p');needSetup.className='notice';
  needSetup.id='share-everyday-state';needSetup.setAttribute('role','status');
  needSetup.style.cssText='font-size:12px;margin:9px 0 0';
  everyday.append(everydayTitle,everydayInfo,btnRow,needSetup);
+ const sendPassword=$('share-send-current-password');
+ if(sendPassword){
+  sendPassword.textContent='🔐 Envoyer le mot de passe séparément';
+  sendPassword.style.cssText='width:100%;margin-top:9px';
+  everyday.append(sendPassword);
+ }
  const firstAction=$('share-password-actions');
  if(firstAction)sharing.insertBefore(everyday,firstAction);
  else sharing.append(everyday);
@@ -2498,9 +2520,12 @@ function healthReferenceGraph(target,p){
   const p=profile();if(!p)return;
   const linked=window.AndroidBackup?.sharedStatus?.(p.id)==='1';
   const hasLink=linked&&!!(window.AndroidBackup?.getInvitationLink?.(p.id)||'');
+  const hasPassword=linked&&!!window.AndroidBackup?.hasSharePassword?.(p.id);
+  if(sendPassword)sendPassword.style.display=linked?'block':'none';
   needSetup.textContent=!linked?'Aucun partage configuré : ouvre les paramètres avancés pour le créer.':
-    hasLink?'Lien prêt ✓ · L’accès Drive et le mot de passe restent nécessaires.':
-    'Lien non configuré : ouvre les paramètres avancés pour enregistrer le lien Drive.';
+    !hasLink?'Lien non configuré : ouvre les paramètres avancés pour enregistrer le lien Drive.':
+    !hasPassword?'⚠ Mot de passe introuvable : vérifie ton partage avant l’envoi.':
+    '✓ Invitation prête. Vérifie les autorisations Lecteur dans Google Drive pour le destinataire : elles ne sont pas accordées automatiquement.';
  }
  const previousStatus=shareStatus;
  shareStatus=function(){previousStatus();updateDaily()};
