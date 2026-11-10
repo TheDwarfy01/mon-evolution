@@ -1,0 +1,1 @@
+Lancer tests et compilation Android signée v1.6.51 : boutons sauvegarde pleine largeur, copie du mot de passe sur une seule ligne.
