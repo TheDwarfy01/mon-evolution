@@ -53,10 +53,15 @@ public class MainActivity extends Activity {
     // Invalidate outdated background selections whenever a new invitation is loaded.
     private final java.util.concurrent.atomic.AtomicLong receivedLoadEpoch =
         new java.util.concurrent.atomic.AtomicLong();
+    private final java.util.concurrent.atomic.AtomicBoolean friendsRefreshRunning =
+        new java.util.concurrent.atomic.AtomicBoolean(false);
     private static final String PREFS = "drive_backup";
     private static final String BACKUP_URI = "backup_uri";
     private static final String BACKUP_HASH = "backup_hash";
     private static final String BACKUP_TIME = "backup_time";
+    private static final String BACKUP_VERIFIED_AT = "backup_verified_at";
+    private static final String BACKUP_VERIFY_STATE = "backup_verify_state";
+    private static final String BACKUP_VERIFY_INFO = "backup_verify_info";
 
     @Override protected void onSaveInstanceState(android.os.Bundle state){
         super.onSaveInstanceState(state);
@@ -635,57 +640,88 @@ public class MainActivity extends Activity {
         });
     }
 
+    // Only a validated read updates the cached friend summary. Never switch tabs.
+    private JSONObject readFriendDocument(JSONObject item,String key) throws Exception{
+        String kind=item.getString("kind"),source=item.getString("source"),raw;
+        if("public".equals(kind)){
+            String file=driveFileId(source);
+            if(file==null)throw new Exception("notfound");
+            raw=new String(fetchPublicProfile(file,driveResourceKey(source)),StandardCharsets.UTF_8);
+        }else if("private".equals(kind))raw=readSafJson(Uri.parse(source),40_000_000);
+        else throw new Exception("invalid_json");
+        return decodeShared(raw,readSecret("receive_pass_"+key));
+    }
+    private void updateFriendSummary(String key,JSONObject doc) throws Exception{
+        synchronized(MainActivity.this){
+            SharedPreferences prefs=getPreferences(MODE_PRIVATE);
+            JSONArray latest=new JSONArray(prefs.getString("received_profiles","[]"));
+            for(int i=0;i<latest.length();i++){
+                JSONObject item=latest.getJSONObject(i);
+                if(key.equals(item.optString("key"))){
+                    fillFriendOverview(item,doc);
+                    prefs.edit().putString("received_profiles",latest.toString()).apply();
+                    return;
+                }
+            }
+            throw new Exception("Profil retiré");
+        }
+    }
+    @JavascriptInterface public void refreshFriendOverview(String key){
+        if(!isReceivedSaved(key))return;
+        recordReceivedSync(key,"pending");
+        io.execute(()->{
+            if(!isReceivedSaved(key))return;
+            try{
+                JSONArray list=new JSONArray(getPreferences(MODE_PRIVATE)
+                    .getString("received_profiles","[]"));
+                JSONObject item=null;
+                for(int i=0;i<list.length();i++){
+                    JSONObject candidate=list.getJSONObject(i);
+                    if(key.equals(candidate.optString("key"))){item=candidate;break;}
+                }
+                if(item==null)return;
+                JSONObject doc=readFriendDocument(item,key);
+                if(!isReceivedSaved(key))return;
+                updateFriendSummary(key,doc);
+                recordReceivedSync(key,"ok");
+                js("friendsOverviewUpdated()");
+            }catch(Exception e){
+                if(isReceivedSaved(key))recordReceivedSync(key,receivedErrorCode(e));
+            }
+        });
+    }
     @JavascriptInterface public void refreshFriendsOverview() {
-        io.execute(() -> {
+        if(!friendsRefreshRunning.compareAndSet(false,true))return;
+        io.execute(()->{
             int succeeded=0,failed=0;
-            try {
-                android.content.SharedPreferences prefs=getPreferences(MODE_PRIVATE);
-                JSONArray saved=new JSONArray(prefs.getString("received_profiles","[]"));
+            try{
+                JSONArray saved=new JSONArray(getPreferences(MODE_PRIVATE)
+                    .getString("received_profiles","[]"));
                 int count=Math.min(saved.length(),30);
                 for(int i=0;i<count;i++){
+                    JSONObject item;
+                    try{item=saved.getJSONObject(i);}catch(Exception e){failed++;continue;}
+                    String key=item.optString("key","");
+                    if(!isReceivedSaved(key))continue;
+                    recordReceivedSync(key,"pending");
                     try{
-                        JSONObject item=saved.getJSONObject(i);
-                        String kind=item.getString("kind");
-                        String source=item.getString("source");
-                        String id=item.getString("key");
-                        String raw;
-                        if("public".equals(kind)){
-                            String driveId=driveFileId(source);
-                            if(driveId==null)throw new Exception("Invalid Drive link");
-                            raw=new String(fetchPublicProfile(driveId,driveResourceKey(source)),StandardCharsets.UTF_8);
-                        } else if("private".equals(kind)){
-                            raw=readSafJson(Uri.parse(source),40_000_000);
-                        } else throw new Exception("Unknown share");
-                        JSONObject doc=decodeShared(raw,readSecret("receive_pass_"+id));
-                        synchronized(MainActivity.this){
-                            JSONArray latest=new JSONArray(prefs.getString("received_profiles","[]"));
-                            boolean found=false;
-                            for(int n=0;n<latest.length();n++){
-                                JSONObject entry=latest.getJSONObject(n);
-                                if(id.equals(entry.optString("key"))){
-                                    fillFriendOverview(entry,doc);
-                                    prefs.edit().putString("received_profiles",latest.toString()).apply();
-                                    found=true;
-                                    break;
-                                }
-                            }
-                            if(!found)throw new Exception("Share removed");
-                        }
+                        JSONObject doc=readFriendDocument(item,key);
+                        if(!isReceivedSaved(key))continue;
+                        updateFriendSummary(key,doc);
                         succeeded++;
-                        recordReceivedSync(id,"ok");
+                        recordReceivedSync(key,"ok");
                         js("friendsOverviewUpdated()");
                     }catch(Exception e){
-                        // Preserve previously saved data when offline or not authorized.
                         failed++;
-                        try{
-                            JSONObject failedItem=saved.getJSONObject(i);
-                            recordReceivedSync(failedItem.optString("key"),receivedErrorCode(e));
-                        }catch(Exception ignored){}
+                        if(isReceivedSaved(key))recordReceivedSync(key,receivedErrorCode(e));
                     }
                 }
-            }catch(Exception ignored){failed++;}
-            js("friendsOverviewUpdated()");
-            js("friendsOverviewSyncFinished("+succeeded+","+failed+")");
+            }catch(Exception e){failed++;}
+            finally{
+                friendsRefreshRunning.set(false);
+                js("friendsOverviewUpdated()");
+                js("friendsOverviewSyncFinished("+succeeded+","+failed+")");
+            }
         });
     }
 
