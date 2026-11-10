@@ -78,7 +78,13 @@ for(const [fragment,name] of [
  ["c.addEventListener('click',show)", 'touch point details'],
  ['date:r.date', 'dated chart measure'],
  ["'clip-path':'url(#'+clipId+')'", 'clipped chart zoom'],
- ['share-copy-current-password', 'existing password recovery']
+ ['share-copy-current-password', 'existing password recovery'],
+ ['share-password-current-buttons', 'mobile single-column password action'],
+ ['backup-check-actions', 'mobile stacked backup controls'],
+ ['flex-direction:column;align-items:stretch;gap:10px', 'no overlapping backup controls'],
+ ['📋 Copier le mot de passe</button>', 'shortened password button label'],
+ ['white-space:nowrap;font-size:clamp', 'copy password fits on one line'],
+ ['action.style.cssText', 'backup action full-width sizing']
 ])section(fragment,name);
 for(const [fragment,name] of [
  ['AES/GCM/NoPadding','encrypted share uses AES-GCM'],
