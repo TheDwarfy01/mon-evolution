@@ -249,6 +249,53 @@ public class MainActivity extends Activity {
             pendingReceivedPassword=pass==null?"":pass;
             openShared();
         }
+        // Rotates the encryption of the *existing* linked document in place.
+        // Always verify that its current contents can be decrypted by the saved
+        // password. The selected SAF Uri and its invitations are not changed.
+        @JavascriptInterface public void rotateSharePassword(String id,String nextPassword) {
+            if(id==null || !id.matches("[a-zA-Z0-9_-]{1,75}")
+                || !validNewSharePassword(nextPassword)){
+                js("sharePasswordChangeFailed('Mot de passe invalide : 6 caractères minimum, une majuscule et un caractère spécial.')");
+                return;
+            }
+            final String uriValue=getPreferences(MODE_PRIVATE).getString("share_uri_"+id,null);
+            if(uriValue==null){
+                js("sharePasswordChangeFailed('Aucun fichier partagé relié à ce profil.')");
+                return;
+            }
+            io.execute(()->{
+                try{
+                    String oldPassword=readSecret("share_pass_"+id);
+                    if(oldPassword==null)throw new Exception("Ancien mot de passe introuvable.");
+                    if(oldPassword.equals(nextPassword))throw new Exception("Le nouveau mot de passe doit être différent.");
+                    Uri uri=Uri.parse(uriValue);
+                    String previous=readSafJson(uri,40_000_000);
+                    JSONObject content=decodeShared(previous,oldPassword);
+                    if(!"mon-evolution-lecture-seule".equals(content.optString("format")))
+                        throw new Exception("Contenu du partage invalide.");
+                    // Encrypt exactly the current remote document: no stale local profile.
+                    String encrypted=encryptShared(content.toString(),nextPassword);
+                    // Recheck before overwriting in case the document changed elsewhere.
+                    if(!previous.equals(readSafJson(uri,40_000_000)))
+                        throw new Exception("Le fichier a été modifié. Actualise et réessaie.");
+                    writeShared(uri,encrypted);
+                    try {
+                        // Keep the old password if writing fails; persist the new one only
+                        // after the existing document has been overwritten.
+                        saveSecret("share_pass_"+id,nextPassword);
+                    }catch(Exception saveError){
+                        try{writeShared(uri,previous);}catch(Exception rollbackError){
+                            throw new Exception("Mot de passe local non mis à jour. Récupère le nouveau mot de passe saisi et contacte le support avant toute synchronisation.");
+                        }
+                        throw new Exception("Enregistrement local impossible. Ancien mot de passe conservé.");
+                    }
+                    js("sharePasswordChanged()");
+                }catch(Exception e){
+                    js("sharePasswordChangeFailed("+JSONObject.quote(
+                        e.getMessage()==null?"Échec de modification du mot de passe.":e.getMessage())+")");
+                }
+            });
+        }
         @JavascriptInterface public void createShare(String profileId, String json) {
             if (profileId == null || !profileId.matches("[a-zA-Z0-9_-]{1,75}")
                     || json == null || json.length() > 40_000_000) {
@@ -1357,8 +1404,8 @@ public class MainActivity extends Activity {
         return new String(c.doFinal(android.util.Base64.decode(o.getString("data"),0)),StandardCharsets.UTF_8);
     }
     private javax.crypto.SecretKey deriveKey(String password,byte[] salt) throws Exception {
-        if(password==null || !(validTenCode(password) || (password.length()>=10 && password.length()<=512)))
-            throw new Exception("Code à 10 caractères ou ancien mot de passe nécessaire");
+        if(password==null || password.length()<6 || password.length()>512)
+            throw new Exception("Mot de passe de partage : 6 caractères minimum");
         javax.crypto.spec.PBEKeySpec spec=new javax.crypto.spec.PBEKeySpec(password.toCharArray(),salt,210000,256);
         byte[] raw=javax.crypto.SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256").generateSecret(spec).getEncoded();
         spec.clearPassword();
