@@ -178,6 +178,58 @@ function backupCompleted(linked) {
 }
 function backupFailed() { message('Sauvegarde Drive impossible : vérifie la connexion ou relie à nouveau le fichier'); }
 function backupConflict() { alert('Conflit de sauvegarde : le fichier Drive a changé sur un autre appareil. Les données locales sont conservées. Vérifie la sauvegarde avant de relier à nouveau Drive.'); }
+const backupStatusLine=document.createElement('p');backupStatusLine.id='backup-verified-state';
+backupStatusLine.className='notice';backupStatusLine.setAttribute('role','status');
+backupStatusLine.style.cssText='padding:8px 11px;border-radius:10px;background:#173344;margin-top:8px';
+const backupChecks=document.createElement('div');backupChecks.className='two';
+backupChecks.style.cssText='display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:8px';
+const checkBackup=document.createElement('button');checkBackup.className='secondary';checkBackup.type='button';
+checkBackup.id='verify-backup';checkBackup.textContent='✓ Vérifier la sauvegarde';
+const restoreNow=document.createElement('button');restoreNow.className='secondary';restoreNow.type='button';
+restoreNow.id='recover-backup';restoreNow.textContent='↥ Récupérer mes profils';
+backupChecks.append(checkBackup,restoreNow);
+$('drive-state').insertAdjacentElement('afterend',backupStatusLine);
+backupStatusLine.insertAdjacentElement('afterend',backupChecks);
+function renderBackupVerification(){
+ let info={};
+ try{info=JSON.parse(window.AndroidBackup?.backupVerificationStatus?.()||'{}')}catch(e){}
+ const time=Number(info.verifiedAt||0);
+ const saveTime=Number(window.AndroidBackup?.backupStatus?.().split('|')[1]||0);
+ if(!window.AndroidBackup?.isLinked?.()){
+  backupStatusLine.textContent='Aucune sauvegarde reliée à vérifier.';
+  checkBackup.disabled=true;return;
+ }
+ checkBackup.disabled=false;
+ if(!time){
+  backupStatusLine.textContent='◷ Sauvegarde non vérifiée. Vérifie que le fichier est lisible avant d’en dépendre.';
+  return;
+ }
+ const stamp=new Date(time).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'});
+ const needsNewCheck=saveTime>time;
+ const label=info.state==='ok'?'✓ Sauvegarde vérifiée':info.state==='conflict'?'⚠ Fichier modifié sur un autre appareil':'⚠ Vérification en échec';
+ backupStatusLine.textContent=label+' · '+stamp+(needsNewCheck?' · Nouvelle sauvegarde depuis ce contrôle.':'')+
+   (info.info?' · '+info.info:'');
+}
+window.backupVerificationResult=(state,info)=>{
+ if(state==='pending'){
+  backupStatusLine.textContent='↻ '+info;
+  checkBackup.disabled=true;
+  return;
+ }
+ checkBackup.disabled=false;
+ renderBackupVerification();
+ if(state==='conflict'||state==='error')message('⚠ Sauvegarde non confirmée : vérifie le fichier avant une restauration.');
+};
+checkBackup.onclick=()=>{
+ if(!window.AndroidBackup?.verifyLinkedBackup)return message('Vérification réservée à Android.');
+ AndroidBackup.verifyLinkedBackup();
+};
+restoreNow.onclick=()=>{
+ if(!window.AndroidBackup?.load)return message('Restauration disponible sur Android.');
+ if(confirm('Choisir un fichier de sauvegarde à restaurer ? Une confirmation distincte sera demandée avant toute modification de tes profils.'))AndroidBackup.load();
+};
+const previousRefreshDriveState=refreshDriveState;
+refreshDriveState=function(){previousRefreshDriveState();renderBackupVerification()};
 refreshDriveState();
 </script>
 <script>
