@@ -1216,6 +1216,51 @@ if(initialUnified.startsWith('received:'))selectUnified(initialUnified);
    const photoState=document.createElement('p');photoState.className='notice';
    photoState.textContent=thumb?'✓ Photo de profil reçue':'Photo absente du partage reçu';
    div.append(photoState);
+   // État propre à ce profil : ajouté ≠ correctement synchronisé.
+   let syncInfo={};
+   try{syncInfo=JSON.parse(window.AndroidBackup?.receivedSyncInfo?.(friend.key)||'{}')}catch(e){}
+   const states={
+    ok:['✓ Synchronisé','Dernière lecture réussie du fichier'],
+    password:['🔒 Mot de passe incorrect ou modifié','Les anciennes données restent affichées. Mets à jour le code communiqué par le propriétaire.'],
+    access:['⚠ Accès Drive refusé','Le propriétaire doit vérifier les permissions Lecteur.'],
+    missing:['⚠ Fichier introuvable','Vérifie le lien enregistré avec le propriétaire.'],
+    network:['⚠ Connexion indisponible','Les dernières données restent disponibles.'],
+    preview:['⚠ Prévisualisation Drive reçue','Essaie un accès au fichier Drive privé.'],
+    format:['⚠ Document non compatible','Vérifie le fichier de partage du propriétaire.'],
+    error:['⚠ Synchronisation en échec','Réessaie pour obtenir le détail.']
+   };
+   const state=states[syncInfo.state]||['◷ Synchronisation à vérifier','Profil enregistré ; lecture à confirmer.'];
+   const syncLine=document.createElement('p');
+   syncLine.className='notice';
+   syncLine.style.cssText='padding:9px 11px;border-radius:9px;background:'+
+    (syncInfo.state==='ok'?'#183e33':'#47352d')+';color:'+
+    (syncInfo.state==='ok'?'#b1f1d1':'#ffe4bf')+';margin:10px 0 6px';
+   const at=Number(syncInfo.state==='ok'?syncInfo.successAt:syncInfo.attemptAt);
+   const stamp=Number.isFinite(at)&&at>0?' · '+new Date(at).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'';
+   syncLine.textContent=state[0]+stamp;
+   div.append(syncLine);
+   const syncDetail=document.createElement('p');syncDetail.className='notice';
+   syncDetail.textContent=state[1];
+   div.append(syncDetail);
+   if(syncInfo.state!=='ok'){
+    const action=document.createElement('button');action.type='button';
+    action.className='secondary';action.style.cssText='width:100%;margin-top:8px';
+    action.textContent=syncInfo.state==='password'?'🔑 Mettre à jour le mot de passe':'↻ Vérifier la synchronisation';
+    action.onclick=()=>{
+     if(syncInfo.state==='password'){
+      askCrypt('Nouveau mot de passe reçu du propriétaire',false,pass=>{
+       if(pass===null)return;
+       if(!window.AndroidBackup?.updateReceivedPassword)return message('Mise à jour indisponible.');
+       message('Vérification du mot de passe de '+friend.name+'…');
+       AndroidBackup.updateReceivedPassword(friend.key,pass);
+      });
+     }else{
+      message('Vérification du partage de '+friend.name+'…');
+      window.AndroidBackup?.selectReceivedProfile?.(friend.key);
+     }
+    };
+    div.append(action);
+   }
    const remove=document.createElement('button');
    remove.type='button';
    remove.className='secondary';
@@ -1258,6 +1303,27 @@ if(initialUnified.startsWith('received:'))selectUnified(initialUnified);
  };
  card.append(reload);
  window.friendsOverviewUpdated=()=>updateReceivedChoices();
+ window.friendSyncUpdated=(key,state)=>updateReceivedChoices();
+ window.receivedPasswordUpdateSucceeded=key=>{
+  updateReceivedChoices();
+  message('✓ Mot de passe confirmé : ce profil peut être synchronisé.');
+  if(unifiedCurrent==='received:'+key && $('shared').hidden)
+   window.AndroidBackup?.selectReceivedProfile?.(key);
+ };
+ window.receivedPasswordUpdateFailed=(key,code)=>{
+  updateReceivedChoices();
+  const explanations={
+   password:'Le mot de passe fourni ne permet pas de déchiffrer ce fichier.',
+   access:'Le propriétaire doit vérifier les autorisations du fichier Drive.',
+   missing:'Ce fichier partagé est introuvable.',
+   network:'Connexion indisponible : réessaie plus tard.',
+   preview:'Google Drive a renvoyé une prévisualisation.',
+   format:'Ce fichier ne contient pas un partage Mon Évolution compatible.',
+   invalid:'Mot de passe invalide.',
+   error:'Mise à jour impossible.'
+  };
+  message(explanations[code]||explanations.error);
+ };
  const oldClick=sharedNav.onclick;
  sharedNav.onclick=()=>{
   if(typeof oldClick==='function')oldClick();
