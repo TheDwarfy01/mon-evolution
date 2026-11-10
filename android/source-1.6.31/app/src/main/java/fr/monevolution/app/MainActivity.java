@@ -278,16 +278,24 @@ public class MainActivity extends Activity {
                     // Recheck before overwriting in case the document changed elsewhere.
                     if(!previous.equals(readSafJson(uri,40_000_000)))
                         throw new Exception("Le fichier a été modifié. Actualise et réessaie.");
-                    writeShared(uri,encrypted);
                     try {
-                        // Keep the old password if writing fails; persist the new one only
-                        // after the existing document has been overwritten.
+                        writeShared(uri,encrypted);
+                        // A successful write call alone is not proof that the cloud
+                        // provider kept the complete replacement document.
+                        if(!encrypted.equals(readSafJson(uri,40_000_000)))
+                            throw new Exception("Le stockage n’a pas confirmé le nouveau fichier.");
                         saveSecret("share_pass_"+id,nextPassword);
-                    }catch(Exception saveError){
-                        try{writeShared(uri,previous);}catch(Exception rollbackError){
-                            throw new Exception("Mot de passe local non mis à jour. Récupère le nouveau mot de passe saisi et contacte le support avant toute synchronisation.");
+                    }catch(Exception changeError){
+                        // Restore the previous remote contents whenever the new
+                        // password cannot be saved or its upload cannot be checked.
+                        try{
+                            writeShared(uri,previous);
+                            if(!previous.equals(readSafJson(uri,40_000_000)))
+                                throw new Exception("Restauration non confirmée");
+                        }catch(Exception rollbackError){
+                            throw new Exception("ATTENTION : état du partage incertain. Désactive la synchronisation et vérifie le fichier avant toute modification.");
                         }
-                        throw new Exception("Enregistrement local impossible. Ancien mot de passe conservé.");
+                        throw new Exception("Changement annulé, ancien mot de passe conservé : "+changeError.getMessage());
                     }
                     js("sharePasswordChanged()");
                 }catch(Exception e){
