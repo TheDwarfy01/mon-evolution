@@ -1680,7 +1680,7 @@ if(initialUnified.startsWith('received:'))selectUnified(initialUnified);
  const days=(a,b)=>(utc(b)-utc(a))/DAY;
  const dateAt=(a,d)=>new Date(utc(a)+d*DAY).toISOString().slice(0,10);
  const colors=['#78e4cf','#f7d77c','#8caeff','#f5a5c4','#ffb47d','#b5e68b','#c9a8ff'];
- let view='weight',period='90',reference=.5,trend=true,projection=true,referenceBand=false,metric='loss',healthReference=false,healthMetric='weight',chartOptionsOpen=false,graphPlotSerial=0;
+ let view='weight',period='90',reference=.5,trend=true,projection=true,referenceBand=false,metric='loss',healthReference=false,healthMetric='weight',healthZoom='local',chartOptionsOpen=false,graphPlotSerial=0;
  let sharedMap=new Map(), sharedWanted=new Set(), sharedState='';
  let activeData=null;
  const personalChart=$('chart').querySelector(':scope > .card');
@@ -1805,6 +1805,13 @@ if(initialUnified.startsWith('received:'))selectUnified(initialUnified);
   if(Number.isFinite(opts.xMin))minX=opts.xMin;
   if(Number.isFinite(opts.xMax))maxX=opts.xMax;
   let minY=Math.min(...pts.flatMap(p=>Number.isFinite(p.y2)?[p.y,p.y2]:[p.y])),maxY=Math.max(...pts.flatMap(p=>Number.isFinite(p.y2)?[p.y,p.y2]:[p.y]));
+  if(opts.yMode==='local'){
+   const actual=series.filter(s=>s.notes).flatMap(s=>s.points||[])
+    .filter(p=>Number.isFinite(p.y)&&p.x>=minX&&p.x<=maxX).map(p=>p.y);
+   if(actual.length){minY=Math.min(...actual);maxY=Math.max(...actual)}
+  }
+  if(Number.isFinite(opts.yMin))minY=Math.min(minY,opts.yMin);
+  if(Number.isFinite(opts.yMax))maxY=Math.max(maxY,opts.yMax);
   if(opts.zeroY){minY=Math.min(0,minY);maxY=Math.max(0,maxY)}
   if(maxX-minX<1){maxX=minX+1}if(maxY-minY<.1){maxY=minY+1}
   const padY=(maxY-minY)*.09;minY-=padY;maxY+=padY;
@@ -1852,15 +1859,42 @@ if(initialUnified.startsWith('received:'))selectUnified(initialUnified);
    if(pp.length>1)svg('polyline',{points:pp.map(p=>X(p.x)+','+Y(p.y)).join(' '),fill:'none',stroke:s.color||colors[0],'stroke-width':s.thin?2:3,'stroke-dasharray':s.dashed?'8 6':'none','stroke-linecap':'round','stroke-linejoin':'round'},drawing);
    if(pp.length===1)svg('circle',{cx:X(pp[0].x),cy:Y(pp[0].y),r:5,fill:s.color||colors[0]},drawing);
    if(s.notes){
-    for(const p of pp.filter(p=>p.note)){
-     const c=svg('circle',{cx:X(p.x),cy:Y(p.y),r:4,fill:'#fff0ac',stroke:'#142f43','stroke-width':1},drawing);
-     svg('title',{},c,String(p.note).slice(0,120));
+    // Tap or keyboard focus a real measurement to inspect its exact data.
+    const shown=pp.filter(p=>p.x>=minX&&p.x<=maxX);
+    const step=Math.max(1,Math.ceil(shown.length/320));
+    for(let i=0;i<shown.length;i+=step){
+     const p=shown[i],label=[p.date?day(p.date):'Mesure',
+       Number.isFinite(p.weight)?fmt1(p.weight)+' kg':'Valeur : '+fmt1(p.y),
+       Number.isFinite(p.bmi)?'IMC '+fmt1(p.bmi):''].filter(Boolean).join(' · ');
+     const c=svg('circle',{cx:X(p.x),cy:Y(p.y),r:5.5,
+       fill:'#7de3cf',stroke:'#17394d','stroke-width':1.5,
+       tabindex:0,role:'button','aria-label':'Afficher '+label},drawing);
+     c.style.cursor='pointer';
+     svg('title',{},c,label+(p.note?' · '+String(p.note).slice(0,80):''));
+     const show=()=>{
+      const details=target.querySelector('.advanced-point-detail:last-child');
+      if(details){
+       details.textContent=label+(p.note?' · '+String(p.note).slice(0,120):'');
+       details.style.display='block';
+      }
+     };
+     c.addEventListener('click',show);
+     c.addEventListener('keydown',event=>{
+      if(event.key==='Enter'||event.key===' '){event.preventDefault();show()}
+     });
     }
    }
   }
   const leg=node('div','advanced-legend');for(const s of series.filter(s=>!s.band)){
    const span=node('span','',s.label);span.style.setProperty('--legend-color',s.color||colors[0]);leg.append(span);
   }target.append(leg);
+  if(series.some(s=>s.notes)){
+   const details=node('p','advanced-point-detail','Appuie sur un point de la courbe pour voir la date, le poids et l’IMC.');
+   details.style.cssText='margin:9px 0 0;padding:10px 12px;border-radius:10px;background:#102a3f;border:1px solid #3b6175;font-size:12px;color:#d9eef6;line-height:1.5';
+   details.setAttribute('role','status');
+   details.setAttribute('aria-live','polite');
+   target.append(details);
+  }
  }
  function weeklyRecords(p){
   const byWeek=new Map();
@@ -1912,7 +1946,11 @@ function healthReferenceGraph(target,p){
   }
   const first=p.rows[0].date;
   const relevant=rangeRows(p);
-  const points=relevant.map(r=>({x:child?ageOn(r.date):days(first,r.date),y:actualMetric(r),note:r.note})).filter(q=>q.x!==null&&Number.isFinite(q.y));
+  const points=relevant.map(r=>{
+   const measuredHeight=tall(r)||(child?null:p.height);
+   return {x:child?ageOn(r.date):days(first,r.date),y:actualMetric(r),
+    date:r.date,weight:r.weight,bmi:measuredHeight?r.weight/Math.pow(measuredHeight/100,2):null,note:r.note};
+  }).filter(q=>q.x!==null&&Number.isFinite(q.y));
   if(!points.length){
    target.append(node('p','advanced-help',healthMetric==='weight'?'Aucune pesée exploitable.':'Renseigne la taille mesurée à chaque pesée pour calculer la taille et l’IMC de l’enfant.'));
    return;
@@ -1947,7 +1985,10 @@ function healthReferenceGraph(target,p){
     line('IOTF seuil surpoids (IMC 25 adulte)',palette[3],iotf.map(q=>({x:q[0],y:q[2]})));
     line('IOTF seuil obésité (IMC 30 adulte)',palette[4],iotf.map(q=>({x:q[0],y:q[3]})));
    }
-   graph(target,series,{title:'Croissance et références selon âge et sexe',xLabel:v=>(v/12).toFixed(1)+' ans'});
+   controls(target,[['Vue globale',healthZoom==='global',()=>{healthZoom='global';redraw()}],
+     ['Zoom sur mes mesures',healthZoom==='local',()=>{healthZoom='local';redraw()}]]);
+   graph(target,series,{title:'Croissance et références selon âge et sexe',
+    xLabel:v=>(v/12).toFixed(1)+' ans',yMode:healthZoom});
    target.append(node('p','advanced-help','Références de croissance OMS 2007 (5–19 ans, poids jusqu’à 10 ans) et seuils IMC IOTF 2012 (2–18 ans). Distinctes des courbes françaises AFPA 2018 du carnet de santé. Interprétation médicale nécessaire, notamment pendant la croissance.'));
   }else{
    if(healthMetric==='height'){
@@ -1993,7 +2034,13 @@ function healthReferenceGraph(target,p){
    }
    target.append(referenceCard);
    const bands=zones.map(z=>({...z,from:toY(z.from),to:toY(z.to)}));
-   graph(target,series,{title:'Poids et zones de corpulence IMC de l’adulte',yBands:bands});
+   controls(target,[['Vue globale',healthZoom==='global',()=>{healthZoom='global';redraw()}],
+    ['Zoom sur mes mesures',healthZoom==='local',()=>{healthZoom='local';redraw()}]]);
+   const lowGlobal=toY(Math.min(16,actualBmi-2));
+   const highGlobal=toY(Math.max(42,actualBmi+2));
+   graph(target,series,{title:'Poids et zones de corpulence IMC de l’adulte',
+    yBands:bands,yMode:healthZoom,
+    ...(healthZoom==='global'?{yMin:lowGlobal,yMax:highGlobal}:{})});
    const legend=node('div','adult-health-zones');
    legend.style.cssText='display:flex;flex-wrap:wrap;gap:8px 14px;margin:3px 0 14px';
    for(const z of zones){
@@ -2022,7 +2069,8 @@ function healthReferenceGraph(target,p){
   advanced.append(checkbox('Afficher la projection',projection,v=>{projection=v;redraw()}));
   advanced.append(checkbox('Repères types',referenceBand,v=>{referenceBand=v;redraw()}));
   const rows=rangeRows(p),origin=p.rows[0].date,last=p.rows.at(-1),wEnd=days(origin,last.date);
-  const series=[{label:'Poids réel',color:colors[0],notes:true,points:rows.map(r=>({x:days(origin,r.date),y:r.weight,note:r.note}))},
+  const series=[{label:'Poids réel',color:colors[0],notes:true,points:rows.map(r=>({x:days(origin,r.date),y:r.weight,date:r.date,
+   weight:r.weight,bmi:r.weight/Math.pow(p.height/100,2),note:r.note}))},
    {label:'Objectif',color:'#f7d77c',dashed:true,thin:true,points:[{x:0,y:p.goal},{x:wEnd,y:p.goal}]}];
   if(trend){
    const trendPoints=rows.map(r=>{
@@ -2057,9 +2105,10 @@ function healthReferenceGraph(target,p){
  function progressGraph(target,p){
   target.append(sectionTitle('Progression et évolution hebdomadaire'));
   const start=p.rows[0].weight,goal=p.goal;
-  const loss=p.rows.map(r=>({x:days(p.rows[0].date,r.date),y:start-r.weight}));
+  const loss=p.rows.map(r=>({x:days(p.rows[0].date,r.date),y:start-r.weight,
+   date:r.date,weight:r.weight,bmi:r.weight/Math.pow(p.height/100,2)}));
   const objective=Math.max(.001,start-goal);
-  graph(target,[{label:'Kg perdus cumulés',color:colors[0],points:loss},{label:'Objectif en kg',color:colors[1],dashed:true,points:[{x:0,y:objective},{x:Math.max(1,loss.at(-1).x),y:objective}]}],{title:'Perte cumulée depuis le départ',zeroY:true});
+  graph(target,[{label:'Kg perdus cumulés',color:colors[0],notes:true,points:loss},{label:'Objectif en kg',color:colors[1],dashed:true,points:[{x:0,y:objective},{x:Math.max(1,loss.at(-1).x),y:objective}]}],{title:'Perte cumulée depuis le départ',zeroY:true});
   const bars=weeklyRecords(p),area=node('div','',undefined);target.append(sectionTitle('Variation par semaine'));
   if(!bars.length){target.append(node('p','advanced-help','Au moins deux semaines de mesures sont nécessaires.'));return}
   const max=Math.max(.1,...bars.map(b=>Math.abs(b.change)));
