@@ -1,0 +1,1 @@
+Déclencher la v1.6.54 : protection des descriptions de repas non enregistrées au changement d’onglet, de profil, de jour ou de mois.
