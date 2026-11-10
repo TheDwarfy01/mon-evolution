@@ -464,10 +464,11 @@ shareCard.innerHTML=`<h3>🔗 Partage en lecture seule</h3>
  <label class="checkline"><input type="checkbox" id="share-photos"> Autoriser aussi les photos des repas</label>
  <p class="notice">Le portrait et les photos des repas se règlent séparément pour ce profil. Les autres profils ne sont jamais inclus.</p>
  <p id="share-state" class="notice"></p>
- <button class="primary" id="create-share">Créer le fichier partagé sur Drive</button><button class="secondary" style="width:100%;margin-top:10px" id="share-relink">↗ Relier un fichier partagé existant</button>
+ <button class="primary" id="create-share">Créer le fichier partagé sur Drive</button>
+ <button class="secondary" style="width:100%;margin-top:10px;display:none" id="share-change-password">🔐 Changer le mot de passe du partage</button><button class="secondary" style="width:100%;margin-top:10px" id="share-relink">↗ Relier un fichier partagé existant</button>
  <div id="share-link-panel" style="display:none;margin-top:15px;border-top:1px solid #38576b;padding-top:15px">
    <h3>🔗 Envoyer mon profil à un proche</h3>
-   <p class="notice">🔒 Fichier chiffré AES-256-GCM. Le lien ne change pas. Envoie le mot de passe séparément. Minimum 6 caractères avec 1 majuscule et 1 symbole ; 10 à 12 caractères ou plus sont recommandés.</p>
+   <p class="notice">🔒 Fichier chiffré AES-256-GCM. Le lien ne change pas. Un mot de passe aléatoire de 16 caractères est généré automatiquement. Copie-le ou envoie-le séparément du lien de partage.</p>
    <p class="notice">1. Dans Drive, retrouve le fichier « mon-evolution-partage-… ». Appuie sur ⋮ → Partager, invite les proches comme <strong>Lecteurs</strong> et copie le lien. Garde l’accès général sur <strong>Limité</strong>.</p>
    <button id="share-open-drive" class="secondary" type="button" style="width:100%">Ouvrir Google Drive</button>
    <label class="field">2. Colle ici le lien obtenu dans Google Drive
@@ -510,6 +511,7 @@ function shareStatus(){
  $('stop-share').style.display=linked?'block':'none';
  $('delete-active-share').style.display=linked?'block':'none';
  $('manage-drive-share').style.display=linked?'block':'none';
+ $('share-change-password').style.display=linked?'block':'none';
  $('create-share').textContent=linked?'↻ Mettre à jour le partage Drive':'Créer le fichier partagé sur Drive';
  $('share-relink').textContent=linked?'Changer de fichier partagé relié':'↗ Relier un fichier partagé existant';
  $('share-link-panel').style.display=linked?'block':'none';
@@ -553,13 +555,37 @@ $('create-share').onclick=()=>{
  const p=profile();
  const linked=window.AndroidBackup?.sharedStatus?.(p.id)==='1';
  if(!linked && !confirm('Un fichier de partage existe-t-il déjà pour ce profil ? Si oui, annule et utilise « Relier un fichier partagé existant » pour éviter un doublon.'))return;
- const publish=()=>AndroidBackup.createShare(p.id,JSON.stringify({profile:{name:p.name,height:p.height,goal:p.goal,entries:p.entries,meals:p.meals||{},avatar:p.avatar||''}}));
+ const publish=()=>AndroidBackup.createShare(p.id,JSON.stringify({profile:{name:p.name,height:p.height,goal:p.goal,entries:p.entries,meals:p.meals||{},avatar:p.avatar||'',birthDate:p.birthDate||'',sex:p.sex||''}}));
  if(AndroidBackup.hasSharePassword?.(p.id))publish();
- else askCrypt('Créer le mot de passe du fichier chiffré',true,pass=>{
-  if(pass!==null && AndroidBackup.saveSharePassword(p.id,pass))publish();
+ else askCrypt('Mot de passe généré pour ce nouveau partage',true,pass=>{
+  if(pass!==null){
+   if(AndroidBackup.saveSharePassword(p.id,pass))publish();
+   else alert('Impossible de conserver le mot de passe. Aucun nouveau fichier partagé créé.');
+  }
  });
  if(linked)message('Actualisation du fichier partagé existant…');
 };
+$('share-change-password').onclick=()=>{
+ const p=profile();
+ if(!window.AndroidBackup?.rotateSharePassword || window.AndroidBackup?.sharedStatus?.(p.id)!=='1'){
+  return message('Un fichier de partage doit être relié pour changer le mot de passe.');
+ }
+ if(!confirm('⚠️ ATTENTION : changer le mot de passe rendra l’ancien code inutilisable pour lire le fichier partagé actuel. Tous les destinataires devront recevoir le nouveau mot de passe. Les copies déjà téléchargées restent accessibles. Continuer ?'))return;
+ askCrypt('Nouveau mot de passe aléatoire du partage',true,next=>{
+  if(next===null)return;
+  if(!confirm('⚠️ DERNIÈRE CONFIRMATION : as-tu bien copié ou envoyé le nouveau mot de passe ? Une fois le fichier mis à jour, l’ancien ne fonctionnera plus. Confirmer le changement ?'))return;
+  message('Chiffrement du fichier existant avec le nouveau mot de passe…');
+  AndroidBackup.rotateSharePassword(p.id,next);
+ });
+};
+function sharePasswordChanged(){
+ shareStatus();
+ alert('✓ Mot de passe modifié ! Le fichier et son lien sont conservés. Communique le nouveau mot de passe à tous les destinataires autorisés.');
+}
+function sharePasswordChangeFailed(reason){
+ shareStatus();
+ alert('Changement de mot de passe non confirmé : '+String(reason||'erreur inconnue')+'\nVérifie l’accès au fichier avant une nouvelle tentative.');
+}
 $('share-relink').onclick=()=>{
  if(!window.AndroidBackup?.linkExistingShare)return message('Liaison du partage indisponible');
  const p=profile();
@@ -933,9 +959,10 @@ if(initialUnified.startsWith('received:'))selectUnified(initialUnified);
   const input=$('crypt-input');input.value='';input.type='password';
   input.inputMode='text';
   input.maxLength=512;
-  input.placeholder=creating?'6 caractères minimum, 1 majuscule et 1 symbole':'Mot de passe du fichier partagé';
-  $('crypt-generate-actions').hidden=!creating;
-  $('crypt-generate-help').hidden=!creating;
+  input.placeholder=creating?'Mot de passe aléatoire généré automatiquement':'Mot de passe du fichier partagé';
+  $('crypt-generate-actions').style.display=creating?'flex':'none';
+  $('crypt-generate-help').style.display=creating?'block':'none';
+  input.readOnly=creating;
   $('crypt-generate').onclick=()=>{
    if(!window.AndroidBackup?.generateSharePassword){$('crypt-error').textContent='Génération sécurisée disponible sur Android uniquement.';return;}
    const generated=AndroidBackup.generateSharePassword();
@@ -943,19 +970,19 @@ if(initialUnified.startsWith('received:'))selectUnified(initialUnified);
    input.value=generated;input.type='text';$('crypt-error').textContent='';
   };
   $('crypt-copy').onclick=()=>{
-   if(!input.value){$('crypt-error').textContent='Génère ou saisis d’abord un mot de passe.';return;}
+   if(!input.value){$('crypt-error').textContent='Aucun mot de passe généré.';return;}
    if(window.AndroidBackup?.copySharePassword)AndroidBackup.copySharePassword(input.value);
    else $('crypt-error').textContent='Copie disponible sur Android.';
   };
   $('crypt-send').onclick=()=>{
-   if(!input.value){$('crypt-error').textContent='Génère ou saisis d’abord un mot de passe.';return;}
+   if(!input.value){$('crypt-error').textContent='Aucun mot de passe généré.';return;}
    if(window.AndroidBackup?.sendSharePassword)AndroidBackup.sendSharePassword(input.value);
    else $('crypt-error').textContent='Envoi disponible sur Android.';
   };
   $('crypt-ok').onclick=()=>{
    const pass=input.value;
-   if(creating && !(pass.length>=6 && pass.length<=512 && /[A-Z]/.test(pass) && /[^A-Za-z0-9]/.test(pass))){
-    $('crypt-error').textContent='Minimum 6 caractères, dont au moins 1 majuscule et 1 caractère spécial (10 à 12 recommandés).';return;
+   if(creating && !(pass.length===16 && /[A-Z]/.test(pass) && /[^A-Za-z0-9]/.test(pass))){
+    $('crypt-error').textContent='Le mot de passe doit être généré automatiquement.';return;
    }
    if(!creating && !(pass.length>=6 && pass.length<=512)){
     $('crypt-error').textContent='Saisis le mot de passe du fichier (6 caractères minimum).';return;
@@ -963,7 +990,10 @@ if(initialUnified.startsWith('received:'))selectUnified(initialUnified);
    d.close();input.value='';callback(pass);
   };
   $('crypt-cancel').onclick=()=>{d.close();input.value='';callback(null)};
-  d.showModal();input.focus();
+  $('crypt-ok').textContent=creating?'Utiliser ce mot de passe':'Ouvrir le fichier';
+  d.showModal();
+  if(creating)$('crypt-generate').click();
+  else input.focus();
  };
 })();
 </script>
