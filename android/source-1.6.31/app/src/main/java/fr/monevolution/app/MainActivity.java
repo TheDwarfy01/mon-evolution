@@ -238,6 +238,53 @@ public class MainActivity extends Activity {
                 }catch(Exception e){web.evaluateJavascript("showMessage('Impossible d’ouvrir le partage Android')",null);}
             });
         }
+        // Never expose an existing password to JavaScript. Read it from encrypted
+        // app storage and perform clipboard / Android share operations natively.
+        @JavascriptInterface public void copyCurrentSharePassword(String id){
+            if(id==null || !id.matches("[a-zA-Z0-9_-]{1,75}"))return;
+            try{
+                if(!getPreferences(MODE_PRIVATE).contains("share_uri_"+id))throw new Exception();
+                String password=readSecret("share_pass_"+id);
+                if(password==null || password.length()<6)throw new Exception();
+                final String secret=password;
+                runOnUiThread(()->{
+                    try{
+                        android.content.ClipboardManager clipboard=
+                            (android.content.ClipboardManager)getSystemService(CLIPBOARD_SERVICE);
+                        if(clipboard==null)throw new Exception();
+                        android.content.ClipData clip=android.content.ClipData.newPlainText(
+                            "Mot de passe du profil partagé",secret);
+                        // Android 13+ hides the copied value from clipboard previews.
+                        if(android.os.Build.VERSION.SDK_INT>=33){
+                            android.os.PersistableBundle extras=new android.os.PersistableBundle();
+                            extras.putBoolean(android.content.ClipDescription.EXTRA_IS_SENSITIVE,true);
+                            clip.getDescription().setExtras(extras);
+                        }
+                        clipboard.setPrimaryClip(clip);
+                        web.evaluateJavascript("showMessage('Mot de passe actuel copié ✓')",null);
+                    }catch(Exception e){web.evaluateJavascript("showMessage('Copie impossible')",null);}
+                });
+            }catch(Exception e){js("shareCurrentPasswordUnavailable()");}
+        }
+        @JavascriptInterface public void sendCurrentSharePassword(String id){
+            if(id==null || !id.matches("[a-zA-Z0-9_-]{1,75}"))return;
+            try{
+                if(!getPreferences(MODE_PRIVATE).contains("share_uri_"+id))throw new Exception();
+                String password=readSecret("share_pass_"+id);
+                if(password==null || password.length()<6)throw new Exception();
+                final String secret=password;
+                runOnUiThread(()->{
+                    try{
+                        Intent send=new Intent(Intent.ACTION_SEND);
+                        send.setType("text/plain");
+                        send.putExtra(Intent.EXTRA_SUBJECT,"Mot de passe Mon Évolution IMC");
+                        send.putExtra(Intent.EXTRA_TEXT,
+                            "Voici le mot de passe actuel de mon profil partagé Mon Évolution IMC (à conserver confidentiel) : "+secret);
+                        startActivity(Intent.createChooser(send,"Envoyer le mot de passe actuel"));
+                    }catch(Exception e){web.evaluateJavascript("showMessage('Envoi impossible')",null);}
+                });
+            }catch(Exception e){js("shareCurrentPasswordUnavailable()");}
+        }
         @JavascriptInterface public boolean hasSharePassword(String id){
             return id!=null && getPreferences(MODE_PRIVATE).contains("share_pass_"+id);
         }
