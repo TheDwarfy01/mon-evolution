@@ -2327,22 +2327,72 @@ function healthReferenceGraph(target,p){
  const cards=Array.from(shared.children).filter(x=>x.classList?.contains('card'));
  const lookup=cards.find(x=>x.querySelector('#shared-public-url'));
  shared.insertBefore(outer,lookup||null);
- const advanced=document.createElement('details');advanced.id='outgoing-advanced';
- const advancedTitle=document.createElement('summary');advancedTitle.textContent='⚙ Gestion avancée du partage';
- advanced.append(advancedTitle);
- for(const id of ['stop-share','delete-active-share','manage-drive-share']){
-  const control=$(id);if(control)advanced.append(control);
+ // Daily actions at the top. Reuse the original buttons: their Android
+ // native copy/send handlers remain attached; never reimplement link security.
+ const everyday=document.createElement('div');everyday.id='share-everyday';
+ everyday.style.cssText='padding:13px 0 8px';
+ const everydayTitle=document.createElement('h3');everydayTitle.textContent='✉ Envoyer mon profil à un proche';
+ everydayTitle.style.cssText='margin:0 0 7px';
+ const everydayInfo=document.createElement('p');everydayInfo.className='notice';
+ everydayInfo.textContent='Copie ton invitation ou partage-la directement. Envoie le mot de passe séparément.';
+ everydayInfo.style.margin='0 0 12px';
+ const btnRow=document.createElement('div');btnRow.className='two';
+ btnRow.style.cssText='display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px';
+ const copy=$('share-link-copy'),send=$('share-link-send');
+ if(copy && send){
+  const oldRow=copy.parentElement;
+  copy.textContent='📋 Copier';
+  copy.title='Copier le lien d’invitation Mon Évolution';
+  copy.setAttribute('aria-label','Copier le lien d’invitation');
+  send.textContent='↗ Partager';
+  send.title='Partager l’invitation à un proche';
+  send.setAttribute('aria-label','Partager le lien d’invitation');
+  btnRow.append(copy,send);
+  if(oldRow && oldRow!==btnRow && !oldRow.children.length)oldRow.remove();
  }
- const notices=Array.from(sharing.children).filter(el=>el.matches('p.notice') &&
-  el.textContent.includes('Pour lui retirer'));
+ const needSetup=document.createElement('p');needSetup.className='notice';
+ needSetup.id='share-everyday-state';needSetup.setAttribute('role','status');
+ needSetup.style.cssText='font-size:12px;margin:9px 0 0';
+ everyday.append(everydayTitle,everydayInfo,btnRow,needSetup);
+ const firstAction=$('share-password-actions');
+ if(firstAction)sharing.insertBefore(everyday,firstAction);
+ else sharing.append(everyday);
+
+ const advanced=document.createElement('details');advanced.id='outgoing-advanced';
+ const advancedTitle=document.createElement('summary');
+ advancedTitle.textContent='⚙ Paramètres avancés · Drive, liens et options';
+ advanced.append(advancedTitle);
+ // Initial creation, manual Drive links, photo permissions, changing a password,
+ // and destructive operations are setup/maintenance, not daily actions.
+ for(const id of ['share-avatar','share-avatar-status','share-photos','create-share',
+                  'share-relink','share-link-panel','share-change-password',
+                  'stop-share','delete-active-share','manage-drive-share']){
+  const control=$(id);
+  if(control)advanced.append(control.matches('input[type="checkbox"]')&&control.closest('label')?control.closest('label'):control);
+ }
+ const notices=Array.from(sharing.children).filter(el=>el.matches('p.notice')&&
+   (el.textContent.includes('Pour lui retirer')||
+    el.textContent.includes('Le portrait et les photos')||
+    el.textContent.includes('Publie uniquement ce profil')));
  for(const notice of notices)advanced.append(notice);
  const unused=$('open-share');
  if(unused){unused.hidden=true;unused.style.display='none'}
  sharing.append(advanced);
- summary.addEventListener('click',()=>{refreshName();if(typeof shareStatus==='function')shareStatus()});
+ function updateDaily(){
+  const p=profile();if(!p)return;
+  const linked=window.AndroidBackup?.sharedStatus?.(p.id)==='1';
+  const hasLink=linked&&!!(window.AndroidBackup?.getInvitationLink?.(p.id)||'');
+  needSetup.textContent=!linked?'Aucun partage configuré : ouvre les paramètres avancés pour le créer.':
+    hasLink?'Lien prêt ✓ · L’accès Drive et le mot de passe restent nécessaires.':
+    'Lien non configuré : ouvre les paramètres avancés pour enregistrer le lien Drive.';
+ }
+ const previousStatus=shareStatus;
+ shareStatus=function(){previousStatus();updateDaily()};
+ advanced.open=window.AndroidBackup?.sharedStatus?.(profile().id)!=='1';
+ summary.addEventListener('click',()=>{refreshName();shareStatus()});
  const profileSelect=$('profile-picker');
- if(profileSelect)profileSelect.addEventListener('change',refreshName);
- refreshName();
+ if(profileSelect)profileSelect.addEventListener('change',()=>{refreshName();shareStatus()});
+ refreshName();shareStatus();
 })();
 </script>
 
