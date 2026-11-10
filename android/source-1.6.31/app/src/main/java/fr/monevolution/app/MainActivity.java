@@ -575,44 +575,6 @@ public class MainActivity extends Activity {
                 }catch(Exception e){js("driveProfileRemoveFailed()");}
             });
         }
-    private boolean isReceivedSaved(String key){
-        if(key==null || !key.matches("[a-f0-9-]{36}"))return false;
-        try{
-            JSONArray list=new JSONArray(getPreferences(MODE_PRIVATE)
-                .getString("received_profiles","[]"));
-            for(int i=0;i<list.length();i++)
-                if(key.equals(list.getJSONObject(i).optString("key")))return true;
-        }catch(Exception ignored){}
-        return false;
-    }
-    private String receivedErrorCode(Exception failure){
-        for(Throwable cur=failure;cur!=null;cur=cur.getCause()){
-            if(cur instanceof javax.crypto.AEADBadTagException)return "password";
-        }
-        String msg=failure==null?"":String.valueOf(failure.getMessage());
-        if(msg.contains("Mot de passe")||msg.contains("password")||msg.contains("Invalid secret"))
-            return "password";
-        if("forbidden".equals(msg))return "access";
-        if("notfound".equals(msg))return "missing";
-        if("network".equals(msg))return "network";
-        if("html".equals(msg))return "preview";
-        if("invalid_json".equals(msg)||msg.contains("Format")||msg.contains("invalide"))
-            return "format";
-        return "error";
-    }
-    private void recordReceivedSync(String key,String code) {
-        if(!isReceivedSaved(key))return;
-        try {
-            SharedPreferences prefs=getPreferences(MODE_PRIVATE);
-            JSONObject saved=new JSONObject(prefs.getString("received_sync_"+key,"{}"));
-            long now=System.currentTimeMillis();
-            saved.put("state",code);
-            saved.put("attemptAt",now);
-            if("ok".equals(code))saved.put("successAt",now);
-            prefs.edit().putString("received_sync_"+key,saved.toString()).apply();
-            js("friendSyncUpdated("+JSONObject.quote(key)+","+JSONObject.quote(code)+")");
-        }catch(Exception ignored){}
-    }
     @JavascriptInterface public String receivedSyncInfo(String key){
         if(!isReceivedSaved(key))return "{}";
         return getPreferences(MODE_PRIVATE).getString("received_sync_"+key,"{}");
@@ -1499,6 +1461,44 @@ public class MainActivity extends Activity {
         });
     }
 
+    private boolean isReceivedSaved(String key){
+        if(key==null || !key.matches("[a-f0-9-]{36}"))return false;
+        try{
+            JSONArray list=new JSONArray(getPreferences(MODE_PRIVATE)
+                .getString("received_profiles","[]"));
+            for(int i=0;i<list.length();i++)
+                if(key.equals(list.getJSONObject(i).optString("key")))return true;
+        }catch(Exception ignored){}
+        return false;
+    }
+    private String receivedErrorCode(Exception failure){
+        for(Throwable cur=failure;cur!=null;cur=cur.getCause()){
+            if(cur instanceof javax.crypto.AEADBadTagException)return "password";
+        }
+        String msg=failure==null?"":String.valueOf(failure.getMessage());
+        if(msg.contains("Mot de passe")||msg.contains("password")||msg.contains("Invalid secret"))
+            return "password";
+        if("forbidden".equals(msg))return "access";
+        if("notfound".equals(msg))return "missing";
+        if("network".equals(msg))return "network";
+        if("html".equals(msg))return "preview";
+        if("invalid_json".equals(msg)||msg.contains("Format")||msg.contains("invalide"))
+            return "format";
+        return "error";
+    }
+    private void recordReceivedSync(String key,String code) {
+        if(!isReceivedSaved(key))return;
+        try {
+            SharedPreferences prefs=getPreferences(MODE_PRIVATE);
+            JSONObject saved=new JSONObject(prefs.getString("received_sync_"+key,"{}"));
+            long now=System.currentTimeMillis();
+            saved.put("state",code);
+            saved.put("attemptAt",now);
+            if("ok".equals(code))saved.put("successAt",now);
+            prefs.edit().putString("received_sync_"+key,saved.toString()).apply();
+            js("friendSyncUpdated("+JSONObject.quote(key)+","+JSONObject.quote(code)+")");
+        }catch(Exception ignored){}
+    }
     private void loadShared(Uri uri) {
         final long request=receivedLoadEpoch.incrementAndGet();
         final String pass=pendingReceivedPassword;
