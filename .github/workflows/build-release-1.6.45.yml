@@ -1,0 +1,127 @@
+name: Construire et publier Mon Evolution IMC 1.6.45
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'android/release-trigger-v1.6.45.txt'
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Preparer la version 1.6.45 depuis les sources communes 1.6.31
+        run: |
+          set -euo pipefail
+          cp -R android/source-1.6.31 android/source-1.6.45
+          python3 - <<'PY'
+          from pathlib import Path
+          app=Path('android/source-1.6.45/app/build.gradle')
+          gradle=app.read_text()
+          assert "versionCode 47" in gradle and "versionName '1.6.31'" in gradle
+          app.write_text(gradle.replace('versionCode 47','versionCode 61').replace("versionName '1.6.31'","versionName '1.6.45'"))
+          html=Path('android/source-1.6.45/app/src/main/assets/index.html')
+          source=html.read_text()
+          assert 'friends-release-status-row' in source
+          assert 'update-compact-line' in source
+          assert 'Consulter le profil complet' not in source
+          assert "remove.textContent='🗑'" in source
+          assert 'position:absolute;top:12px;right:12px' in source
+          assert '#shared-content{display:none!important}' in source
+          assert 'waterSlots=24' in source
+          assert 'id="avatar-choose"' in source
+          assert 'Choisir une photo</button>' not in source
+          assert 'profile-save-icon' in source
+          assert 'profile-tools-corner' in source
+          assert 'updateEvolutionRank(progress)' in source
+          assert 'weight-and-rank' in source
+          assert 'rank-name' in source
+          assert 'const renderWithRank=render' in source
+          assert 'friendPortrait' in source
+          assert 'oldSyncFinished' in source
+          assert 'about-info-trigger' in source
+          assert 'dialog.append(aboutCard)' in source
+          assert 'share-avatar-status' in source
+          assert 'id="share-avatar"' in source
+          assert 'Sauvegarde et synchronisation' in source
+          assert 'Dropbox' in source
+          assert 'OneDrive' in source
+          assert 'healthReferenceGraph(target,p)' in source
+          assert 'growth-references.js' in source
+          assert 'edit-birth' in source
+          assert 'measure-height' in source
+          assert 'pass.length>=6' in source
+          assert '1 majuscule' in source
+          assert 'crypt-generate' in source
+          assert 'crypt-copy' in source
+          assert 'crypt-send' in source
+          assert 'share-change-password' in source
+          assert 'share-copy-current-password' in source
+          assert 'share-send-current-password' in source
+          assert 'function showShareDialog' in source
+          assert 'J’ai copié ou envoyé le nouveau mot de passe' in source
+          assert 'copyCurrentSharePassword' in Path('android/source-1.6.45/app/src/main/java/fr/monevolution/app/MainActivity.java').read_text()
+          assert 'sendCurrentSharePassword' in Path('android/source-1.6.45/app/src/main/java/fr/monevolution/app/MainActivity.java').read_text()
+          assert 'DERNIÈRE CONFIRMATION' in source
+          assert 'icons[level.key]' in source
+          assert 'rank-emblem svg' in source
+          assert 'const friendPortrait=' in source
+          assert '/^data:image\\/jpeg;base64,/' in source
+          assert 'GROWTH_WHO2007' in Path('android/source-1.6.45/app/src/main/assets/growth-references.js').read_text()
+          assert 'GROWTH_IOTF2012' in Path('android/source-1.6.45/app/src/main/assets/growth-references.js').read_text()
+          source=source.replace('1.6.31','1.6.45')
+          html.write_text(source)
+          PY
+          grep -q 'versionCode 61' android/source-1.6.45/app/build.gradle
+          grep -q 'friendsOverviewSyncFinished' android/source-1.6.45/app/src/main/java/fr/monevolution/app/MainActivity.java
+          grep -q 'shareAvatarEnabled' android/source-1.6.45/app/src/main/java/fr/monevolution/app/MainActivity.java
+          grep -q 'backupProviderLabel' android/source-1.6.45/app/src/main/java/fr/monevolution/app/MainActivity.java
+          grep -q 'water23' android/source-1.6.45/app/src/main/java/fr/monevolution/app/MainActivity.java
+          grep -q 'Pause hydratation' android/source-1.6.45/app/src/main/java/fr/monevolution/app/ReminderReceiver.java
+          grep -q 'PBKDF2WithHmacSHA256' android/source-1.6.45/app/src/main/java/fr/monevolution/app/MainActivity.java
+          grep -Fq 'AES/GCM/NoPadding' android/source-1.6.45/app/src/main/java/fr/monevolution/app/MainActivity.java
+      - name: Installer SDK Android
+        run: |
+          set -euo pipefail
+          sdkmanager_bin="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager -print -quit)"
+          echo "$(dirname "$sdkmanager_bin")" >> "$GITHUB_PATH"
+          "$sdkmanager_bin" --install "platforms;android-35" "build-tools;35.0.0"
+      - name: Compiler l'application
+        working-directory: android/source-1.6.45
+        run: gradle --no-daemon :app:assembleRelease
+      - name: Signer l'APK avec la cle officielle existante
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          test -n "$KEYSTORE_B64" && test -n "$KEYSTORE_PASS" && test -n "$KEY_PASS" && test -n "$KEY_ALIAS"
+          printf '%s' "$KEYSTORE_B64" | base64 -d > /tmp/mon-evolution.jks
+          mkdir -p downloads
+          "$ANDROID_HOME/build-tools/35.0.0/zipalign" -p -f 4 \
+            android/source-1.6.45/app/build/outputs/apk/release/app-release-unsigned.apk \
+            /tmp/mon-evolution-aligned.apk
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign \
+            --ks /tmp/mon-evolution.jks --ks-key-alias "$KEY_ALIAS" \
+            --ks-pass env:KEYSTORE_PASS --key-pass env:KEY_PASS \
+            --out downloads/Mon_Evolution_IMC_v1.6.45.apk /tmp/mon-evolution-aligned.apk
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose downloads/Mon_Evolution_IMC_v1.6.45.apk
+          rm -f /tmp/mon-evolution.jks
+      - name: Publier la version 1.6.45
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release create v1.6.45 downloads/Mon_Evolution_IMC_v1.6.45.apk \
+            --title "Mon Évolution IMC 1.6.45 — gestion du mot de passe partagé" \
+            --notes "Partage : ajout de boutons permanents Copier et Envoyer le mot de passe actuel, stocké chiffré sur le téléphone. Remplacement des avertissements génériques file:// par deux confirmations intégrées avec explication des conséquences, rappel qu’aucun destinataire n’est prévenu automatiquement et obligation de confirmer que le nouveau code est conservé. Rotation sécurisée dans le fichier existant sans changer son lien. Badges métalliques personnalisés et courbes santé conservés. Mise à jour par-dessus l’ancienne version."
