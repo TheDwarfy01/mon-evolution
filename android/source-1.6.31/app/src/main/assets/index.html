@@ -95,7 +95,7 @@ function driveProfileRemoveFailed(){alert('Suppression Drive refusée (fichier m
 function restoreBase64(base64){
  try{
   const bytes=atob(base64),arr=Uint8Array.from(bytes,c=>c.charCodeAt(0)),raw=new TextDecoder().decode(arr),v=JSON.parse(raw);
-  if(v.format!=='mon-evolution'||v.version!==1)throw Error('format');
+  if(!window.MonEvolutionQuality?.isBackupDocument(v))throw Error('format');
   validate(v.data);
   if(!data.profiles.length || !confirm('Fusionner les profils de cette sauvegarde avec tes profils actuels ? Choisis Annuler pour accéder à l’option Remplacer.')){
    if(!confirm('REMPLACER tous les profils du téléphone par ceux du fichier ? Les données locales actuelles non sauvegardées seront perdues.'))return;
@@ -817,6 +817,7 @@ function sharedLoaded(base64,receivedKey){
  try {
   const raw=new TextDecoder().decode(Uint8Array.from(atob(base64),c=>c.charCodeAt(0)));
   const doc=JSON.parse(raw),p=doc.profile;
+  if(!window.MonEvolutionQuality?.isSharedDocument(doc))throw Error('invalide');
   if(doc.format!=='mon-evolution-lecture-seule'||doc.version!==1||!p||typeof p.name!=='string'||p.name.length>100
     ||!Number.isFinite(p.goal)||!Number.isFinite(p.height)||!Array.isArray(p.entries)||!p.entries.length||p.entries.length>20000
     ||!p.entries.every(e=>Number.isFinite(e.weight)&&e.weight>=1&&e.weight<=400&&/^\d{4}-\d{2}-\d{2}$/.test(e.date)))throw Error('invalide');
@@ -1729,6 +1730,7 @@ if(initialUnified.startsWith('received:'))selectUnified(initialUnified);
  paint();
 })();
 </script>
+<script src="quality-checks.js"></script>
 <script src="growth-references.js"></script>
 <script>
 /* Advanced Mon Évolution weight visualization — no third-party services. */
@@ -2089,7 +2091,7 @@ function healthReferenceGraph(target,p){
    if(actualBmi>=25){
     // L'écart est toujours une différence de poids en kg, même en mode IMC.
     // normalMax affiché sur l'axe vaut 25 en mode IMC, et non 25 kg.
-    const normalUpperWeight=25*factor;
+    const normalUpperWeight=window.MonEvolutionQuality?.normalWeightRange(p.height)?.high??25*factor;
     const remaining=Math.max(0,p.rows.at(-1).weight-normalUpperWeight);
     referenceCard.append(node('div','', 'Écart jusqu’au seuil supérieur de la zone verte : '+fmt1(remaining)+' kg.'));
    }
@@ -2519,12 +2521,14 @@ function healthReferenceGraph(target,p){
  function updateDaily(){
   const p=profile();if(!p)return;
   const linked=window.AndroidBackup?.sharedStatus?.(p.id)==='1';
-  const hasLink=linked&&!!(window.AndroidBackup?.getInvitationLink?.(p.id)||'');
+  const link=window.AndroidBackup?.getInvitationLink?.(p.id)||'';
+  const hasLink=linked&&!!link;
   const hasPassword=linked&&!!window.AndroidBackup?.hasSharePassword?.(p.id);
+  const check=window.MonEvolutionQuality?.invitationState(linked,link,hasPassword)||'setup';
   if(sendPassword)sendPassword.style.display=linked?'block':'none';
-  needSetup.textContent=!linked?'Aucun partage configuré : ouvre les paramètres avancés pour le créer.':
-    !hasLink?'Lien non configuré : ouvre les paramètres avancés pour enregistrer le lien Drive.':
-    !hasPassword?'⚠ Mot de passe introuvable : vérifie ton partage avant l’envoi.':
+  needSetup.textContent=check==='setup'?'Aucun partage configuré : ouvre les paramètres avancés pour le créer.':
+    check==='link'?'Lien non configuré : ouvre les paramètres avancés pour enregistrer le lien Drive.':
+    check==='password'?'⚠ Mot de passe introuvable : vérifie ton partage avant l’envoi.':
     '✓ Invitation prête. Vérifie les autorisations Lecteur dans Google Drive pour le destinataire : elles ne sont pas accordées automatiquement.';
  }
  const previousStatus=shareStatus;
