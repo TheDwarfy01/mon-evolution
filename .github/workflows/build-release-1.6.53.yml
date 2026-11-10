@@ -92,7 +92,7 @@ jobs:
           assert 'backup-check-actions' in source
           assert 'share-password-current-buttons' in source
           assert '📋 Copier le mot de passe</button>' in source
-          assert 'flex-direction:column;align-items:stretch;gap:10px' in source
+          assert 'flex-direction:column;align-items:stretch;gap:14px' in source
           assert "controls(target,[['Poids',view==='weight'" in source
           assert 'controls(target,options.map(v=>' in source
           assert 'MonEvolutionQuality?.normalWeightRange(p.height)' in source
