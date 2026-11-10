@@ -1690,6 +1690,23 @@ if(initialUnified.startsWith('received:'))selectUnified(initialUnified);
   const X=v=>left+(v-minX)/(maxX-minX)*(width-left-right);
   const Y=v=>height-bottom-(v-minY)/(maxY-minY)*(height-top-bottom);
   const root=svg('svg',{viewBox:'0 0 640 290',class:'advanced-graph',role:'img','aria-label':opts.title||'Graphique du poids'},target);
+  // Fond de référence : bandes colorées placées sous la grille et sous les mesures.
+  if(Array.isArray(opts.yBands)){
+   const yClip=v=>Math.max(minY,Math.min(maxY,v));
+   for(const zone of opts.yBands){
+    const low=yClip(zone.from),high=yClip(zone.to);
+    if(!Number.isFinite(low)||!Number.isFinite(high)||high<=low)continue;
+    const yy=Y(high),hh=Y(low)-Y(high);
+    const rect=svg('rect',{x:left,y:yy,width:width-left-right,height:hh,fill:zone.color,
+      'fill-opacity':zone.normal?.34:.19},root);
+    svg('title',{},rect,zone.label);
+    if(hh>18){
+     svg('text',{x:width-right-8,y:yy+Math.min(17,hh/2+5),
+       'text-anchor':'end','font-size':zone.normal?13:11,'font-weight':zone.normal?'700':'500',
+       fill:zone.normal?'#e2fff2':'#d8e6f1'},root,zone.label);
+    }
+   }
+  }
   for(let i=0;i<=4;i++){
    const v=minY+(maxY-minY)*i/4,y=Y(v);
    svg('line',{x1:left,x2:width-right,y1:y,y2:y,stroke:'#36576c','stroke-width':1},root);
@@ -1811,15 +1828,54 @@ function healthReferenceGraph(target,p){
     target.append(node('p','advanced-help','Le suivi de la taille par âge est réservé aux profils enfants.'));
     return;
    }
-   const thresholds=[18.5,25,30,35,40];
-   const labels=['Insuffisance pondérale','Surpoids','Obésité I','Obésité II','Obésité III'];
+   // Seuils de classification IMC adulte (non applicables aux enfants).
    const factor=Math.pow(p.height/100,2);
-   for(let i=0;i<thresholds.length;i++){
-    const val=healthMetric==='weight'?thresholds[i]*factor:thresholds[i];
-    line(labels[i]+' · IMC '+thresholds[i],palette[i],[{x:lo,y:val},{x:Math.max(lo+1,hi),y:val}]);
+   const toY=bmi=>healthMetric==='weight'?bmi*factor:bmi;
+   const zones=[
+    {from:0,to:18.5,label:'Insuffisance pondérale',color:'#3478bd'},
+    {from:18.5,to:25,label:'Corpulence normale',color:'#248f58',normal:true},
+    {from:25,to:30,label:'Surpoids',color:'#b99a2d'},
+    {from:30,to:35,label:'Obésité I',color:'#c77d30'},
+    {from:35,to:40,label:'Obésité II',color:'#b75359'},
+    {from:40,to:200,label:'Obésité III',color:'#8255b3'}
+   ];
+   const zoneAt=bmi=>zones.find(z=>bmi<z.to)||zones.at(-1);
+   const actualBmi=p.rows.at(-1).weight/factor;
+   const category=zoneAt(actualBmi);
+   const referenceCard=node('div','adult-reference-summary');
+   referenceCard.style.cssText='padding:12px 14px;margin:12px 0 7px;border:1px solid #40667a;border-left:5px solid '+category.color+';border-radius:12px;background:#102d41;line-height:1.55';
+   const currentLine=node('div','');
+   currentLine.append(node('span','','Zone actuelle : '));
+   const currentName=node('strong','',category.label+' · IMC '+fmt1(actualBmi));
+   currentName.style.color='#e5f6ff';currentLine.append(currentName);referenceCard.append(currentLine);
+   const goalBmi=p.goal/factor;
+   const targetLine=node('div','');
+   targetLine.append(node('span','','Zone cible : '));
+   targetLine.append(node('strong','',zoneAt(goalBmi).label));referenceCard.append(targetLine);
+   const normalMin=toY(18.5),normalMax=toY(25);
+   const normalLine=node('div','');
+   normalLine.append(node('span','',healthMetric==='weight'
+    ?'Zone de corpulence normale : '+fmt1(normalMin)+' à '+fmt1(normalMax)+' kg'
+    :'Zone de corpulence normale : IMC 18,5 à 25'));
+   referenceCard.append(normalLine);
+   if(actualBmi>=25){
+    const remaining=Math.max(0,p.rows.at(-1).weight-normalMax);
+    referenceCard.append(node('div','', 'Écart jusqu’au seuil supérieur de la zone verte : '+fmt1(remaining)+' kg.'));
    }
-   graph(target,series,{title:'Poids et catégories IMC de l’adulte'});
-   target.append(node('p','advanced-help','Références IMC adultes : seuils 18,5 / 25 / 30 / 35 / 40. En mode Poids, conversion selon la taille du profil. Les catégories ne remplacent pas une évaluation médicale.'));
+   target.append(referenceCard);
+   const bands=zones.map(z=>({...z,from:toY(z.from),to:toY(z.to)}));
+   graph(target,series,{title:'Poids et zones de corpulence IMC de l’adulte',yBands:bands});
+   const legend=node('div','adult-health-zones');
+   legend.style.cssText='display:flex;flex-wrap:wrap;gap:8px 14px;margin:3px 0 14px';
+   for(const z of zones){
+    const item=node('span','','');
+    item.style.cssText='display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#d7e6f0';
+    const swatch=node('span','','');
+    swatch.style.cssText='display:inline-block;flex:0 0 11px;width:11px;height:11px;border-radius:3px;background:'+z.color;
+    item.append(swatch,node('span','',z.label));legend.append(item);
+   }
+   target.append(legend);
+   target.append(node('p','advanced-help','Zones de référence IMC pour les adultes, converties en kilogrammes selon la taille du profil lorsque Poids est sélectionné. La zone verte correspond à la corpulence normale (18,5 ≤ IMC < 25). Les catégories ne remplacent pas une évaluation médicale.'));
   }
  }
  
