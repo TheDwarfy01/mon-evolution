@@ -1,0 +1,1 @@
+Publication signée v1.6.47 : profils reçus stables en navigation, statuts individuels de synchronisation, renouvellement mot de passe, erreur d'invitation correctement identifiée.
