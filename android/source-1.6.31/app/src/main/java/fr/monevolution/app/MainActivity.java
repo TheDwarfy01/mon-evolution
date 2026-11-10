@@ -111,7 +111,31 @@ public class MainActivity extends Activity {
                 return handleUri(Uri.parse(url));
             }
         });
-        web.setWebChromeClient(new WebChromeClient());
+        // All remaining JS alerts/confirmations use a branded Android dialog.
+        // Prevent the WebView default title "La page file:// indique".
+        web.setWebChromeClient(new WebChromeClient() {
+            @Override public boolean onJsAlert(WebView view,String url,String message,
+                                                 android.webkit.JsResult result){
+                new android.app.AlertDialog.Builder(MainActivity.this)
+                    .setTitle("Mon Évolution IMC")
+                    .setMessage(message==null?"":message)
+                    .setPositiveButton("OK",(dialog,which)->result.confirm())
+                    .setOnCancelListener(dialog->result.cancel())
+                    .show();
+                return true;
+            }
+            @Override public boolean onJsConfirm(WebView view,String url,String message,
+                                                   android.webkit.JsResult result){
+                new android.app.AlertDialog.Builder(MainActivity.this)
+                    .setTitle("Mon Évolution IMC")
+                    .setMessage(message==null?"":message)
+                    .setPositiveButton("Confirmer",(dialog,which)->result.confirm())
+                    .setNegativeButton("Annuler",(dialog,which)->result.cancel())
+                    .setOnCancelListener(dialog->result.cancel())
+                    .show();
+                return true;
+            }
+        });
         if (android.os.Build.VERSION.SDK_INT >= 35) {
             content.setOnApplyWindowInsetsListener((view, insets) -> {
                 android.graphics.Insets bars = insets.getInsets(
