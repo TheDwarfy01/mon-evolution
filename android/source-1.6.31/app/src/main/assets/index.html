@@ -356,14 +356,17 @@ $('clear-meals').onclick=()=>{
   const p=profile();if(p.meals)delete p.meals[mealDate];
   save();renderMeals();message('Repas effacés');
 };
-$('export-meals-pdf').onclick=()=>{
+function mealsPdfPayload(){
   const p=profile(),days=Object.keys(p.meals||{}).filter(d=>d.slice(0,7)===mealMonth)
     .sort().map(date=>({date,meals:mealTypes
       .filter(([key])=>String(p.meals[date][key]||'').trim()||p.meals[date][key+'Photo'])
       .map(([key,label])=>({label,text:p.meals[date][key]||'',photo:p.meals[date][key+'Photo']||''}))}));
-  if(!window.AndroidBackup?.exportMealsPdf)return message('Export PDF disponible dans l’application Android');
   const weights=entries().filter(e=>e.date.startsWith(mealMonth)).map(e=>({date:e.date,weight:e.weight}));
-  AndroidBackup.exportMealsPdf(JSON.stringify({name:p.name,month:mealMonth,goal:p.goal,weights,days}));
+  return JSON.stringify({name:p.name,month:mealMonth,goal:p.goal,weights,days});
+}
+$('export-meals-pdf').onclick=()=>{
+  if(!window.AndroidBackup?.exportMealsPdf)return message('Export PDF disponible dans l’application Android');
+  AndroidBackup.exportMealsPdf(mealsPdfPayload());
 };
 const previousRender=render;
 render=function(){previousRender();renderMeals()};
@@ -376,15 +379,18 @@ const summary=document.createElement('div');
 summary.className='card';
 summary.innerHTML='<h3>Statistiques avancées</h3><div class="two"><div class="tile"><span>Moyenne sur 7 jours</span><strong id="average-seven">—</strong></div><div class="tile"><span>Évolution du mois</span><strong id="month-change">—</strong></div><div class="tile"><span>Poids le plus bas</span><strong id="lowest-weight">—</strong></div><div class="tile"><span>Pesées sur 30 jours</span><strong id="weighings-month">0</strong></div></div><button id="export-progress-pdf" class="secondary" style="width:100%;margin-top:12px">Télécharger le bilan PDF global</button>';
 $('home').append(summary);
-$('export-progress-pdf').onclick=()=>{
- if(!window.AndroidBackup?.exportProgressPdf)return message('Bilan global indisponible sur Android');
- const p=profile();
- const rows=entries();
- if(rows.length>12000)return alert('Trop de pesées pour cet export PDF. Utilise plutôt le CSV.');
- AndroidBackup.exportProgressPdf(JSON.stringify({
+function progressPdfPayload(){
+ const p=profile(),rows=entries();
+ if(rows.length>12000){alert('Trop de pesées pour cet export PDF. Utilise plutôt le CSV.');return null}
+ return JSON.stringify({
   name:p.name,height:p.height,goal:p.goal,
   weights:rows.map(e=>({date:e.date,weight:e.weight,note:e.note||''}))
- }));
+ });
+}
+$('export-progress-pdf').onclick=()=>{
+ if(!window.AndroidBackup?.exportProgressPdf)return message('Bilan global indisponible sur Android');
+ const payload=progressPdfPayload();
+ if(payload)AndroidBackup.exportProgressPdf(payload);
 };
 function enhanceWeights(){
   const list=entries(),lastDate=new Date(),start7=new Date(lastDate),start30=new Date(lastDate);
@@ -2718,6 +2724,24 @@ main{padding:10px 12px 40px}
   'Bilan PDF de ton profil : évolution du poids, objectif et historique des pesées.');
  bottomExport('meals','export-meals-pdf','↓ Télécharger le compte rendu mensuel',
   'Compte rendu PDF des repas du mois affiché dans le calendrier.');
+ // Les aperçus partagent exactement les mêmes données que les exports PDF.
+ for(const config of [
+  {id:'export-progress-pdf',label:'👁 Voir le bilan',kind:'progress',make:()=>progressPdfPayload()},
+  {id:'export-meals-pdf',label:'👁 Voir le PDF des repas',kind:'meals',make:()=>mealsPdfPayload()}
+ ]){
+  const download=$(config.id);if(!download)continue;
+  const preview=document.createElement('button');
+  preview.type='button';preview.className='secondary pdf-preview-btn';
+  preview.textContent=config.label;
+  preview.style.cssText='display:block;width:100%;margin:8px 0 0;min-height:44px';
+  preview.onclick=()=>{
+   if(!window.AndroidBackup?.previewPdf)return message('Aperçu PDF indisponible sur cette version Android');
+   const contents=config.make();
+   if(contents)AndroidBackup.previewPdf(config.kind,contents);
+  };
+  download.insertAdjacentElement('beforebegin',preview);
+  download.textContent='↓ Télécharger le PDF';
+ }
  // Remove the now-empty card at the end of the meal journal.
  const meals=$('meals');
  const empty=[...meals.querySelectorAll(':scope > .card')].find(c=>
