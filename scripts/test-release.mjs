@@ -80,6 +80,7 @@ for(const [fragment,name] of [
  ["'clip-path':'url(#'+clipId+')'", 'clipped chart zoom'],
  ['share-copy-current-password', 'existing password recovery'],
  ['share-password-current-buttons', 'mobile single-column password action'],
+ ['#home .weight-and-rank{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0;margin-top:12px}', 'visible separation between rank and weight loss'],
  ['backup-check-actions', 'mobile stacked backup controls'],
  ['flex-direction:column;align-items:stretch;gap:10px', 'no overlapping backup controls'],
  ['📋 Copier le mot de passe</button>', 'shortened password button label'],
