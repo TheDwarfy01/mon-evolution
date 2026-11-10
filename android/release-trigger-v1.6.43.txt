@@ -1,0 +1,1 @@
+Lancer publication v1.6.43, génération aléatoire forte de mot de passe, copie et envoi individuel, politique 6 caractères minimum.
