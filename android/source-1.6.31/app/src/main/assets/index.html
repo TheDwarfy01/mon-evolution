@@ -1985,7 +1985,10 @@ function healthReferenceGraph(target,p){
     :'Zone de corpulence normale : IMC 18,5 à 25'));
    referenceCard.append(normalLine);
    if(actualBmi>=25){
-    const remaining=Math.max(0,p.rows.at(-1).weight-normalMax);
+    // L'écart est toujours une différence de poids en kg, même en mode IMC.
+    // normalMax affiché sur l'axe vaut 25 en mode IMC, et non 25 kg.
+    const normalUpperWeight=25*factor;
+    const remaining=Math.max(0,p.rows.at(-1).weight-normalUpperWeight);
     referenceCard.append(node('div','', 'Écart jusqu’au seuil supérieur de la zone verte : '+fmt1(remaining)+' kg.'));
    }
    target.append(referenceCard);
@@ -2009,10 +2012,11 @@ function healthReferenceGraph(target,p){
   target.append(sectionTitle('Évolution du poids'));
   const periods=['30','90','365','all'],labels={'30':'30 jours','90':'90 jours','365':'1 an',all:'Tout'};
   const index=periods.indexOf(period);
-  stepper(target,'Période · zoom',labels[period]||'90 jours',
-   ()=>{period=periods[Math.min(periods.length-1,index+1)];redraw()},
+  // − réduit la durée ; + l'augmente, comme pour toute valeur numérique.
+  stepper(target,'Période affichée',labels[period]||'90 jours',
    ()=>{period=periods[Math.max(0,index-1)];redraw()},
-   index>=periods.length-1,index<=0);
+   ()=>{period=periods[Math.min(periods.length-1,index+1)];redraw()},
+   index<=0,index>=periods.length-1);
   const advanced=toggleChartOptions(target);
   advanced.append(checkbox('Afficher la tendance',trend,v=>{trend=v;redraw()}));
   advanced.append(checkbox('Afficher la projection',projection,v=>{projection=v;redraw()}));
@@ -2140,21 +2144,20 @@ function healthReferenceGraph(target,p){
   if(!target)return;
   target.replaceChildren();
   if(!p){target.append(node('p','advanced-help','Sélectionne un profil puis charge ses mesures pour afficher les graphiques.'));return;}
-  const views=['weight','progress','compare'],viewLabels={weight:'Poids',progress:'Progression',compare:'Comparaison'};
-  const viewIndex=views.indexOf(view);
-  stepper(target,'Type de graphique',viewLabels[view],
-   ()=>{view=views[(viewIndex+views.length-1)%views.length];redraw()},
-   ()=>{view=views[(viewIndex+1)%views.length];redraw()});
+  // Les modes sont des choix catégoriels : tous les boutons restent visibles.
+  controls(target,[['Poids',view==='weight',()=>{view='weight';redraw()}],
+   ['Progression',view==='progress',()=>{view='progress';redraw()}],
+   ['Comparaison',view==='compare',()=>{view='compare';redraw()}]]);
   if(view==='weight'){
    target.append(checkbox('Afficher les références santé',healthReference,checked=>{healthReference=checked;redraw()}));
    if(healthReference){
     const child=p.birthDate&&Number.isFinite(utc(p.birthDate))&&days(p.birthDate,p.rows.at(-1).date)<365.25*18;
     const options=child?[['Poids', 'weight'],['Taille','height'],['IMC','bmi']]:[['Poids','weight'],['IMC','bmi']];
     if(!options.some(v=>v[1]===healthMetric))healthMetric='weight';
-    const currentIndex=options.findIndex(v=>v[1]===healthMetric);
-    stepper(target,'Mesure',options[currentIndex][0],
-     ()=>{healthMetric=options[(currentIndex+options.length-1)%options.length][1];redraw()},
-     ()=>{healthMetric=options[(currentIndex+1)%options.length][1];redraw()});
+    // Poids / Taille / IMC restent des boutons directs et lisibles.
+    controls(target,options.map(v=>[v[0],healthMetric===v[1],()=>{
+     healthMetric=v[1];redraw();
+    }]));
     healthReferenceGraph(target,p);
    }else primaryGraph(target,p);
   }
