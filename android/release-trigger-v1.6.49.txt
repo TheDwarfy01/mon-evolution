@@ -1,0 +1,1 @@
+Compilation release v1.6.49 : catégories graphiques visibles, +/- pour la période et les valeurs, écart vers la zone verte correct en mode IMC.
