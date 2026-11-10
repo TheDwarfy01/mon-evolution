@@ -94,7 +94,7 @@ jobs:
           assert 'if(listOpen)return;' in source
           assert 'window.friendSyncUpdated=' in source
           assert 'receivedLoadEpoch.incrementAndGet()' in Path('android/source-1.6.50/app/src/main/java/fr/monevolution/app/MainActivity.java').read_text()
-          assert 'recordReceivedSync(id,"ok")' in Path('android/source-1.6.50/app/src/main/java/fr/monevolution/app/MainActivity.java').read_text()
+          assert 'recordReceivedSync(key,"ok")' in Path('android/source-1.6.50/app/src/main/java/fr/monevolution/app/MainActivity.java').read_text()
           assert 'J’ai copié ou envoyé le nouveau mot de passe' in source
           assert 'copyCurrentSharePassword' in Path('android/source-1.6.50/app/src/main/java/fr/monevolution/app/MainActivity.java').read_text()
           assert 'sendCurrentSharePassword' in Path('android/source-1.6.50/app/src/main/java/fr/monevolution/app/MainActivity.java').read_text()
