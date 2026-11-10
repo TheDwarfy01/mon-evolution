@@ -3123,4 +3123,114 @@ render=function(){
 };
 updateEvolutionRank(Number.parseFloat(($('pct')?.textContent||'0').replace(',','.')));
 </script>
+
+<style>
+/* Journal alimentaire : mise en évidence des descriptions non enregistrées. */
+#meal-unsaved-hint{color:#ffd89b;font-size:12px;font-weight:650;margin:8px 0 0}
+#save-meals.meal-unsaved{box-shadow:0 0 0 2px #ffcb7699}
+.meal-leave-dialog{box-sizing:border-box;width:min(92vw,440px);max-height:85vh;overflow:auto;padding:21px;border-radius:18px;border:1px solid #608a9e;background:#122d41;color:#f1fbff;box-shadow:0 16px 50px #000b}
+.meal-leave-dialog::backdrop{background:#020d18b8}
+.meal-leave-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}
+.meal-leave-actions>button{flex:1 1 150px;min-width:0;min-height:45px}
+</style>
+<script>
+(function(){
+ 'use strict';
+ // Compare visible text with the saved journal instead of merely tracking
+ // keystrokes. Typing then undoing a change must not trigger a warning.
+ const mealSection=document.getElementById('meals');
+ const inputs=document.getElementById('meal-inputs');
+ const saveButton=document.getElementById('save-meals');
+ if(!mealSection||!inputs||!saveButton)return;
+ let bypass=false,dialogOpen=false;
+ const hint=document.createElement('p');
+ hint.id='meal-unsaved-hint';hint.hidden=true;
+ hint.setAttribute('role','status');
+ hint.textContent='● Descriptions non enregistrées';
+ saveButton.insertAdjacentElement('beforebegin',hint);
+ function changed(){
+  if(mealSection.hidden)return false;
+  const p=profile();
+  if(!p||!inputs.querySelector('textarea'))return false;
+  const saved=p.meals?.[mealDate]||{};
+  return mealTypes.some(([key])=>{
+   const field=document.getElementById('meal-'+key);
+   return !!field && field.value.trim()!==String(saved[key]||'').trim();
+  });
+ }
+ function paint(){
+  const dirty=changed();
+  hint.hidden=!dirty;
+  saveButton.classList.toggle('meal-unsaved',dirty);
+ }
+ inputs.addEventListener('input',event=>{
+  if(event.target.matches('textarea'))paint();
+ });
+ // Update after save, calendar rendering, automatic photo saves and re-render.
+ const originalRenderMeals=renderMeals;
+ renderMeals=function(){
+  const result=originalRenderMeals();
+  paint();
+  return result;
+ };
+ saveButton.addEventListener('click',()=>queueMicrotask(paint));
+ function warning(continueAction){
+  if(dialogOpen)return;
+  dialogOpen=true;
+  const dialog=document.createElement('dialog');dialog.className='meal-leave-dialog';
+  const title=document.createElement('h3');title.textContent='Descriptions non enregistrées';
+  const message=document.createElement('p');
+  message.textContent='Tu as modifié des repas sans les enregistrer. Si tu quittes cette page, ces modifications seront perdues.';
+  message.style.cssText='font-size:14px;line-height:1.6;color:#d4e6ee;margin:12px 0';
+  const buttons=document.createElement('div');buttons.className='meal-leave-actions';
+  const stay=document.createElement('button');stay.type='button';stay.className='primary';
+  stay.textContent='Rester et enregistrer';
+  const leave=document.createElement('button');leave.type='button';leave.className='secondary';
+  leave.textContent='Quitter sans enregistrer';
+  buttons.append(stay,leave);dialog.append(title,message,buttons);
+  document.body.append(dialog);
+  let proceed=false;
+  stay.onclick=()=>dialog.close();
+  leave.onclick=()=>{proceed=true;dialog.close()};
+  dialog.addEventListener('close',()=>{
+   dialogOpen=false;dialog.remove();
+   if(proceed){bypass=true;try{continueAction()}finally{bypass=false}}
+   else saveButton.focus();
+  },{once:true});
+  dialog.showModal();
+ }
+ // Capture BEFORE all existing navigation handlers. A replay takes place
+ // only after the user explicitly confirms that unsaved edits may be lost.
+ document.addEventListener('click',event=>{
+  if(bypass||dialogOpen||!changed())return;
+  const target=event.target;
+  if(!(target instanceof Element))return;
+  let action=target.closest('[data-tab],#visual-profile-picker .profile-portrait-choice,#meal-calendar button,#previous-month,#next-month');
+  if(!action)return;
+  const tab=action.closest('[data-tab]');
+  if(tab&&tab.dataset.tab==='meals')return;
+  if(action.matches('#visual-profile-picker .profile-portrait-choice')&&action.getAttribute('aria-pressed')==='true')return;
+  if(action.closest('#meal-calendar')&&action.classList.contains('selected'))return;
+  event.preventDefault();event.stopImmediatePropagation();
+  warning(()=>action.click());
+ },true);
+ // Select menus fire change rather than click. Restore their displayed
+ // selection while confirmation is open, then replay the original change.
+ document.addEventListener('change',event=>{
+  if(bypass||dialogOpen||!changed())return;
+  const select=event.target;
+  if(!(select instanceof HTMLInputElement||select instanceof HTMLSelectElement))return;
+  if(!['unified-profile-picker','profile-picker','summary-report-month'].includes(select.id))return;
+  const desired=select.value;
+  const previous=select.id==='unified-profile-picker'?unifiedCurrent:
+   select.id==='profile-picker'?data.active:mealMonth;
+  if(desired===previous)return;
+  event.preventDefault();event.stopImmediatePropagation();
+  select.value=previous;
+  warning(()=>{select.value=desired;select.dispatchEvent(new Event('change',{bubbles:true}))});
+ },true);
+ // No data mutation: the user must use the existing Save button.
+ paint();
+})();
+</script>
 </body></html>
