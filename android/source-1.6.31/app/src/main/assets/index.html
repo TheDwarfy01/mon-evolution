@@ -1305,7 +1305,15 @@ if(initialUnified.startsWith('received:'))selectUnified(initialUnified);
  };
  card.append(reload);
  window.friendsOverviewUpdated=()=>updateReceivedChoices();
- window.friendSyncUpdated=(key,state)=>updateReceivedChoices();
+ window.friendSyncUpdated=(key,state)=>{
+  // Ne jamais naviguer automatiquement sur une réponse réseau.
+  updateReceivedChoices();
+  if(key && unifiedCurrent==='received:'+key && !$('shared').hidden){
+   const info=JSON.parse(window.AndroidBackup?.receivedSyncInfo?.(key)||'{}');
+   if(info.state==='password')$('shared-state').textContent='🔒 Mot de passe incorrect ou modifié : utilise « Mettre à jour le mot de passe » sur la fiche du profil.';
+   else if(info.state==='ok')$('shared-state').textContent='✓ Profil synchronisé · '+new Date(info.successAt||Date.now()).toLocaleString('fr-FR');
+  }
+ };
  window.receivedPasswordUpdateSucceeded=key=>{
   updateReceivedChoices();
   message('✓ Mot de passe confirmé : ce profil peut être synchronisé.');
@@ -1329,8 +1337,10 @@ if(initialUnified.startsWith('received:'))selectUnified(initialUnified);
  const oldClick=sharedNav.onclick;
  sharedNav.onclick=()=>{
   if(typeof oldClick==='function')oldClick();
+  // L'onglet Partagés reste ouvert, même si un rafraîchissement natif
+  // termine pendant que l'utilisateur consulte la liste.
+  showUnifiedTab('shared');
   updateReceivedChoices();
-  // Preserve Mario · Personnel; do not invoke selectUnified here.
   window.AndroidBackup?.refreshFriendsOverview?.();
  };
  const loaded=window.onReceivedProfileLoaded;
