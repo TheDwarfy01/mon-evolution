@@ -1040,6 +1040,72 @@ public class MainActivity extends Activity {
             SharedPreferences prefs = getPreferences(MODE_PRIVATE);
             return (prefs.contains(BACKUP_URI) ? "1" : "0") + "|" + prefs.getLong(BACKUP_TIME, 0);
         }
+        @JavascriptInterface public String backupVerificationStatus() {
+            SharedPreferences prefs=getPreferences(MODE_PRIVATE);
+            JSONObject result=new JSONObject();
+            try{
+                result.put("state",prefs.getString(BACKUP_VERIFY_STATE,"unknown"));
+                result.put("verifiedAt",prefs.getLong(BACKUP_VERIFIED_AT,0));
+                result.put("info",prefs.getString(BACKUP_VERIFY_INFO,""));
+            }catch(Exception ignored){}
+            return result.toString();
+        }
+        // Verify readability and backup structure without writing or restoring data.
+        @JavascriptInterface public void verifyLinkedBackup(){
+            final String reference=getPreferences(MODE_PRIVATE).getString(BACKUP_URI,null);
+            if(reference==null){
+                js("backupVerificationResult('unlinked','Aucune sauvegarde reliée.')");
+                return;
+            }
+            js("backupVerificationResult('pending','Vérification du fichier en lecture seule…')");
+            io.execute(()->{
+                String state="ok",description="Sauvegarde valide et lisible.";
+                try{
+                    String raw=readSafJson(Uri.parse(reference),40_000_000);
+                    JSONObject wrapper=new JSONObject(raw);
+                    if(!"mon-evolution".equals(wrapper.optString("format"))
+                        ||wrapper.optInt("version")!=1)throw new Exception("format");
+                    JSONArray profiles=wrapper.getJSONObject("data").getJSONArray("profiles");
+                    if(profiles.length()<1||profiles.length()>50)throw new Exception("format");
+                    int records=0;
+                    for(int i=0;i<profiles.length();i++){
+                        JSONObject profile=profiles.getJSONObject(i);
+                        if(profile.optString("id","").trim().isEmpty()
+                            ||profile.optString("name","").trim().isEmpty()
+                            ||profile.getDouble("height")<45||profile.getDouble("height")>250
+                            ||profile.getDouble("goal")<1||profile.getDouble("goal")>400)
+                            throw new Exception("format");
+                        JSONArray entries=profile.getJSONArray("entries");
+                        if(entries.length()<1||entries.length()>20000)throw new Exception("format");
+                        for(int k=0;k<entries.length();k++){
+                            JSONObject entry=entries.getJSONObject(k);
+                            double weight=entry.getDouble("weight");
+                            if(!Double.isFinite(weight)||weight<1||weight>400
+                                ||!entry.getString("date").matches("\\d{4}-\\d{2}-\\d{2}"))
+                                throw new Exception("format");
+                            records++;
+                        }
+                    }
+                    description=profiles.length()+" profil(s) · "+records+" pesée(s) vérifiées.";
+                    String expected=getPreferences(MODE_PRIVATE).getString(BACKUP_HASH,null);
+                    if(expected!=null&&!expected.equals(stringHash(raw))){
+                        state="conflict";
+                        description="Fichier valide, mais modifié depuis la dernière sauvegarde connue. Vérifier avant de remplacer.";
+                    }
+                }catch(Exception e){
+                    state="error";
+                    description="Impossible de lire ou valider le fichier. Les données locales restent inchangées.";
+                }
+                // Discard the result if the user disconnected or relinked mid-check.
+                if(!reference.equals(getPreferences(MODE_PRIVATE).getString(BACKUP_URI,null)))return;
+                getPreferences(MODE_PRIVATE).edit()
+                    .putString(BACKUP_VERIFY_STATE,state)
+                    .putString(BACKUP_VERIFY_INFO,description)
+                    .putLong(BACKUP_VERIFIED_AT,System.currentTimeMillis()).apply();
+                js("backupVerificationResult("+JSONObject.quote(state)+","+JSONObject.quote(description)+")");
+            });
+        }
+
         @JavascriptInterface public void autoSave(String json) {
             updateSharedFiles(json);
             String value = getPreferences(MODE_PRIVATE).getString(BACKUP_URI, null);
