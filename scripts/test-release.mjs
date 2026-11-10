@@ -82,7 +82,10 @@ for(const [fragment,name] of [
  ['share-password-current-buttons', 'mobile single-column password action'],
  ['#home .weight-and-rank{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0;margin-top:12px}', 'visible separation between rank and weight loss'],
  ['backup-check-actions', 'mobile stacked backup controls'],
- ['flex-direction:column;align-items:stretch;gap:10px', 'no overlapping backup controls'],
+ ['margin:12px 0 22px', 'backup buttons separated from options by vertical margin'],
+ ['backup-options-menu', 'options card gets its own top margin'],
+ ["showShareDialog('Récupérer mes profils'", 'restore uses internal branded confirmation'],
+ ['flex-direction:column;align-items:stretch;gap:14px', 'no overlapping backup controls'],
  ['📋 Copier le mot de passe</button>', 'shortened password button label'],
  ['white-space:nowrap;font-size:clamp', 'copy password fits on one line'],
  ['action.style.cssText', 'backup action full-width sizing']
@@ -98,6 +101,9 @@ for(const [fragment,name] of [
  ['friendsRefreshRunning','coalesced friend refresh'],
  ['recordReceivedSync(key,"pending")','friend pending status'],
  ['verifyLinkedBackup','native read-only verification'],
+ ['onJsAlert(WebView view','branded alert handler'],
+ ['onJsConfirm(WebView view','branded confirmation handler'],
+ ['.setTitle("Mon Évolution IMC")','no file URL in Android dialog title'],
  ['backupVerificationStatus','backup verification persisted'],
  ['readSafJson(uri','SAF read']
 ])check(java.includes(fragment),'Native: '+name);
