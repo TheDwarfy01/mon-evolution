@@ -806,10 +806,13 @@ public class MainActivity extends Activity {
             });
         }
         @JavascriptInterface public void selectReceivedProfile(String key) {
-            if(key==null || !key.matches("[a-f0-9-]{36}")){
-                js("sharedReadFailed()");return;
+            if(!isReceivedSaved(key)){
+                // A previously deleted key can still be queued by an old refresh.
+                return;
             }
+            final long request=receivedLoadEpoch.incrementAndGet();
             io.execute(() -> {
+                if(request!=receivedLoadEpoch.get()||!isReceivedSaved(key))return;
                 try {
                     JSONArray saved=new JSONArray(getPreferences(MODE_PRIVATE)
                         .getString("received_profiles","[]"));
@@ -818,40 +821,54 @@ public class MainActivity extends Activity {
                         JSONObject current=saved.getJSONObject(i);
                         if(key.equals(current.optString("key"))){item=current;break;}
                     }
-                    if(item==null)throw new Exception("Profil reçu inconnu");
+                    if(item==null)return;
                     String kind=item.getString("kind");
                     String source=item.getString("source");
                     byte[] body;
                     if("public".equals(kind)){
                         String fileId=driveFileId(source);
-                        if(fileId==null)throw new Exception("Lien non valide");
+                        if(fileId==null)throw new Exception("notfound");
                         body=fetchPublicProfile(fileId,driveResourceKey(source));
                     }else if("private".equals(kind)){
                         String raw=readSafJson(Uri.parse(source),40_000_000);
                         body=raw.getBytes(StandardCharsets.UTF_8);
-                    }else throw new Exception("Type de profil inconnu");
+                    }else throw new Exception("format");
                     JSONObject doc=decodeShared(new String(body,StandardCharsets.UTF_8),
                         readSecret("receive_pass_"+key));
+                    if(request!=receivedLoadEpoch.get()||!isReceivedSaved(key))return;
+                    // No new keys and no change to the user's visible tab.
                     registerReceived(kind,source,doc);
-                    body=doc.toString().getBytes(StandardCharsets.UTF_8);
                     getPreferences(MODE_PRIVATE).edit().putString("received_selected",key).apply();
-                    String base64=android.util.Base64.encodeToString(body,android.util.Base64.NO_WRAP);
+                    recordReceivedSync(key,"ok");
+                    String base64=android.util.Base64.encodeToString(
+                        doc.toString().getBytes(StandardCharsets.UTF_8),
+                        android.util.Base64.NO_WRAP);
                     js("sharedLoaded("+JSONObject.quote(base64)+","+JSONObject.quote(key)+")");
-                }catch(Exception e){js("sharedReadFailed()");}
+                }catch(Exception e){
+                    if(request==receivedLoadEpoch.get()&&isReceivedSaved(key)){
+                        String code=receivedErrorCode(e);
+                        recordReceivedSync(key,code);
+                        js("sharedReadFailed("+JSONObject.quote(code)+","+
+                            JSONObject.quote(key)+")");
+                    }
+                }
             });
         }
         @JavascriptInterface public void loadSharedPublic(String url) {
+            final long request=receivedLoadEpoch.incrementAndGet();
             final String pass=pendingReceivedPassword;
             pendingReceivedPassword="";
             String id=driveFileId(url);
-            if(id==null){js("sharedPublicFailed()");return;}
+            if(id==null){js("sharedPublicFailed('invalid_link')");return;}
             io.execute(() -> {
+                if(request!=receivedLoadEpoch.get())return;
                 try {
                     byte[] body=fetchPublicProfile(id,driveResourceKey(url));
                     JSONObject doc=decodeShared(new String(body,StandardCharsets.UTF_8),pass);
                     String resourceKey=driveResourceKey(url);
                     String source="https://drive.google.com/file/d/"+id+"/view"
                         +(resourceKey==null?"":"?resourcekey="+Uri.encode(resourceKey));
+                    if(request!=receivedLoadEpoch.get())return;
                     String key=registerReceived("public",source,doc);
                     if(pass!=null && pass.length()>=6 && pass.length()<=512)saveSecret("receive_pass_"+key,pass);
                     byte[] clear=doc.toString().getBytes(StandardCharsets.UTF_8);
@@ -859,16 +876,14 @@ public class MainActivity extends Activity {
                     getPreferences(MODE_PRIVATE).edit()
                         .remove("received_public_url").remove("received_share_uri")
                         .putString("received_selected",key).apply();
+                    recordReceivedSync(key,"ok");
                     js("sharedLoaded("+JSONObject.quote(b64)+","+JSONObject.quote(key)+")");
                 }catch(Exception e){
-                    String reason=e.getMessage();
-                    String code="invalid_json";
-                    if("html".equals(reason))code="html";
-                    else if("forbidden".equals(reason))code="forbidden";
-                    else if("notfound".equals(reason))code="notfound";
-                    else if("network".equals(reason))code="network";
-                    else if("too_large".equals(reason))code="too_large";
-                    js("sharedPublicFailed("+JSONObject.quote(code)+")");
+                    // Do not show an error from an invitation the user has replaced.
+                    if(request==receivedLoadEpoch.get()){
+                        String code=receivedErrorCode(e);
+                        js("sharedPublicFailed("+JSONObject.quote(code)+")");
+                    }
                 }
             });
         }
@@ -1485,20 +1500,27 @@ public class MainActivity extends Activity {
     }
 
     private void loadShared(Uri uri) {
+        final long request=receivedLoadEpoch.incrementAndGet();
+        final String pass=pendingReceivedPassword;
+        pendingReceivedPassword="";
         io.execute(() -> {
+            if(request!=receivedLoadEpoch.get())return;
             try {
                 String raw=readSafJson(uri,40_000_000);
-                String pass=pendingReceivedPassword;
-                pendingReceivedPassword="";
                 JSONObject doc=decodeShared(raw,pass);
+                if(request!=receivedLoadEpoch.get())return;
                 String key=registerReceived("private",uri.toString(),doc);
                 if(pass!=null && pass.length()>=6 && pass.length()<=512)saveSecret("receive_pass_"+key,pass);
                 raw=doc.toString();
                 getPreferences(MODE_PRIVATE).edit().putString("received_selected",key).apply();
                 String encoded=android.util.Base64.encodeToString(
                     raw.getBytes(StandardCharsets.UTF_8),android.util.Base64.NO_WRAP);
+                recordReceivedSync(key,"ok");
                 js("sharedLoaded("+JSONObject.quote(encoded)+","+JSONObject.quote(key)+")");
-            }catch(Exception e){js("sharedReadFailed()");}
+            }catch(Exception e){
+                if(request==receivedLoadEpoch.get())
+                    js("sharedReadFailed("+JSONObject.quote(receivedErrorCode(e))+",null)");
+            }
         });
     }
 
