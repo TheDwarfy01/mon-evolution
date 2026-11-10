@@ -700,9 +700,22 @@ function sharedSyncFailed(){
  const note=$('share-state');
  if(note)note.textContent='Ton profil personnel est enregistré, mais le fichier partagé n’a pas pu être synchronisé. Vérifie les autorisations de modification Google Drive dans Profils.';
 }
-function sharedReadFailed(){
- $('shared-state').textContent='Impossible de lire le profil sélectionné. Vérifie que c’est le fichier mon-evolution-partage-…json, avec le bon compte Google et un accès Lecteur.';
- message('Fichier de partage illisible ou accès Google Drive refusé');
+function sharedReadFailed(reason,key){
+ // Ignore a stale failure from a friend deleted or replaced during import.
+ if(key && !getReceivedList().some(friend=>friend.key===key))return;
+ if(key && unifiedCurrent!=='received:'+key)return;
+ const errors={
+  password:'Mot de passe incorrect ou modifié. Utilise « Mettre à jour le mot de passe » sous ce profil.',
+  access:'Accès Google Drive refusé : le propriétaire doit vérifier les autorisations de lecture.',
+  missing:'Fichier de partage introuvable. Demande un nouveau lien.',
+  network:'Connexion indisponible. Les anciennes données restent visibles.',
+  preview:'Google Drive renvoie une page de prévisualisation, pas le fichier partagé.',
+  format:'Le fichier n’est pas un document de partage Mon Évolution compatible.',
+  error:'Synchronisation impossible. Réessaie.'
+ };
+ const text=errors[reason]||errors.error;
+ if(!$('shared').hidden)$('shared-state').textContent=text;
+ if(!key)message(text);
 }
 function sharedPublicFailed(reason){
  const errors={
@@ -711,7 +724,10 @@ function sharedPublicFailed(reason){
   notfound:'Le fichier lié est introuvable. Demande à ton proche un nouveau lien vers le fichier JSON.',
   network:'La connexion à Google Drive a échoué. Vérifie la connexion et réessaie.',
   too_large:'Ce profil est trop volumineux pour être récupéré par un lien.',
-  invalid_json:'Le document téléchargé ne contient pas un profil Mon Évolution compatible.',
+  invalid_json:'Le document téléchargé n’est pas un fichier partagé Mon Évolution compatible.',
+  format:'Le document est incompatible. Choisis le fichier mon-evolution-partage-…json et non une sauvegarde générale.',
+  password:'Mot de passe incorrect ou modifié par le propriétaire. Demande-lui son mot de passe actuel.',
+  invalid_link:'Ce lien d’invitation est invalide. Recopie celui du propriétaire.',
   error:'Chargement impossible. Essaie de sélectionner le fichier directement dans Google Drive.'
  };
  const msg=errors[reason]||errors.error;
@@ -720,7 +736,7 @@ function sharedPublicFailed(reason){
  if(button){button.disabled=false;button.textContent='Charger le profil depuis l’URL';}
  const fallback=$('shared-open');
  if(fallback){fallback.hidden=false;fallback.focus();}
- alert(msg+'\n\nTu peux importer le document via « Ou choisir un fichier Drive privé ».');
+ message(msg);
 }
 $('open-share').onclick=()=>window.AndroidBackup?.openShared?.();
 $('shared-open').onclick=()=>askCrypt('Mot de passe du fichier reçu',false,pass=>{
@@ -742,7 +758,7 @@ $('shared-refresh').onclick=()=>window.AndroidBackup?.refreshShared?.();
 sharedNav.onclick=()=>{
  document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('on',b===sharedNav));
  ['home','chart','history','meals','profiles','shared'].forEach(t=>$(t).hidden=t!=='shared');
- if(typeof unifiedCurrent!=='undefined' && unifiedCurrent.startsWith('received:'))window.AndroidBackup?.refreshShared?.();
+ // Ouvrir la liste sans recharger ou sélectionner automatiquement un ancien profil.
 };
 document.querySelectorAll('[data-tab]:not([data-tab="shared"])').forEach(b=>b.addEventListener('click',()=>{$('shared').hidden=true}));
 function sharedLoaded(base64,receivedKey){
@@ -791,16 +807,15 @@ function sharedLoaded(base64,receivedKey){
    }
   }
   if(!days.length){const empty=document.createElement('p');empty.textContent='Aucun repas enregistré';food.append(empty)}
-  if($('shared').hidden){document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('on',b===sharedNav));['home','chart','history','meals','profiles','shared'].forEach(t=>$(t).hidden=t!=='shared')}
+  // Ne jamais changer l'écran lors d'une synchronisation en arrière-plan.
   window.onReceivedProfileLoaded?.(receivedKey,p.name);
-  message('Profil partagé actualisé ✓');
  }catch(e){message('Fichier de partage incompatible ou invalide')}
 }
 const renderBeforeShare=render;render=function(){renderBeforeShare();shareStatus()};
 shareStatus();
 // Quand le profil partagé est affiché, vérifier régulièrement les changements disponibles.
-setInterval(()=>{if(!$('shared').hidden&&document.visibilityState==='visible')window.AndroidBackup?.refreshShared?.()},60000);
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&!$('shared').hidden)window.AndroidBackup?.refreshShared?.()});
+setInterval(()=>{if(!$('shared').hidden&&document.visibilityState==='visible')window.AndroidBackup?.refreshFriendsOverview?.()},60000);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&!$('shared').hidden)window.AndroidBackup?.refreshFriendsOverview?.()});
 </script>
 <script>
 // Native Android reads JSON from GitHub Releases. No remote JavaScript is executed.
@@ -980,7 +995,7 @@ window.onReceivedProfileLoaded=(key,name)=>{
  unifiedCurrent='received:'+key;
  localStorage.setItem(unifiedStorageKey,unifiedCurrent);
  updateUnifiedPicker(unifiedCurrent);
- showUnifiedTab('shared');
+ // Le retour réseau ne commande aucune navigation.
  updateFirstLaunch();
 };
 const originalRenderForSwitcher=render;
@@ -1470,12 +1485,16 @@ if(initialUnified.startsWith('received:'))selectUnified(initialUnified);
  // the friend's data. Keep the friend selected and switch back to its summary.
  const beforeLoaded=window.onReceivedProfileLoaded;
  window.onReceivedProfileLoaded=function(key,name){
+  const listOpen=!$('shared').hidden;
+  const activeFriendTab=tabs.find(t=>!$(t).hidden && $(t).classList.contains('friend-view-active'));
+  const sameProfile=unifiedCurrent==='received:'+key;
   if(typeof beforeLoaded==='function')beforeLoaded(key,name);
   if(!key||!getReceivedList().some(p=>p.key===key))return;
   unifiedCurrent='received:'+key;
   localStorage.setItem(unifiedStorageKey,unifiedCurrent);
   updateUnifiedPicker(unifiedCurrent);
-  displayFriendTab(receivedTab);
+  if(listOpen)return;
+  if(sameProfile && activeFriendTab)displayFriendTab(activeFriendTab);
  };
  // Make the friend row activate the full profile including the top picker.
  const list=$('received-list-choices');
