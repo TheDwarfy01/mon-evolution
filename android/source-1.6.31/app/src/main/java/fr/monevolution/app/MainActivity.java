@@ -197,6 +197,47 @@ public class MainActivity extends Activity {
             if(id==null || !id.matches("[a-zA-Z0-9_-]{1,75}"))return false;
             try{if(!validNewSharePassword(pass))return false;saveSecret("share_pass_"+id,pass);return true;}catch(Exception e){return false;}
         }
+        // Generate using Android SecureRandom, never Math.random().
+        @JavascriptInterface public String generateSharePassword(){
+            final String upper="ABCDEFGHJKLMNPQRSTUVWXYZ";
+            final String lower="abcdefghjkmnpqrstuvwxyz";
+            final String digits="23456789";
+            final String symbols="!@#$%&*-_";
+            final String alphabet=upper+lower+digits+symbols;
+            java.security.SecureRandom random=new java.security.SecureRandom();
+            char[] password=new char[16];
+            password[0]=upper.charAt(random.nextInt(upper.length()));
+            password[1]=symbols.charAt(random.nextInt(symbols.length()));
+            for(int i=2;i<password.length;i++)password[i]=alphabet.charAt(random.nextInt(alphabet.length()));
+            for(int i=password.length-1;i>0;i--){
+                int k=random.nextInt(i+1);
+                char tmp=password[i];password[i]=password[k];password[k]=tmp;
+            }
+            return new String(password);
+        }
+        @JavascriptInterface public void copySharePassword(String password) {
+            if(!validNewSharePassword(password))return;
+            runOnUiThread(()->{
+                android.content.ClipboardManager clipboard=
+                    (android.content.ClipboardManager)getSystemService(CLIPBOARD_SERVICE);
+                if(clipboard==null)return;
+                android.content.ClipData clip=android.content.ClipData.newPlainText("Mot de passe du profil partagé",password);
+                clipboard.setPrimaryClip(clip);
+                web.evaluateJavascript("showMessage('Mot de passe copié ✓')",null);
+            });
+        }
+        @JavascriptInterface public void sendSharePassword(String password) {
+            if(!validNewSharePassword(password))return;
+            runOnUiThread(()->{
+                try{
+                    Intent send=new Intent(Intent.ACTION_SEND);
+                    send.setType("text/plain");
+                    send.putExtra(Intent.EXTRA_SUBJECT,"Mot de passe Mon Évolution IMC");
+                    send.putExtra(Intent.EXTRA_TEXT,"Voici le mot de passe de mon profil partagé Mon Évolution IMC (à conserver confidentiel) : "+password);
+                    startActivity(Intent.createChooser(send,"Envoyer le mot de passe séparément"));
+                }catch(Exception e){web.evaluateJavascript("showMessage('Impossible d’ouvrir le partage Android')",null);}
+            });
+        }
         @JavascriptInterface public boolean hasSharePassword(String id){
             return id!=null && getPreferences(MODE_PRIVATE).contains("share_pass_"+id);
         }
