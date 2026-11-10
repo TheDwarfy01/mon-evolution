@@ -1,0 +1,1 @@
+Déclenchement build v1.6.55 : aperçu natif multi-pages des bilans PDF global et repas sans télécharger ; export PDF conservé.
