@@ -1515,11 +1515,11 @@ public class MainActivity extends Activity {
                 getPreferences(MODE_PRIVATE).edit().putString("received_selected",key).apply();
                 String encoded=android.util.Base64.encodeToString(
                     raw.getBytes(StandardCharsets.UTF_8),android.util.Base64.NO_WRAP);
-                recordReceivedSync(key,"ok");
+                new Bridge().recordReceivedSync(key,"ok");
                 js("sharedLoaded("+JSONObject.quote(encoded)+","+JSONObject.quote(key)+")");
             }catch(Exception e){
                 if(request==receivedLoadEpoch.get())
-                    js("sharedReadFailed("+JSONObject.quote(receivedErrorCode(e))+",null)");
+                    js("sharedReadFailed("+JSONObject.quote(new Bridge().receivedErrorCode(e))+",null)");
             }
         });
     }
