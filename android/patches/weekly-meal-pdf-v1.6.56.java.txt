@@ -4,8 +4,14 @@
         JSONObject data=new JSONObject(json);
         String start=data.getString("start");
         if(!start.matches("\\d{4}-\\d{2}-\\d{2}"))throw new Exception("Invalid week");
-        java.time.LocalDate monday=java.time.LocalDate.parse(start);
-        if(monday.getDayOfWeek()!=java.time.DayOfWeek.MONDAY)throw new Exception("Week must start Monday");
+        java.text.SimpleDateFormat iso=new java.text.SimpleDateFormat("yyyy-MM-dd",java.util.Locale.ROOT);
+        iso.setLenient(false);
+        java.util.Calendar monday=java.util.Calendar.getInstance();
+        monday.setTime(iso.parse(start));
+        if(monday.get(java.util.Calendar.DAY_OF_WEEK)!=java.util.Calendar.MONDAY)
+            throw new Exception("Week must start Monday");
+        java.text.SimpleDateFormat shortDate=new java.text.SimpleDateFormat("dd/MM/yyyy",java.util.Locale.FRANCE);
+        java.text.SimpleDateFormat shortDay=new java.text.SimpleDateFormat("dd/MM",java.util.Locale.FRANCE);
         JSONObject all=data.getJSONObject("days");
         if(all.length()>7||json.length()>6_000_000)throw new Exception("Weekly data too large");
         String name=data.optString("name","Profil");
@@ -25,8 +31,10 @@
                 pen.setTextSize(17f);
                 canvas.drawText("Mon Évolution IMC — Repas de la semaine",left,33f,pen);
                 pen.setColor(ink);pen.setTypeface(Typeface.DEFAULT);pen.setTextSize(11f);
-                String through=monday.plusDays(6).format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"));
-                canvas.drawText("Profil : "+name+"    |    Du "+monday.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))+" au "+through,left,54f,pen);
+                java.util.Calendar sunday=(java.util.Calendar)monday.clone();
+                sunday.add(java.util.Calendar.DAY_OF_MONTH,6);
+                String through=shortDate.format(sunday.getTime());
+                canvas.drawText("Profil : "+name+"    |    Du "+shortDate.format(monday.getTime())+" au "+through,left,54f,pen);
                 pen.setTextSize(10f);
                 canvas.drawText(pageNo==1?"Page 1/2 — Descriptions des repas":"Page 2/2 — Photos des repas",left,74f,pen);
                 pen.setStyle(Paint.Style.STROKE);pen.setStrokeWidth(.75f);pen.setColor(line);
@@ -45,11 +53,12 @@
                 pen.setTypeface(Typeface.create(Typeface.DEFAULT,Typeface.BOLD));pen.setTextSize(10f);
                 canvas.drawText("Repas / jour",left+7,top+26,pen);
                 for(int d=0;d<7;d++){
-                    java.time.LocalDate date=monday.plusDays(d);
+                    java.util.Calendar date=(java.util.Calendar)monday.clone();
+                    date.add(java.util.Calendar.DAY_OF_MONTH,d);
                     float x=left+firstWidth+d*colWidth+5f;
                     canvas.drawText(weekdays[d],x,top+17f,pen);
                     pen.setTypeface(Typeface.DEFAULT);pen.setTextSize(9f);
-                    canvas.drawText(date.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM")),x,top+31f,pen);
+                    canvas.drawText(shortDay.format(date.getTime()),x,top+31f,pen);
                     pen.setTypeface(Typeface.create(Typeface.DEFAULT,Typeface.BOLD));pen.setTextSize(10f);
                 }
                 for(int meal=0;meal<keys.length;meal++){
@@ -57,7 +66,9 @@
                     pen.setColor(heading);pen.setTypeface(Typeface.create(Typeface.DEFAULT,Typeface.BOLD));pen.setTextSize(10f);
                     canvas.drawText(labels[meal],left+6f,y+24f,pen);
                     for(int d=0;d<7;d++){
-                        String date=monday.plusDays(d).toString();
+                        java.util.Calendar day=(java.util.Calendar)monday.clone();
+                        day.add(java.util.Calendar.DAY_OF_MONTH,d);
+                        String date=iso.format(day.getTime());
                         JSONObject record=all.optJSONObject(date);
                         if(record==null)continue;
                         float x=left+firstWidth+d*colWidth+5f;
