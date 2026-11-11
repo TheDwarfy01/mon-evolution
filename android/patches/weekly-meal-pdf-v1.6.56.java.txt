@@ -1,0 +1,122 @@
+
+    // Two-page A4 landscape weekly meal overview: first text, then photos.
+    private void createWeeklyMealsPdf(OutputStream output,String json) throws Exception {
+        JSONObject data=new JSONObject(json);
+        String start=data.getString("start");
+        if(!start.matches("\\d{4}-\\d{2}-\\d{2}"))throw new Exception("Invalid week");
+        java.time.LocalDate monday=java.time.LocalDate.parse(start);
+        if(monday.getDayOfWeek()!=java.time.DayOfWeek.MONDAY)throw new Exception("Week must start Monday");
+        JSONObject all=data.getJSONObject("days");
+        if(all.length()>7||json.length()>6_000_000)throw new Exception("Weekly data too large");
+        String name=data.optString("name","Profil");
+        if(name.length()>80)name=name.substring(0,80);
+        String[] keys={"morning","morningSnack","lunch","afternoonSnack","dinner","eveningSnack"};
+        String[] labels={"Petit-déjeuner","Collation matin","Déjeuner","Goûter","Dîner","Collation soir"};
+        String[] weekdays={"Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi","Dimanche"};
+        int ink=Color.rgb(31,52,68),line=Color.rgb(205,220,230),heading=Color.rgb(27,74,91);
+        float left=18f,top=100f,firstWidth=120f,colWidth=98f,rowHeight=68f,headerHeight=42f;
+        PdfDocument pdf=new PdfDocument();
+        Paint pen=new Paint(Paint.ANTI_ALIAS_FLAG);
+        try{
+            for(int pageNo=1;pageNo<=2;pageNo++){
+                PdfDocument.Page page=pdf.startPage(new PdfDocument.PageInfo.Builder(842,595,pageNo).create());
+                Canvas canvas=page.getCanvas();canvas.drawColor(Color.WHITE);
+                pen.setColor(heading);pen.setTypeface(Typeface.create(Typeface.DEFAULT,Typeface.BOLD));
+                pen.setTextSize(17f);
+                canvas.drawText("Mon Évolution IMC — Repas de la semaine",left,33f,pen);
+                pen.setColor(ink);pen.setTypeface(Typeface.DEFAULT);pen.setTextSize(11f);
+                String through=monday.plusDays(6).format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+                canvas.drawText("Profil : "+name+"    |    Du "+monday.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))+" au "+through,left,54f,pen);
+                pen.setTextSize(10f);
+                canvas.drawText(pageNo==1?"Page 1/2 — Descriptions des repas":"Page 2/2 — Photos des repas",left,74f,pen);
+                pen.setStyle(Paint.Style.STROKE);pen.setStrokeWidth(.75f);pen.setColor(line);
+                for(int c=0;c<=8;c++){
+                    float x=c==0?left:(c==1?left+firstWidth:left+firstWidth+(c-1)*colWidth);
+                    canvas.drawLine(x,top,x,top+headerHeight+keys.length*rowHeight,pen);
+                }
+                canvas.drawLine(left,top+headerHeight+keys.length*rowHeight,
+                    left+firstWidth+7*colWidth,top+headerHeight+keys.length*rowHeight,pen);
+                for(int row=0;row<=keys.length;row++){
+                    float y=top+headerHeight+row*rowHeight;
+                    canvas.drawLine(left,y,left+firstWidth+7*colWidth,y,pen);
+                }
+                canvas.drawLine(left,top,left+firstWidth+7*colWidth,top,pen);
+                pen.setStyle(Paint.Style.FILL);pen.setColor(heading);
+                pen.setTypeface(Typeface.create(Typeface.DEFAULT,Typeface.BOLD));pen.setTextSize(10f);
+                canvas.drawText("Repas / jour",left+7,top+26,pen);
+                for(int d=0;d<7;d++){
+                    java.time.LocalDate date=monday.plusDays(d);
+                    float x=left+firstWidth+d*colWidth+5f;
+                    canvas.drawText(weekdays[d],x,top+17f,pen);
+                    pen.setTypeface(Typeface.DEFAULT);pen.setTextSize(9f);
+                    canvas.drawText(date.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM")),x,top+31f,pen);
+                    pen.setTypeface(Typeface.create(Typeface.DEFAULT,Typeface.BOLD));pen.setTextSize(10f);
+                }
+                for(int meal=0;meal<keys.length;meal++){
+                    float y=top+headerHeight+meal*rowHeight;
+                    pen.setColor(heading);pen.setTypeface(Typeface.create(Typeface.DEFAULT,Typeface.BOLD));pen.setTextSize(10f);
+                    canvas.drawText(labels[meal],left+6f,y+24f,pen);
+                    for(int d=0;d<7;d++){
+                        String date=monday.plusDays(d).toString();
+                        JSONObject record=all.optJSONObject(date);
+                        if(record==null)continue;
+                        float x=left+firstWidth+d*colWidth+5f;
+                        String key=keys[meal];
+                        if(pageNo==1){
+                            drawWeeklyMealCell(canvas,pen,record.optString(key,""),x,y+13f,colWidth-10f,rowHeight-8f);
+                        }else{
+                            String src=record.optString(key+"Photo","");
+                            if(src.startsWith("data:image/jpeg;base64,")&&src.length()<=260000)
+                                drawWeeklyMealPhoto(canvas,src.substring("data:image/jpeg;base64,".length()),x,y+5f,colWidth-10f,rowHeight-10f);
+                        }
+                    }
+                }
+                pdf.finishPage(page);
+            }
+            pdf.writeTo(output);
+        }finally{pdf.close();}
+    }
+    private void drawWeeklyMealCell(Canvas canvas,Paint paint,String value,float x,float y,float width,float height){
+        value=value==null?"":value.replace('\n',' ').replace('\r',' ').trim();
+        if(value.isEmpty())return;
+        paint.setTypeface(Typeface.DEFAULT);paint.setColor(Color.rgb(31,52,68));paint.setTextSize(8.3f);
+        int lines=0;float yy=y;String remaining=value;
+        while(!remaining.isEmpty()&&lines<5){
+            int chars=paint.breakText(remaining,true,width,null);
+            if(chars<=0)break;
+            int end=chars;
+            if(chars<remaining.length()){
+                int lastSpace=remaining.lastIndexOf(' ',chars);
+                if(lastSpace>1)end=lastSpace;
+            }
+            String part=remaining.substring(0,end).trim();
+            remaining=remaining.substring(end).trim();
+            if(lines==4&&!remaining.isEmpty()){
+                while(part.length()>1&&paint.measureText(part+"…")>width)
+                    part=part.substring(0,part.length()-1);
+                part+="…";
+            }
+            canvas.drawText(part,x,yy,paint);
+            yy+=10.5f;lines++;
+        }
+    }
+    private void drawWeeklyMealPhoto(Canvas canvas,String encoded,float x,float y,float width,float height){
+        Bitmap bitmap=null;
+        try{
+            byte[] raw=android.util.Base64.decode(encoded,android.util.Base64.DEFAULT);
+            if(raw.length>200000)return;
+            BitmapFactory.Options opts=new BitmapFactory.Options();
+            opts.inJustDecodeBounds=true;
+            BitmapFactory.decodeByteArray(raw,0,raw.length,opts);
+            opts.inSampleSize=1;
+            while(opts.outWidth/opts.inSampleSize>300||opts.outHeight/opts.inSampleSize>300)
+                opts.inSampleSize*=2;
+            opts.inJustDecodeBounds=false;
+            bitmap=BitmapFactory.decodeByteArray(raw,0,raw.length,opts);
+            if(bitmap==null)return;
+            float scale=Math.min(width/bitmap.getWidth(),height/bitmap.getHeight());
+            float w=bitmap.getWidth()*scale,h=bitmap.getHeight()*scale;
+            canvas.drawBitmap(bitmap,null,new RectF(x+(width-w)/2f,y+(height-h)/2f,
+                x+(width+w)/2f,y+(height+h)/2f),new Paint(Paint.ANTI_ALIAS_FLAG|Paint.FILTER_BITMAP_FLAG));
+        }catch(Exception ignored){}finally{if(bitmap!=null)bitmap.recycle();}
+    }
