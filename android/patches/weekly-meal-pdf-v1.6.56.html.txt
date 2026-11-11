@@ -1,0 +1,76 @@
+
+<style>
+#weekly-meal-report .week-nav{display:flex;align-items:center;gap:8px;margin:10px 0}
+#weekly-meal-report .week-nav>button{width:40px;min-width:40px;height:40px;padding:0;border-radius:10px}
+#weekly-meal-report .week-nav input{margin:0;min-width:0;flex:1;font-size:14px;padding:9px}
+#weekly-meal-report .week-label{font-size:12px;color:#c1e6e4;margin-bottom:10px}
+#weekly-meal-report .weekly-actions{display:grid;gap:8px}
+#weekly-meal-report .weekly-actions button{width:100%;min-height:42px}
+</style>
+<script>
+(function(){
+ const reports=$('summary-pdf-reports');
+ if(!reports)return;
+ const details=document.createElement('details');details.className='export-details';details.id='weekly-meal-report';
+ const label=document.createElement('summary');label.textContent='📅 Bilan hebdomadaire des repas (2 pages)';
+ const body=document.createElement('div');body.className='export-content';
+ const info=document.createElement('p');info.className='notice';
+ info.textContent='Sélectionne une semaine : page 1 les repas écrits, page 2 leurs photos, en A4 paysage.';
+ const nav=document.createElement('div');nav.className='week-nav';
+ const prev=document.createElement('button');prev.className='secondary';prev.textContent='‹';prev.title='Semaine précédente';
+ const date=document.createElement('input');date.type='date';date.setAttribute('aria-label','Choisir un jour de la semaine à exporter');
+ const next=document.createElement('button');next.className='secondary';next.textContent='›';next.title='Semaine suivante';
+ const caption=document.createElement('p');caption.className='week-label';
+ const actions=document.createElement('div');actions.className='weekly-actions';
+ const preview=document.createElement('button');preview.className='secondary';preview.textContent='👁 Voir le PDF';
+ const download=document.createElement('button');download.className='primary';download.textContent='↓ Télécharger le PDF';
+ function isoDate(d){return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')}
+ function mondayOf(s){
+  const parts=s.split('-').map(Number);
+  if(parts.length!==3||parts.some(v=>!Number.isInteger(v)))return null;
+  const d=new Date(parts[0],parts[1]-1,parts[2],12);
+  if(d.getFullYear()!==parts[0]||d.getMonth()+1!==parts[1]||d.getDate()!==parts[2])return null;
+  d.setDate(d.getDate()-(d.getDay()+6)%7);
+  return d;
+ }
+ let monday=mondayOf(isoDate(new Date()));
+ function setWeek(d){
+  monday=d;
+  date.value=isoDate(d);
+  const end=new Date(d);end.setDate(end.getDate()+6);
+  const f=x=>x.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'});
+  caption.textContent='Semaine du '+f(d)+' au '+f(end);
+ }
+ setWeek(monday);
+ date.onchange=()=>{const d=mondayOf(date.value);if(d)setWeek(d)};
+ prev.onclick=()=>{const d=new Date(monday);d.setDate(d.getDate()-7);setWeek(d)};
+ next.onclick=()=>{const d=new Date(monday);d.setDate(d.getDate()+7);setWeek(d)};
+ function payload(){
+  const p=profile();
+  if(!p)return null;
+  const days={};
+  for(let i=0;i<7;i++){
+   const d=new Date(monday);d.setDate(d.getDate()+i);
+   const key=isoDate(d),meal=p.meals?.[key];
+   if(!meal)continue;
+   const out={};
+   for(const [id] of mealTypes){
+    if(typeof meal[id]==='string')out[id]=meal[id].slice(0,3000);
+    if(typeof meal[id+'Photo']==='string')out[id+'Photo']=meal[id+'Photo'];
+   }
+   days[key]=out;
+  }
+  return JSON.stringify({name:p.name,start:isoDate(monday),days});
+ }
+ preview.onclick=()=>{
+  if(!window.AndroidBackup?.previewPdf)return message('Aperçu indisponible');
+  AndroidBackup.previewPdf('weekly',payload());
+ };
+ download.onclick=()=>{
+  if(!window.AndroidBackup?.exportWeeklyMealsPdf)return message('Export hebdomadaire indisponible');
+  AndroidBackup.exportWeeklyMealsPdf(payload());
+ };
+ nav.append(prev,date,next);actions.append(preview,download);
+ body.append(info,nav,caption,actions);details.append(label,body);reports.append(details);
+})();
+</script>
