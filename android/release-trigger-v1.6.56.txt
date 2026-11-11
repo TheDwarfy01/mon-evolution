@@ -1,0 +1,1 @@
+v1.6.56 : export hebdomadaire des repas, semaine sélectionnable, PDF A4 paysage sur 2 pages texte et photos.
