@@ -1,0 +1,186 @@
+<style>
+#evo-v159-summary,#evo-v159-graph{margin-top:15px}
+.evo-v159-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.evo-v159-tile{min-width:0;border-radius:12px;border:1px solid #33576b;background:#102a3e;padding:11px}
+.evo-v159-tile small{display:block;font-size:11px;color:#a8c7d6}
+.evo-v159-tile strong{display:block;font-size:17px;margin-top:4px;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.evo-v159-note{font-size:12px;color:#afc9d5;line-height:1.5}
+.evo-v159-modes{display:flex;gap:7px;margin:12px 0}
+.evo-v159-modes button{flex:1;min-width:0;padding:9px 4px;font-size:12px}
+.evo-v159-modes button[aria-pressed="true"]{background:#25675a;border-color:#77decb}
+.evo-v159-chart svg{display:block;width:100%;height:auto}
+.evo-v159-month{margin:14px 0 8px;padding:8px 0 6px;color:#7ce0c8;border-bottom:1px solid #3b5e6e;font-weight:700;font-size:14px}
+.evo-v159-details{display:block;font-size:12px;line-height:1.5;margin-top:5px;color:#b6d3dd}
+@media(min-width:650px){.evo-v159-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+</style>
+<script>
+(function(){
+'use strict';
+const home=document.getElementById('home');
+const chart=document.getElementById('chart');
+const list=document.getElementById('entries');
+if(!home||!chart||!list||!window.profile||!window.entries)return;
+const stats=document.createElement('section');stats.className='card';stats.id='evo-v159-summary';
+const title=document.createElement('h3');title.textContent='📊 Évolution et statistiques';
+const grid=document.createElement('div');grid.className='evo-v159-grid';
+const status=document.createElement('p');status.className='evo-v159-note';
+stats.append(title,grid,status);
+const reports=document.getElementById('summary-pdf-reports');
+if(reports)home.insertBefore(stats,reports);else home.append(stats);
+const panel=document.createElement('section');panel.className='card';panel.id='evo-v159-graph';
+const heading=document.createElement('h3');heading.textContent='📈 Mesures et trajectoire estimée';
+const tabs=document.createElement('div');tabs.className='evo-v159-modes';
+const plot=document.createElement('div');plot.className='evo-v159-chart';
+const leg=document.createElement('p');leg.className='evo-v159-note';
+const bmiHeading=document.createElement('h3');bmiHeading.textContent='Évolution de mon IMC';bmiHeading.style.marginTop='21px';
+const bmiPlot=document.createElement('div');bmiPlot.className='evo-v159-chart';
+const info=document.createElement('p');info.className='evo-v159-note';
+panel.append(heading,tabs,plot,leg,bmiHeading,bmiPlot,info);
+chart.insertBefore(panel,chart.firstElementChild);
+let mode='recent';
+for(const [key,label] of [['recent','30 jours'],['monthly','Par mois'],['all','Tout']]){
+ const b=document.createElement('button');b.type='button';b.className='secondary';b.dataset.mode=key;b.textContent=label;
+ b.onclick=()=>{mode=key;update()};
+ tabs.append(b);
+}
+const ts=s=>new Date(s+'T12:00:00').getTime();
+const fmt=n=>Number(n).toLocaleString('fr-FR',{minimumFractionDigits:1,maximumFractionDigits:1});
+const days=(a,b)=>(ts(b)-ts(a))/86400000;
+function rows(){
+ const sorted=[...entries()].filter(r=>r&&/^\d{4}-\d{2}-\d{2}$/.test(r.date)&&Number.isFinite(r.weight))
+  .sort((a,b)=>a.date.localeCompare(b.date)||(Number(a.id)||0)-(Number(b.id)||0));
+ const unique=[];
+ for(const r of sorted){if(unique.length&&unique[unique.length-1].date===r.date)unique[unique.length-1]=r;else unique.push(r);}
+ return unique;
+}
+function speed(r){
+ const last=r[r.length-1];if(!last)return null;
+ const recent=r.filter(x=>ts(x.date)>=ts(last.date)-28*86400000);
+ if(recent.length<2||days(recent[0].date,last.date)<7)return null;
+ return (recent[0].weight-last.weight)/days(recent[0].date,last.date);
+}
+function predict(r,p){
+ const last=r[r.length-1];
+ if(!last||r.length<3||!(last.weight>p.goal))return null;
+ const recent=r.filter(x=>ts(x.date)>=ts(last.date)-28*86400000);
+ if(recent.length<3||days(recent[0].date,last.date)<14)return null;
+ const origin=ts(recent[0].date);
+ const x=recent.map(v=>(ts(v.date)-origin)/86400000);
+ const avgX=x.reduce((a,b)=>a+b,0)/x.length;
+ const avgY=recent.reduce((a,b)=>a+b.weight,0)/recent.length;
+ const den=x.reduce((a,b)=>a+(b-avgX)**2,0);
+ if(den<1)return null;
+ const slope=recent.reduce((a,v,i)=>a+(x[i]-avgX)*(v.weight-avgY),0)/den;
+ if(slope>=-.005||slope<-.25)return null;
+ const duration=Math.ceil((last.weight-p.goal)/(-slope));
+ if(duration<1||duration>730)return null;
+ return {date:new Date(ts(last.date)+duration*86400000),days:duration,slope,weight:p.goal};
+}
+function tile(label,value){
+ const d=document.createElement('div');d.className='evo-v159-tile';
+ const l=document.createElement('small');l.textContent=label;
+ const v=document.createElement('strong');v.textContent=value;
+ d.append(l,v);grid.append(d);
+}
+const ns='http://www.w3.org/2000/svg';
+function svgElement(tag,attrs){
+ const el=document.createElementNS(ns,tag);
+ for(const [k,v] of Object.entries(attrs||{}))el.setAttribute(k,String(v));
+ return el;
+}
+function draw(target,series,metric,project){
+ target.replaceChildren();
+ if(!series.length)return;
+ const W=640,H=245,L=45,R=12,T=16,B=31;
+ const p=profile(),height=Number(p.height)/100||1.7;
+ const points=series.map(r=>({t:ts(r.date),v:metric==='bmi'?r.weight/(height*height):r.weight,date:r.date}));
+ const extra=metric==='weight'&&project?{t:project.date.getTime(),v:project.weight}:null;
+ const xMin=points[0].t,xMax=Math.max(points[points.length-1].t,extra?.t||0);
+ const values=points.map(q=>q.v).concat(extra?[extra.v]:[]);
+ if(metric==='bmi')values.push(18.5,25,30);
+ let min=Math.max(0,Math.min(...values)-1),max=Math.max(...values)+1;
+ const X=t=>L+(t-xMin)/Math.max(86400000,xMax-xMin)*(W-L-R);
+ const Y=v=>T+(max-v)/(max-min)*(H-T-B);
+ const svg=svgElement('svg',{viewBox:'0 0 '+W+' '+H,role:'img'});
+ for(let i=0;i<5;i++){
+  const v=min+i*(max-min)/4,y=Y(v);
+  svg.append(svgElement('line',{x1:L,x2:W-R,y1:y,y2:y,stroke:'#325166'}));
+  const label=svgElement('text',{x:L-7,y:y+4,fill:'#b3d1de','font-size':11,'text-anchor':'end'});
+  label.textContent=fmt(v);svg.append(label);
+ }
+ if(metric==='bmi')for(const cut of [18.5,25,30]){
+  if(cut>min&&cut<max)svg.append(svgElement('line',{x1:L,x2:W-R,y1:Y(cut),y2:Y(cut),stroke:'#e2b777','stroke-dasharray':'4 6'}));
+ }
+ if(points.length>1)svg.append(svgElement('polyline',{points:points.map(q=>X(q.t)+','+Y(q.v)).join(' '),fill:'none',stroke:'#79e5d2','stroke-width':3}));
+ for(const q of points){
+  const dot=svgElement('circle',{cx:X(q.t),cy:Y(q.v),r:3.5,fill:'#79e5d2'});
+  const tip=svgElement('title');tip.textContent=q.date+' : '+fmt(q.v)+(metric==='weight'?' kg':' IMC');dot.append(tip);svg.append(dot);
+ }
+ if(extra){
+  const last=points[points.length-1];
+  svg.append(svgElement('line',{x1:X(last.t),y1:Y(last.v),x2:X(extra.t),y2:Y(extra.v),stroke:'#ffc47e','stroke-width':2,'stroke-dasharray':'8 5'}));
+  svg.append(svgElement('circle',{cx:X(extra.t),cy:Y(extra.v),r:4.5,fill:'#ffc47e'}));
+ }
+ for(const fraction of [0,.5,1]){
+  const d=new Date(xMin+fraction*(xMax-xMin));
+  const label=svgElement('text',{x:L+fraction*(W-L-R),y:H-7,fill:'#abcad6','font-size':10,'text-anchor':fraction===0?'start':fraction===1?'middle':'end'});
+  label.textContent=d.toLocaleDateString('fr-FR',{month:'short',year:'2-digit'});svg.append(label);
+ }
+ target.append(svg);
+}
+function enrichHistory(){
+ const source=[...entries()];
+ const items=[...list.querySelectorAll(':scope > .entry')];
+ if(items.length!==source.length)return;
+ let lastMonth='';
+ for(let i=0;i<items.length;i++){
+  const r=source[source.length-1-i];if(!r)continue;
+  const month=r.date.slice(0,7);
+  if(month!==lastMonth){
+   const line=document.createElement('div');line.className='evo-v159-month';
+   const pieces=month.split('-').map(Number);
+   line.textContent=new Date(pieces[0],pieces[1]-1,1).toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
+   list.insertBefore(line,items[i]);lastMonth=month;
+  }
+  const previous=source[source.length-2-i];
+  const delta=previous?r.weight-previous.weight:null;
+  const detail=document.createElement('span');detail.className='evo-v159-details';
+  detail.textContent='Variation : '+(delta===null?'première pesée':(delta>0?'+':'')+fmt(delta)+' kg')
+    +(r.time?' · '+r.time:'')+(r.note?' · '+r.note:'');
+  const box=items[i].querySelector('div');if(box)box.append(detail);
+ }
+}
+function update(){
+ const p=profile(),r=rows();if(!r.length)return;
+ const first=r[0],last=r[r.length-1],total=first.weight-p.goal,loss=first.weight-last.weight;
+ const progress=total>0?Math.max(0,Math.min(100,loss/total*100)):0;
+ const rate=speed(r),forecast=predict(r,p),span=days(first.date,last.date);
+ const currentBmi=last.weight/Math.pow(p.height/100,2);
+ const category=currentBmi<18.5?'Insuffisance pondérale':currentBmi<25?'Corpulence normale':currentBmi<30?'Surpoids':'Obésité';
+ grid.replaceChildren();
+ tile('Progression',fmt(progress)+' %');
+ tile('Poids perdu',(loss>=0?'−':'+')+fmt(Math.abs(loss))+' kg');
+ tile('Poids restant',fmt(Math.max(0,last.weight-p.goal))+' kg');
+ tile('IMC actuel',fmt(currentBmi)+' · '+category);
+ tile('Perte par jour (28 j)',rate===null?'—':fmt(rate)+' kg');
+ tile('Perte par semaine (28 j)',rate===null?'—':fmt(rate*7)+' kg');
+ tile('Perte par mois (globale)',span<7?'—':fmt(loss/span*30.4375)+' kg');
+ tile('Objectif estimé',forecast?forecast.date.toLocaleDateString('fr-FR'):'Non estimable');
+ status.textContent=forecast?'Prévision indicative : régression des pesées des 28 derniers jours, avec au moins 3 mesures sur 14 jours. Elle ne garantit pas l’atteinte de l’objectif.':'Prévision indisponible : trois mesures sur au moins 14 jours et une tendance récente décroissante sont nécessaires.';
+ for(const b of tabs.children)b.setAttribute('aria-pressed',String(b.dataset.mode===mode));
+ let selected=r;
+ if(mode==='recent'){selected=r.filter(x=>ts(x.date)>=ts(last.date)-30*86400000);if(selected.length<2)selected=r.slice(-2)}
+ if(mode==='monthly'){
+  const m=new Map();for(const x of r)m.set(x.date.slice(0,7),x);selected=[...m.values()];
+ }
+ draw(plot,selected,'weight',mode==='all'?forecast:null);
+ draw(bmiPlot,selected,'bmi',null);
+ leg.textContent='Courbe turquoise : mesures enregistrées. Pointillés orange : projection indicative (vue Tout).';
+ info.textContent='IMC : repères adultes 18,5, 25 et 30. Pour les enfants, consulter les références pédiatriques des graphiques avancés.';
+ enrichHistory();
+}
+const previous=render;
+render=function(){const result=previous();update();return result};
+update();
+})();
+</script>
