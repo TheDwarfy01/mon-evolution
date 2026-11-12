@@ -8,7 +8,7 @@ def R(f,a,b):
  s=f.read_text(encoding="utf-8");n=s.count(a)
  if n!=1:raise AssertionError(f"{f} : {n} matches for {a[:100]!r}")
  f.write_text(s.replace(a,b),encoding="utf-8")
-R(j,"PROGRESS_PDF = 51, PHOTO_CAMERA = 52;","PROGRESS_PDF = 51, PHOTO_CAMERA = 52, IMPORT_WEIGHTS = 54;")
+R(j,"PROGRESS_PDF = 51, PHOTO_CAMERA = 52, WEEKLY_MEALS_PDF = 53;","PROGRESS_PDF = 51, PHOTO_CAMERA = 52, WEEKLY_MEALS_PDF = 53, IMPORT_WEIGHTS = 54;")
 R(j,"        @JavascriptInterface public void load() {",'''        @JavascriptInterface public void importWeightsOnly() {
             runOnUiThread(() -> {
                 Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);
