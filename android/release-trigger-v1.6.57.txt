@@ -1,0 +1,1 @@
+v1.6.57 correction des photos de repas : suppressions indépendantes, remplacement confirmé, caméra simultanée bloquée.
