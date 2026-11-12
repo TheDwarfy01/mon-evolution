@@ -19,7 +19,7 @@
 const home=document.getElementById('home');
 const chart=document.getElementById('chart');
 const list=document.getElementById('entries');
-if(!home||!chart||!list||!window.profile||!window.entries)return;
+if(!home||!chart||!list||typeof profile!=='function'||typeof entries!=='function')return;
 const stats=document.createElement('section');stats.className='card';stats.id='evo-v159-summary';
 const title=document.createElement('h3');title.textContent='📊 Évolution et statistiques';
 const grid=document.createElement('div');grid.className='evo-v159-grid';
