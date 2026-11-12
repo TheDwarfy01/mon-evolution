@@ -1,1 +1,3 @@
 v1.6.58 Importation de l'historique des pesées uniquement dans un profil existant avec confirmation, conservation des autres données.
+
+Reconstruction après correction des dépendances de correctifs hérités.
