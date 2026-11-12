@@ -18,7 +18,7 @@ R(j,"        @JavascriptInterface public void load() {",'''        @JavascriptIn
             });
         }
         @JavascriptInterface public void load() {''')
-R(j,"            if (request == LOAD) {",'''            if (request == IMPORT_WEIGHTS) {
+R(j,"            } else if (request == LOAD) {",'''            } else if (request == IMPORT_WEIGHTS) {
                 byte[] bytes;
                 try(InputStream in=getContentResolver().openInputStream(uri)){
                     if(in==null)throw new Exception("Fichier inaccessible");
