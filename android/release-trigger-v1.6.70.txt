@@ -1,0 +1,2 @@
+Déclenchement compilation 1.6.70
+Comparaison : grille des mesures, période cyclique, zoom tactile, points détaillés.
