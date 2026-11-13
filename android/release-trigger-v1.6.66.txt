@@ -1,0 +1,2 @@
+Mon Évolution IMC v1.6.66
+Analyse détaillée : Poids, Progression, Comparaison, Références sur la première rangée ; Zoom sur mes mesures et Échelle complète sur la seconde. Sélecteur de période intégré dans le titre. Graphiques, prévisions et données inchangés.
