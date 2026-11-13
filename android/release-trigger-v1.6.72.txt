@@ -1,2 +1,4 @@
 Mon Évolution IMC 1.6.72
 Le menu Charger une sauvegarde détecte les fichiers mon-evolution-poids et demande confirmation pour importer uniquement les pesées dans le profil personnel sélectionné ; tous les autres champs restent inchangés. Barre de navigation responsive à six onglets sans retour à la ligne sur différents smartphones.
+
+Relance des tests avec le correctif de navigation et détection automatique des JSON poids.
