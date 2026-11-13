@@ -1,0 +1,2 @@
+Mon Évolution IMC v1.6.62
+Périodes des graphiques avancés adaptées à l’historique disponible ; explication des références santé ; zoom sur les mesures, zoom à deux doigts et graphique plus visible ; anciennes fonctionnalités et données préservées.
