@@ -135,6 +135,17 @@ jobs:
           grep -q 'Pause hydratation' android/source-1.6.60/app/src/main/java/fr/monevolution/app/ReminderReceiver.java
           grep -q 'PBKDF2WithHmacSHA256' android/source-1.6.60/app/src/main/java/fr/monevolution/app/MainActivity.java
           grep -Fq 'AES/GCM/NoPadding' android/source-1.6.60/app/src/main/java/fr/monevolution/app/MainActivity.java
+      - name: Adapter les correctifs valides de la version précédente
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          for name in ('weekly-meal-pdf','fix-meal-photo-replacement','import-weights-only'):
+              old=Path('android/patches/'+name+'-v1.6.59.py')
+              new=Path('android/patches/'+name+'-v1.6.60.py')
+              assert old.exists()
+              new.write_text(old.read_text(encoding='utf-8').replace('1.6.59','1.6.60'),encoding='utf-8')
+          PY
       - name: Ajouter le bilan hebdomadaire A4 paysage à deux pages
         run: |
           set -euo pipefail
