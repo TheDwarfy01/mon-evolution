@@ -1,0 +1,2 @@
+Mon Évolution IMC v1.6.67
+Références : 4 onglets dans la même ligne, Poids/IMC/Vue globale/Zoom mesures sur la ligne suivante ; configuration enfants préservée. Contrôle de la largeur Android pour éviter le retour à la ligne.
