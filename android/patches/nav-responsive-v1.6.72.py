@@ -33,7 +33,7 @@ header nav.nav.nav-compact .nav-tab-icon{font-size:13px}
 header nav.nav.nav-compact .nav-tab-label{font-size:inherit}
 </style>
 """
-script="""<script id="mon-evolution-nav-fit-172">
+script=r"""<script id="mon-evolution-nav-fit-172">
 (function(){
  'use strict';
  const nav=document.querySelector('header nav.nav');
