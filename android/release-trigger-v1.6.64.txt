@@ -1,0 +1,2 @@
+Mon Évolution IMC v1.6.64
+Périodes de la touche centrale évolutives Mois/6 mois/1 an/Tout selon la durée du suivi ; même largeur des colonnes haut/bas ; Poids et IMC moitiés ; Zones santé et Zoom vert activé/rouge doux désactivé sans coche ; fonctions et données préservées.
