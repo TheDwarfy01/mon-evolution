@@ -1,0 +1,1 @@
+Mon Évolution IMC 1.6.71 : navigation supérieure responsive, six onglets alignés et libellés non coupés sur différents formats Android. Aucun changement dans l’importation des 23 pesées ni les autres profils et fonctions.
