@@ -1,0 +1,3 @@
+Mon Evolution IMC v1.6.60
+UX graphes : Actuel / Mois / Projection, zoom automatique, valeurs au toucher, espaces entre blocs, échelles poids/IMC améliorées.
+Réutilisation des correctifs photo, rapports PDF et import des pesées sans altérer les autres données.
