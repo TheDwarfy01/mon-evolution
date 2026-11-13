@@ -1,0 +1,2 @@
+Déclenchement build v1.6.69
+Graphiques : taux réel en kg/semaine, aucune fourchette ni repère ±, projection conditionnelle avec fiabilité indicative.
