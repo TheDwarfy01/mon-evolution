@@ -1,2 +1,4 @@
 Déclenchement compilation 1.6.70
 Comparaison : grille des mesures, période cyclique, zoom tactile, points détaillés.
+
+Relance après reprise du script de projection simplifiée 1.6.69.
