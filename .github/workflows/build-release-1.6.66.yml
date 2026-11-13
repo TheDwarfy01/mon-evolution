@@ -1,0 +1,263 @@
+name: Construire et publier Mon Evolution IMC 1.6.66
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'android/release-trigger-v1.6.66.txt'
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Preparer la version 1.6.66 depuis les sources communes 1.6.31
+        run: |
+          set -euo pipefail
+          cp -R android/source-1.6.31 android/source-1.6.66
+          python3 - <<'PY'
+          from pathlib import Path
+          app=Path('android/source-1.6.66/app/build.gradle')
+          gradle=app.read_text()
+          assert "versionCode 47" in gradle and "versionName '1.6.31'" in gradle
+          app.write_text(gradle.replace('versionCode 47','versionCode 82').replace("versionName '1.6.31'","versionName '1.6.66'"))
+          html=Path('android/source-1.6.66/app/src/main/assets/index.html')
+          source=html.read_text()
+          assert 'friends-release-status-row' in source
+          assert 'update-compact-line' in source
+          assert 'Consulter le profil complet' not in source
+          assert "remove.textContent='🗑'" in source
+          assert 'position:absolute;top:12px;right:12px' in source
+          assert '#shared-content{display:none!important}' in source
+          assert 'waterSlots=24' in source
+          assert 'id="avatar-choose"' in source
+          assert 'Choisir une photo</button>' not in source
+          assert 'profile-save-icon' in source
+          assert 'profile-tools-corner' in source
+          assert 'updateEvolutionRank(progress)' in source
+          assert 'weight-and-rank' in source
+          assert 'backup-options-menu' in source
+          assert 'meal-unsaved-hint' in source
+          assert 'pdf-preview-btn' in source
+          assert 'progressPdfPayload()' in source
+          assert 'mealsPdfPayload()' in source
+          assert 'previewPdf(String kind,String reportJson)' in Path('android/source-1.6.66/app/src/main/java/fr/monevolution/app/MainActivity.java').read_text()
+          assert 'showPdfPreview(File file)' in Path('android/source-1.6.66/app/src/main/java/fr/monevolution/app/MainActivity.java').read_text()
+          assert 'Rester et enregistrer' in source
+          assert 'Quitter sans enregistrer' in source
+          assert 'event.stopImmediatePropagation()' in source
+          assert "showShareDialog('Récupérer mes profils'" in source
+          assert 'margin:12px 0 22px' in source
+          assert 'onJsConfirm(WebView view' in Path('android/source-1.6.66/app/src/main/java/fr/monevolution/app/MainActivity.java').read_text()
+          assert 'onJsAlert(WebView view' in Path('android/source-1.6.66/app/src/main/java/fr/monevolution/app/MainActivity.java').read_text()
+          assert 'min-width:0;margin-top:12px' in source
+          assert 'rank-name' in source
+          assert 'const renderWithRank=render' in source
+          assert 'friendPortrait' in source
+          assert 'oldSyncFinished' in source
+          assert 'about-info-trigger' in source
+          assert 'dialog.append(aboutCard)' in source
+          assert 'share-avatar-status' in source
+          assert 'id="share-avatar"' in source
+          assert 'Sauvegarde et synchronisation' in source
+          assert 'Dropbox' in source
+          assert 'OneDrive' in source
+          assert 'healthReferenceGraph(target,p)' in source
+          assert 'quality-checks.js' in source
+          assert 'MonEvolutionQuality?.isBackupDocument' in source
+          assert 'MonEvolutionQuality?.isSharedDocument' in source
+          assert 'refreshFriendOverview' in source
+          assert 'backupVerificationResult' in source
+          assert 'Zoom sur mes mesures' in source
+          assert 'Vue globale' in source
+          assert 'advanced-point-detail' in source
+          assert 'growth-references.js' in source
+          assert 'edit-birth' in source
+          assert 'measure-height' in source
+          assert 'pass.length>=6' in source
+          assert '1 majuscule' in source
+          assert 'crypt-generate' in source
+          assert 'crypt-copy' in source
+          assert 'crypt-send' in source
+          assert 'share-change-password' in source
+          assert 'share-copy-current-password' in source
+          assert 'share-send-current-password' in source
+          assert 'function showShareDialog' in source
+          assert 'yBands:bands' in source
+          assert 'Corpulence normale' in source
+          assert 'Zone actuelle :' in source
+          assert 'adult-health-zones' in source
+          assert 'function stepper(target' in source
+          assert 'toggleChartOptions(target)' in source
+          assert 'share-everyday' in source
+          assert 'share-everyday-state' in source
+          assert 'backup-check-actions' in source
+          assert 'share-password-current-buttons' in source
+          assert '📋 Copier le mot de passe</button>' in source
+          assert 'flex-direction:column;align-items:stretch;gap:14px' in source
+          assert "controls(target,[['Poids',view==='weight'" in source
+          assert 'controls(target,options.map(v=>' in source
+          assert 'MonEvolutionQuality?.normalWeightRange(p.height)' in source
+          assert "stepper(target,'Période affichée'" in source
+          assert 'Paramètres avancés · Drive, liens et options' in source
+          assert 'share-link-copy' in source and 'share-link-send' in source
+          assert 'receivedSyncInfo?.(friend.key)' in source
+          assert 'AndroidBackup.updateReceivedPassword(friend.key,pass)' in source
+          assert 'if(listOpen)return;' in source
+          assert 'window.friendSyncUpdated=' in source
+          assert 'receivedLoadEpoch.incrementAndGet()' in Path('android/source-1.6.66/app/src/main/java/fr/monevolution/app/MainActivity.java').read_text()
+          assert 'recordReceivedSync(key,"ok")' in Path('android/source-1.6.66/app/src/main/java/fr/monevolution/app/MainActivity.java').read_text()
+          assert 'J’ai copié ou envoyé le nouveau mot de passe' in source
+          assert 'copyCurrentSharePassword' in Path('android/source-1.6.66/app/src/main/java/fr/monevolution/app/MainActivity.java').read_text()
+          assert 'sendCurrentSharePassword' in Path('android/source-1.6.66/app/src/main/java/fr/monevolution/app/MainActivity.java').read_text()
+          assert 'Confirmer le changement' in source
+          assert 'icons[level.key]' in source
+          assert 'rank-emblem svg' in source
+          assert 'const friendPortrait=' in source
+          assert '/^data:image\\/jpeg;base64,/' in source
+          assert 'GROWTH_WHO2007' in Path('android/source-1.6.66/app/src/main/assets/growth-references.js').read_text()
+          assert 'GROWTH_IOTF2012' in Path('android/source-1.6.66/app/src/main/assets/growth-references.js').read_text()
+          source=source.replace('1.6.31','1.6.66')
+          html.write_text(source)
+          PY
+          grep -q 'versionCode 82' android/source-1.6.66/app/build.gradle
+          grep -q 'friendsOverviewSyncFinished' android/source-1.6.66/app/src/main/java/fr/monevolution/app/MainActivity.java
+          grep -q 'shareAvatarEnabled' android/source-1.6.66/app/src/main/java/fr/monevolution/app/MainActivity.java
+          grep -q 'backupProviderLabel' android/source-1.6.66/app/src/main/java/fr/monevolution/app/MainActivity.java
+          grep -q 'water23' android/source-1.6.66/app/src/main/java/fr/monevolution/app/MainActivity.java
+          grep -q 'Pause hydratation' android/source-1.6.66/app/src/main/java/fr/monevolution/app/ReminderReceiver.java
+          grep -q 'PBKDF2WithHmacSHA256' android/source-1.6.66/app/src/main/java/fr/monevolution/app/MainActivity.java
+          grep -Fq 'AES/GCM/NoPadding' android/source-1.6.66/app/src/main/java/fr/monevolution/app/MainActivity.java
+      - name: Adapter les correctifs valides de la version précédente
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          for name in ('weekly-meal-pdf','fix-meal-photo-replacement','import-weights-only'):
+              old=Path('android/patches/'+name+'-v1.6.59.py')
+              new=Path('android/patches/'+name+'-v1.6.66.py')
+              assert old.exists()
+              new.write_text(old.read_text(encoding='utf-8').replace('1.6.59','1.6.66'),encoding='utf-8')
+          PY
+      - name: Ajouter le bilan hebdomadaire A4 paysage à deux pages
+        run: |
+          set -euo pipefail
+          python3 android/patches/weekly-meal-pdf-v1.6.66.py
+          grep -q 'WEEKLY_MEALS_PDF' android/source-1.6.66/app/src/main/java/fr/monevolution/app/MainActivity.java
+          grep -q 'weekly-meal-report' android/source-1.6.66/app/src/main/assets/index.html
+          grep -q 'drawWeeklyMealPhoto' android/source-1.6.66/app/src/main/java/fr/monevolution/app/MainActivity.java
+          grep -q 'createWeeklyMealsPdf(output,reportJson)' android/source-1.6.66/app/src/main/java/fr/monevolution/app/MainActivity.java
+      - name: Corriger le remplacement et la suppression des photos des repas
+        run: |
+          set -euo pipefail
+          python3 android/patches/fix-meal-photo-replacement-v1.6.66.py
+          grep -q 'photoPickerBusy' android/source-1.6.66/app/src/main/java/fr/monevolution/app/MainActivity.java
+          grep -q 'meal-photo-recovery' android/source-1.6.66/app/src/main/assets/index.html
+          grep -q 'Remplacer la photo du' android/source-1.6.66/app/src/main/assets/index.html
+      - name: Importation ciblée sans modification des autres données
+        run: |
+          set -euo pipefail
+          python3 android/patches/import-weights-only-v1.6.66.py
+          grep -q 'importWeightsOnlyBase64' android/source-1.6.66/app/src/main/assets/index.html
+          grep -q 'IMPORT_WEIGHTS' android/source-1.6.66/app/src/main/java/fr/monevolution/app/MainActivity.java
+      - name: Périodes dynamiques et zoom des graphiques avancés
+        run: |
+          set -euo pipefail
+          python3 android/patches/adaptive-advanced-graphs-v1.6.66.py
+          grep -Fq 'availablePeriods(p)' android/source-1.6.66/app/src/main/assets/index.html
+          grep -Fq 'Afficher les zones de santé (poids / IMC)' android/source-1.6.66/app/src/main/assets/index.html
+          grep -Fq 'touchZoom:true' android/source-1.6.66/app/src/main/assets/index.html
+          grep -Fq 'Échelle complète' android/source-1.6.66/app/src/main/assets/index.html
+      - name: Unifier les commandes de santé et séparer l'analyse
+        run: |
+          set -euo pipefail
+          python3 android/patches/unified-health-controls-v1.6.66.py
+          grep -Fq "mon-evolution-health-zones-changed" android/source-1.6.66/app/src/main/assets/index.html
+          grep -Fq "Analyse détaillée" android/source-1.6.66/app/src/main/assets/index.html
+          grep -Fq "['Références',view==='health'" android/source-1.6.66/app/src/main/assets/index.html
+          ! grep -Fq "checkbox('Afficher les zones de santé" android/source-1.6.66/app/src/main/assets/index.html
+      - name: Simplifier la periode du graphe avance et agrandir les boutons
+        run: |
+          set -euo pipefail
+          python3 android/patches/advanced-cycle-font-v1.6.66.py
+          grep -Fq "advanced-period-cycle" android/source-1.6.66/app/src/main/assets/index.html
+          grep -Fq "periodButton=button(" android/source-1.6.66/app/src/main/assets/index.html
+          grep -Fq "mon-evolution-readable-buttons-165" android/source-1.6.66/app/src/main/assets/index.html
+          ! grep -Fq "stepper(target,'Période affichée'" android/source-1.6.66/app/src/main/assets/index.html
+      - name: Deux lignes de boutons pour les analyses detaillees
+        run: |
+          set -euo pipefail
+          python3 android/patches/two-row-advanced-tabs-v1.6.66.py
+          grep -Fq "advancedTabs.classList.add('advanced-view-tabs')" android/source-1.6.66/app/src/main/assets/index.html
+          grep -Fq "target.insertBefore(zoomRow,periodRow)" android/source-1.6.66/app/src/main/assets/index.html
+          grep -Fq "grid-template-columns:repeat(4,minmax(0,1fr))" android/source-1.6.66/app/src/main/assets/index.html
+          grep -Fq "advanced-zoom-row" android/source-1.6.66/app/src/main/assets/index.html
+      - name: Intégrer statistiques, projection, historique et graphiques
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          page=Path("android/source-1.6.66/app/src/main/assets/index.html")
+          source=page.read_text(encoding="utf-8")
+          assert source.count("</body></html>")==1
+          addon=Path("android/patches/evolution-graph-ux-v1.6.64.html.txt").read_text(encoding="utf-8")
+          page.write_text(source.replace("</body></html>",addon+"\n</body></html>"),encoding="utf-8")
+          assert "evo-v159-summary" in page.read_text()
+          assert "evo-v159-graph" in page.read_text()
+          assert "pinchBegin(event)" in page.read_text()
+          assert "evo-v160-zones" in page.read_text()
+          assert "availablePeriodsForRows(r)" in page.read_text()
+          assert "periodChoice='month'" in page.read_text()
+          assert "grid-template-columns:repeat(3,minmax(0,1fr))" in page.read_text()
+          assert "evo-v164-toggle" in page.read_text()
+          assert "Mois" in page.read_text()
+          assert "healthState.enabled" in page.read_text()
+          assert "mon-evolution-health-zones-changed" in page.read_text()
+          PY
+      - name: Tests avant compilation (sans dépendances externes)
+        run: |
+          node scripts/test-release.mjs android/source-1.6.66
+      - name: Installer SDK Android
+        run: |
+          set -euo pipefail
+          sdkmanager_bin="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager -print -quit)"
+          echo "$(dirname "$sdkmanager_bin")" >> "$GITHUB_PATH"
+          "$sdkmanager_bin" --install "platforms;android-35" "build-tools;35.0.0"
+      - name: Compiler l'application
+        working-directory: android/source-1.6.66
+        run: gradle --no-daemon :app:assembleRelease
+      - name: Signer l'APK avec la cle officielle existante
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          test -n "$KEYSTORE_B64" && test -n "$KEYSTORE_PASS" && test -n "$KEY_PASS" && test -n "$KEY_ALIAS"
+          printf '%s' "$KEYSTORE_B64" | base64 -d > /tmp/mon-evolution.jks
+          mkdir -p downloads
+          "$ANDROID_HOME/build-tools/35.0.0/zipalign" -p -f 4 \
+            android/source-1.6.66/app/build/outputs/apk/release/app-release-unsigned.apk \
+            /tmp/mon-evolution-aligned.apk
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign \
+            --ks /tmp/mon-evolution.jks --ks-key-alias "$KEY_ALIAS" \
+            --ks-pass env:KEYSTORE_PASS --key-pass env:KEY_PASS \
+            --out downloads/Mon_Evolution_IMC_v1.6.66.apk /tmp/mon-evolution-aligned.apk
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose downloads/Mon_Evolution_IMC_v1.6.66.apk
+          rm -f /tmp/mon-evolution.jks
+      - name: Publier la version 1.6.66
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release create v1.6.66 downloads/Mon_Evolution_IMC_v1.6.66.apk \
+            --title "Mon Évolution IMC v1.6.66 — commandes des graphes sur deux lignes" \
+            --notes "Quatre onglets Poids, Progression, Comparaison et Références sur une seule ligne ; Zoom sur mes mesures et Échelle complète sur la ligne suivante ; période dans le titre du graphique. Textes lisibles, projections, données, profils et photos conservés."\n
