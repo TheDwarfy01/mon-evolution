@@ -237,6 +237,13 @@ jobs:
       - name: Simplifier tendances et projections selon les pesées réelles
         run: |
           set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          old=Path('android/patches/simplify-trend-projection-v1.6.69.py')
+          new=Path('android/patches/simplify-trend-projection-v1.6.70.py')
+          assert old.exists(), str(old)
+          new.write_text(old.read_text(encoding='utf-8').replace('1.6.69','1.6.70'),encoding='utf-8')
+          PY
           python3 android/patches/simplify-trend-projection-v1.6.70.py
           grep -Fq 'advanced-real-weekly' android/source-1.6.70/app/src/main/assets/index.html
           grep -Fq 'forecastReady=p.rows.length>=4&&historySpan>=21' android/source-1.6.70/app/src/main/assets/index.html
