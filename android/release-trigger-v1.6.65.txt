@@ -1,0 +1,2 @@
+Mon Évolution IMC v1.6.65
+Bouton de période du graphique avancé qui défile à chaque appui, sans +/− ; durées proposées selon l’historique ; textes agrandis des boutons ; cadrage de la courbe sur les mesures réelles, projections conservées.
