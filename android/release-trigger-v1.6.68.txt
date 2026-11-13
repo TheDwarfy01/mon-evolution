@@ -1,0 +1,3 @@
+Déclenchement de la compilation Android v1.6.68
+Source : android/source-1.6.31
+Modifications : icônes ⚖️ Poids actuel et 📊 Statistiques avancées ; titres harmonisés.
