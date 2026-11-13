@@ -1,0 +1,250 @@
+<style>
+#evo-v159-summary,#evo-v159-graph{margin-top:15px}
+.evo-v159-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.evo-v159-tile{min-width:0;border-radius:12px;border:1px solid #33576b;background:#102a3e;padding:11px}
+.evo-v159-tile small{display:block;font-size:11px;color:#a8c7d6}
+.evo-v159-tile strong{display:block;font-size:17px;margin-top:4px;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.evo-v159-note{font-size:12px;color:#afc9d5;line-height:1.5}
+.evo-v159-modes{display:flex;gap:7px;margin:12px 0}
+.evo-v159-modes button{flex:1;min-width:0;padding:9px 4px;font-size:12px}
+.evo-v159-modes button[aria-pressed="true"]{background:#25675a;border-color:#77decb}
+.evo-v159-chart svg{display:block;width:100%;height:auto}
+.evo-v159-month{margin:14px 0 8px;padding:8px 0 6px;color:#7ce0c8;border-bottom:1px solid #3b5e6e;font-weight:700;font-size:14px}
+.evo-v159-details{display:block;font-size:12px;line-height:1.5;margin-top:5px;color:#b6d3dd}
+@media(min-width:650px){.evo-v159-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+/* v1.6.60 : espaces réguliers, navigation et graphes adaptés au mobile */
+#chart > .card,#evo-v159-summary,#evo-v159-graph {margin-top:22px;margin-bottom:22px}
+#chart > h2{margin-top:24px}
+#chart > .muted{margin:12px 0 18px}
+#evo-v159-graph{padding:17px}
+.evo-v159-modes{gap:6px;margin:13px 0 12px}
+.evo-v159-modes button{border-radius:10px;min-height:40px;padding:8px 4px;font-size:12px}
+.evo-v160-tools{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin:12px 0 16px}
+.evo-v160-metric{display:flex;gap:6px}
+.evo-v160-tools button{font-size:12px;padding:9px 13px;min-height:40px}
+.evo-v160-tools button[aria-pressed="true"]{background:#25675a;border-color:#77decb}
+.evo-v160-touch{min-height:38px;margin:8px 0;color:#b8d6dd;font-size:12px;line-height:1.45}
+.evo-v159-chart svg{height:auto;max-height:315px;touch-action:pan-y}
+#evo-v159-summary .evo-v159-grid{gap:11px}
+#evo-v159-summary .evo-v159-tile{padding:12px}
+@media(max-width:380px){.evo-v160-tools button{padding:8px 10px}.evo-v159-modes button{font-size:11px}}
+</style>
+<script>
+(function(){
+'use strict';
+const home=document.getElementById('home');
+const chart=document.getElementById('chart');
+const list=document.getElementById('entries');
+if(!home||!chart||!list||typeof profile!=='function'||typeof entries!=='function')return;
+const stats=document.createElement('section');stats.className='card';stats.id='evo-v159-summary';
+const title=document.createElement('h3');title.textContent='📊 Évolution et statistiques';
+const grid=document.createElement('div');grid.className='evo-v159-grid';
+const status=document.createElement('p');status.className='evo-v159-note';
+stats.append(title,grid,status);
+const reports=document.getElementById('summary-pdf-reports');
+if(reports)home.insertBefore(stats,reports);else home.append(stats);
+const panel=document.createElement('section');panel.className='card';panel.id='evo-v159-graph';
+const heading=document.createElement('h3');heading.textContent='Évolution du poids';
+const tabs=document.createElement('div');tabs.className='evo-v159-modes';
+const toolbar=document.createElement('div');toolbar.className='evo-v160-tools';
+const metricGroup=document.createElement('div');metricGroup.className='evo-v160-metric';
+const zoomButton=document.createElement('button');zoomButton.type='button';zoomButton.className='secondary';
+const plot=document.createElement('div');plot.className='evo-v159-chart';
+const pointInfo=document.createElement('p');pointInfo.className='evo-v160-touch';pointInfo.setAttribute('role','status');
+const leg=document.createElement('p');leg.className='evo-v159-note';
+const info=document.createElement('p');info.className='evo-v159-note';
+toolbar.append(metricGroup,zoomButton);
+panel.append(heading,tabs,toolbar,plot,pointInfo,leg,info);
+chart.insertBefore(panel,chart.firstElementChild);
+let mode='recent',metric='weight',zoom=true;
+for(const [key,label] of [['all','Actuel'],['recent','Mois'],['forecast','Projection']]){
+ const b=document.createElement('button');b.type='button';b.className='secondary';b.dataset.mode=key;b.textContent=label;
+ b.onclick=()=>{mode=key;update()};
+ tabs.append(b);
+}
+for(const [key,label] of [['weight','Poids'],['bmi','IMC']]){
+ const b=document.createElement('button');b.type='button';b.className='secondary';b.dataset.metric=key;b.textContent=label;
+ b.onclick=()=>{metric=key;update()};
+ metricGroup.append(b);
+}
+zoomButton.onclick=()=>{zoom=!zoom;update()};
+const ts=s=>new Date(s+'T12:00:00').getTime();
+const fmt=n=>Number(n).toLocaleString('fr-FR',{minimumFractionDigits:1,maximumFractionDigits:1});
+const days=(a,b)=>(ts(b)-ts(a))/86400000;
+function rows(){
+ const sorted=[...entries()].filter(r=>r&&/^\d{4}-\d{2}-\d{2}$/.test(r.date)&&Number.isFinite(r.weight))
+  .sort((a,b)=>a.date.localeCompare(b.date)||(Number(a.id)||0)-(Number(b.id)||0));
+ const unique=[];
+ for(const r of sorted){if(unique.length&&unique[unique.length-1].date===r.date)unique[unique.length-1]=r;else unique.push(r);}
+ return unique;
+}
+function speed(r){
+ const last=r[r.length-1];if(!last)return null;
+ const recent=r.filter(x=>ts(x.date)>=ts(last.date)-28*86400000);
+ if(recent.length<2||days(recent[0].date,last.date)<7)return null;
+ return (recent[0].weight-last.weight)/days(recent[0].date,last.date);
+}
+function predict(r,p){
+ const last=r[r.length-1];
+ if(!last||r.length<3||!(last.weight>p.goal))return null;
+ const recent=r.filter(x=>ts(x.date)>=ts(last.date)-28*86400000);
+ if(recent.length<3||days(recent[0].date,last.date)<14)return null;
+ const origin=ts(recent[0].date);
+ const x=recent.map(v=>(ts(v.date)-origin)/86400000);
+ const avgX=x.reduce((a,b)=>a+b,0)/x.length;
+ const avgY=recent.reduce((a,b)=>a+b.weight,0)/recent.length;
+ const den=x.reduce((a,b)=>a+(b-avgX)**2,0);
+ if(den<1)return null;
+ const slope=recent.reduce((a,v,i)=>a+(x[i]-avgX)*(v.weight-avgY),0)/den;
+ if(slope>=-.005||slope<-.25)return null;
+ const duration=Math.ceil((last.weight-p.goal)/(-slope));
+ if(duration<1||duration>730)return null;
+ return {date:new Date(ts(last.date)+duration*86400000),days:duration,slope,weight:p.goal};
+}
+function tile(label,value){
+ const d=document.createElement('div');d.className='evo-v159-tile';
+ const l=document.createElement('small');l.textContent=label;
+ const v=document.createElement('strong');v.textContent=value;
+ d.append(l,v);grid.append(d);
+}
+const ns='http://www.w3.org/2000/svg';
+function svgElement(tag,attrs){
+ const el=document.createElementNS(ns,tag);
+ for(const [k,v] of Object.entries(attrs||{}))el.setAttribute(k,String(v));
+ return el;
+}
+function draw(target,series,kind,project){
+ target.replaceChildren();
+ if(!series.length){pointInfo.textContent='Aucune mesure pour cette période.';return;}
+ const W=400,H=295,L=48,R=13,T=18,B=43;
+ const p=profile(),metres=Math.max(.5,Number(p.height)/100||1.7);
+ const unit=kind==='bmi'?'IMC':'kg';
+ const points=series.map(r=>({t:ts(r.date),v:kind==='bmi'?r.weight/(metres*metres):r.weight,date:r.date}));
+ const last=points[points.length-1];
+ let extra=null;
+ if(project&&Number.isFinite(project.slope)){
+  const n=zoom?Math.min(30,project.days):project.days;
+  const w=series[series.length-1].weight+project.slope*n;
+  extra={t:last.t+n*86400000,v:kind==='bmi'?w/(metres*metres):w,date:new Date(last.t+n*86400000).toISOString().slice(0,10)};
+ }
+ const vals=points.map(q=>q.v);
+ if(extra)vals.push(extra.v);
+ if(!zoom){
+  if(kind==='bmi')vals.push(18.5,25,30);
+  else if(Number.isFinite(Number(p.goal)))vals.push(Number(p.goal));
+ }
+ const low=Math.min(...vals),high=Math.max(...vals);
+ const span=Math.max(kind==='bmi'?.45:1.2,high-low);
+ const pad=Math.max(kind==='bmi'?.2:.4,span*.12);
+ const min=Math.max(0,low-pad),max=high+pad;
+ const xmin=points[0].t,xmax=Math.max(xmin+86400000,extra?.t||last.t);
+ const X=t=>L+(t-xmin)/Math.max(86400000,xmax-xmin)*(W-L-R);
+ const Y=v=>T+(max-v)/(max-min)*(H-T-B);
+ const svg=svgElement('svg',{viewBox:'0 0 '+W+' '+H,role:'img','aria-label':'Evolution '+(kind==='bmi'?'de l’IMC':'du poids')});
+ if(kind==='bmi' && min<25 && max>18.5){
+  const y1=Y(Math.min(25,max)),y2=Y(Math.max(18.5,min));
+  svg.append(svgElement('rect',{x:L,y:y1,width:W-L-R,height:Math.max(0,y2-y1),fill:'#4dc8aa','fill-opacity':'.075'}));
+ }
+ for(let i=0;i<5;i++){
+  const v=min+i*(max-min)/4,y=Y(v);
+  svg.append(svgElement('line',{x1:L,x2:W-R,y1:y,y2:y,stroke:'#355568','stroke-width':.7}));
+  const label=svgElement('text',{x:L-8,y:y+4,fill:'#b5cedb','font-size':12,'text-anchor':'end'});
+  label.textContent=fmt(v);svg.append(label);
+ }
+ if(kind==='bmi'&&!zoom){
+  for(const cut of [18.5,25,30])if(cut>min&&cut<max){
+   svg.append(svgElement('line',{x1:L,x2:W-R,y1:Y(cut),y2:Y(cut),stroke:'#b0c7a4','stroke-width':1,'stroke-dasharray':'4 5'}));
+  }
+ }
+ if(kind==='weight'&&Number(p.goal)>min&&Number(p.goal)<max){
+  svg.append(svgElement('line',{x1:L,x2:W-R,y1:Y(Number(p.goal)),y2:Y(Number(p.goal)),stroke:'#e2c473','stroke-width':1.6,'stroke-dasharray':'5 5'}));
+ }
+ if(points.length>1){
+  svg.append(svgElement('polyline',{points:points.map(q=>X(q.t)+','+Y(q.v)).join(' '),fill:'none',stroke:'#79e5d2','stroke-width':2.7,'stroke-linecap':'round','stroke-linejoin':'round'}));
+ }
+ pointInfo.textContent='Touchez un point pour voir la date et la mesure exacte.';
+ for(const q of points){
+  const dot=svgElement('circle',{cx:X(q.t),cy:Y(q.v),r:4.5,fill:'#79e5d2'});
+  svg.append(dot);
+  const touch=svgElement('circle',{cx:X(q.t),cy:Y(q.v),r:15,fill:'transparent',style:'cursor:pointer'});
+  const tip=svgElement('title');tip.textContent=q.date+' : '+fmt(q.v)+' '+unit;touch.append(tip);
+  touch.addEventListener('click',()=>{
+   pointInfo.textContent=new Date(q.t).toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'})+' · '+fmt(q.v)+' '+unit;
+  });
+  svg.append(touch);
+ }
+ if(extra){
+  svg.append(svgElement('line',{x1:X(last.t),y1:Y(last.v),x2:X(extra.t),y2:Y(extra.v),stroke:'#ffc47e','stroke-width':2.3,'stroke-dasharray':'7 5'}));
+  svg.append(svgElement('circle',{cx:X(extra.t),cy:Y(extra.v),r:4.8,fill:'#ffc47e'}));
+ }
+ for(const fraction of [0,.5,1]){
+  const timestamp=xmin+fraction*(xmax-xmin);
+  const d=new Date(timestamp);
+  const label=svgElement('text',{x:L+fraction*(W-L-R),y:H-9,fill:'#b5cedb','font-size':11,'text-anchor':fraction===0?'start':fraction===1?'end':'middle'});
+  label.textContent=d.toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'2-digit'});
+  svg.append(label);
+ }
+ target.append(svg);
+}
+function enrichHistory(){
+ const source=[...entries()];
+ const items=[...list.querySelectorAll(':scope > .entry')];
+ if(items.length!==source.length)return;
+ let lastMonth='';
+ for(let i=0;i<items.length;i++){
+  const r=source[source.length-1-i];if(!r)continue;
+  const month=r.date.slice(0,7);
+  if(month!==lastMonth){
+   const line=document.createElement('div');line.className='evo-v159-month';
+   const pieces=month.split('-').map(Number);
+   line.textContent=new Date(pieces[0],pieces[1]-1,1).toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
+   list.insertBefore(line,items[i]);lastMonth=month;
+  }
+  const previous=source[source.length-2-i];
+  const delta=previous?r.weight-previous.weight:null;
+  const detail=document.createElement('span');detail.className='evo-v159-details';
+  detail.textContent='Variation : '+(delta===null?'première pesée':(delta>0?'+':'')+fmt(delta)+' kg')
+    +(r.time?' · '+r.time:'')+(r.note?' · '+r.note:'');
+  const box=items[i].querySelector('div');if(box)box.append(detail);
+ }
+}
+function update(){
+ const p=profile(),r=rows();
+ if(!r.length){plot.replaceChildren();pointInfo.textContent='Ajoutez une première pesée pour afficher le graphique.';return;}
+ const first=r[0],last=r[r.length-1],total=first.weight-p.goal,loss=first.weight-last.weight;
+ const progress=total>0?Math.max(0,Math.min(100,loss/total*100)):0;
+ const rate=speed(r),forecast=predict(r,p);
+ const metres=Math.max(.5,Number(p.height)/100||1.7);
+ const currentBmi=last.weight/(metres*metres);
+ const category=currentBmi<18.5?'Insuffisance pondérale':currentBmi<25?'Corpulence normale':currentBmi<30?'Surpoids':'Obésité';
+ grid.replaceChildren();
+ tile('Départ',fmt(first.weight)+' kg');
+ tile('Actuel',fmt(last.weight)+' kg');
+ tile('Objectif',fmt(Number(p.goal))+' kg');
+ tile('Poids perdu',(loss>=0?'−':'+')+fmt(Math.abs(loss))+' kg');
+ tile('Restant',fmt(Math.max(0,last.weight-p.goal))+' kg');
+ tile('Progression',fmt(progress)+' %');
+ tile('IMC actuel',fmt(currentBmi)+' · '+category);
+ tile('Perte / semaine (28 j)',rate===null?'—':fmt(rate*7)+' kg');
+ status.textContent=forecast?'Objectif estimé : '+forecast.date.toLocaleDateString('fr-FR')+'. Projection indicative établie à partir des 28 derniers jours, sans garantie.':'Prévision non disponible : au moins 3 pesées sur 14 jours avec une tendance décroissante sont nécessaires.';
+ for(const b of tabs.children)b.setAttribute('aria-pressed',String(b.dataset.mode===mode));
+ for(const b of metricGroup.children)b.setAttribute('aria-pressed',String(b.dataset.metric===metric));
+ zoomButton.textContent=zoom?'Zoom : activé':'Zoom : global';
+ zoomButton.setAttribute('aria-pressed',String(zoom));
+ let selected=r;
+ if(mode==='recent'){
+  selected=r.filter(x=>ts(x.date)>=ts(last.date)-30*86400000);
+  if(selected.length<2)selected=r.slice(-2);
+ }
+ heading.textContent=metric==='bmi'?'Évolution de mon IMC':'Évolution de mon poids';
+ draw(plot,selected,metric,mode==='forecast'?forecast:null);
+ leg.textContent=mode==='forecast'?(forecast?'Turquoise : mesures. Orange pointillé : projection '+(zoom?'à 30 jours':'vers l’objectif')+'.':'Turquoise : mesures enregistrées. Projection indisponible.'):
+  'Turquoise : mesures enregistrées. '+(zoom?'Échelle centrée sur vos mesures.':'Échelle globale incluant les repères pertinents.');
+ info.textContent=metric==='bmi'?'IMC : repères adultes 18,5, 25 et 30 en vue globale. Pour les enfants, consulter les références pédiatriques avancées.':'Objectif : ligne dorée en vue globale lorsqu’il se situe dans la plage affichée.';
+ enrichHistory();
+}
+const previous=render;
+render=function(){const result=previous();update();return result};
+update();
+})();
+</script>
