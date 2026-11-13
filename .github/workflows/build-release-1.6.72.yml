@@ -264,7 +264,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 android/patches/nav-responsive-v1.6.72.py
-          grep -Fq 'mon-evolution-nav-responsive-171' android/source-1.6.72/app/src/main/assets/index.html
+          grep -Fq 'mon-evolution-nav-responsive-172' android/source-1.6.72/app/src/main/assets/index.html
           grep -Fq 'nav.classList.add' android/source-1.6.72/app/src/main/assets/index.html
           grep -Fq 'nav-tab-icon' android/source-1.6.72/app/src/main/assets/index.html
       - name: Import JSON de pesées depuis le chargement classique
