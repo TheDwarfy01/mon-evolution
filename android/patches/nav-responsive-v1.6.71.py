@@ -44,7 +44,7 @@ script="""<script id="mon-evolution-nav-fit-171">
   for(const btn of buttons()){
    if(btn.dataset.navFit171==='yes')continue;
    const label=btn.textContent.trim();
-   const split=label.match(/^(\\S+)\\s+(.+)$/);
+   const split=label.match(/^(\S+)\s+(.+)$/);
    if(!split)continue;
    const icon=document.createElement('span');
    icon.className='nav-tab-icon';icon.setAttribute('aria-hidden','true');
