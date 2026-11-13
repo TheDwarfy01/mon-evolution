@@ -1,0 +1,2 @@
+Mon Évolution IMC v1.6.63
+Un seul bouton Zones santé dans graphique principal Poids / IMC ; bandes colorées adultes converties en kg lorsque nécessaire ; onglet Références pour les détails adultes / enfants ; graphique avancé axé sur les analyses ; zoom et prévisions conservés.
