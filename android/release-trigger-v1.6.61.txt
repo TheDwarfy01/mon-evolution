@@ -1,0 +1,2 @@
+Mon Évolution IMC v1.6.61
+Graphiques : zoom à deux doigts, couleurs IMC plus marquées, légende de corpulence, suppression des grandes marges et prévisions préservées.
