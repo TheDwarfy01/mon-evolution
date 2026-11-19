@@ -1,0 +1,3 @@
+Mon Évolution IMC v1.6.77
+Évolution et statistiques : rapprocher les cartes Perte / mois et Perte / semaine, déplacer Progression à l'emplacement de Perte / semaine, harmoniser les valeurs avec signe négatif pour perte, signe positif pour reprise.
+Les autres fonctionnalités et historiques sont conservés.
