@@ -1,0 +1,4 @@
+Mon Évolution IMC v1.6.84
+19 novembre 2026
+La ligne horizontale de l'objectif final en bas de la courbe de poids s'étend jusqu'au bord du graphique, y compris quand un objectif intermédiaire futur fait grandir l'axe du temps.
+Toutes les autres courbes restent inchangées.
