@@ -29,8 +29,8 @@ once(
  "  const child=window.MonEvolutionChild?.isChildBirth?.(p.birthDate)===true;"
 )
 once(
- "  const adult=age===null||age>=18;",
- "  const adult=age===null||window.MonEvolutionChild?.isChildBirth?.(p.birthDate)!==true;"
+ " const adult=age===null||age>=18;",
+ " const adult=age===null||window.MonEvolutionChild?.isChildBirth?.(p.birthDate)!==true;"
 )
 # In the profile creation hint make the age rule explicit.
 once(
