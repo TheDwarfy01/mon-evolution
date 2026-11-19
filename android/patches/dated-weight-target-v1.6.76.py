@@ -89,11 +89,7 @@ once(
 )
 # Do not lose the goal target when advanced graph draws a short selected period.
 # Its graph renderer clips to the chosen x-range when it needs to.
-once(
- "  const maxWindow=windowSize===null?undefined:wEnd+Math.min(21,windowSize/4);",
- """  const maxWindow=windowSize===null?undefined:Math.max(wEnd+Math.min(21,windowSize/4),
-   goalPlan?days(origin,goalPlan.date):wEnd);"""
-)
+# Advanced graph auto-ranges its future objective endpoint when the full period is selected.
 
 addon=r'''
 <style id="mon-evolution-goal-plan-176">
