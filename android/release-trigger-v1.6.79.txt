@@ -1,0 +1,4 @@
+Mon Évolution IMC v1.6.79
+19 novembre 2026
+Périodes : 1 mois ou plus ; objectif intermédiaire affiché dans la courbe avec sa trajectoire datée distincte.
+L'historique et les données restent conservés.
