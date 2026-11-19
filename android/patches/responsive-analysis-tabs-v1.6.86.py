@@ -11,7 +11,7 @@ def once(old,new):
  s=s.replace(old,new,1)
 
 # Inline !important grid width introduced in v1.6.67 overrides media queries.
-# Make its column count depend on the actual available width in the panel.
+# Keep four equally sized columns and fit each label with measured text size.
 old="""  for(const b of advancedTabs.querySelectorAll('button')){
    b.style.setProperty('width','100%','important');
    b.style.setProperty('min-width','0','important');
@@ -30,13 +30,28 @@ new="""  for(const b of advancedTabs.querySelectorAll('button')){
    b.style.setProperty('word-break','normal','important');
    b.style.setProperty('hyphens','none','important');
   }
-  // On normal-sized displays the four tabs stay on one row. When the inner
-  // panel is narrow (< 410 CSS px), use 2 x 2 readable tabs rather than
-  // cutting "Comparaison" into two lines or shrinking the text too much.
+  // Keep four tabs on ONE row; shrink the typography only when needed.
+  // Layout measurement is based on the actual button width, not the screen
+  // width, so font scaling works on Android with different display densities.
+  const measure=document.createElement('canvas').getContext('2d');
   const fitAdvancedTabs=()=>{
-   const available=advancedTabs.clientWidth||target.clientWidth||document.documentElement.clientWidth;
-   const columns=available<410?'repeat(2,minmax(0,1fr))':'repeat(4,minmax(0,1fr))';
-   advancedTabs.style.setProperty('grid-template-columns',columns,'important');
+   advancedTabs.style.setProperty('grid-template-columns','repeat(4,minmax(0,1fr))','important');
+   for(const b of advancedTabs.querySelectorAll('button')){
+    const width=b.getBoundingClientRect().width;
+    if(width<=0)continue;
+    const style=getComputedStyle(b);
+    const family=style.fontFamily||'sans-serif';
+    const weight=style.fontWeight||'600';
+    const space=Math.max(12,width-8);
+    let size=15;
+    if(measure){
+     while(size>8 && (()=>{
+      measure.font=weight+' '+size+'px '+family;
+      return measure.measureText(b.textContent.trim()).width>space;
+     })())size-=.5;
+    }else size=Math.max(8,Math.min(15,space/Math.max(5,b.textContent.length*.62)));
+    b.style.setProperty('font-size',size+'px','important');
+   }
   };
   fitAdvancedTabs();
   if(typeof ResizeObserver==='function'){
@@ -58,9 +73,9 @@ style="""<style id="mon-evolution-responsive-advanced-tabs-v186">
 </style>
 """
 once('</head>',style+'</head>')
-assert "available<410?'repeat(2,minmax(0,1fr))'" in s
+assert "grid-template-columns','repeat(4,minmax(0,1fr))'" in s
 assert "b.style.setProperty('white-space','nowrap','important')" in s
 assert 'mon-evolution-responsive-advanced-tabs-v186' in s
 assert 'adaptiveObserver.observe(advancedTabs)' in s
 page.write_text(s,encoding='utf-8')
-print('PASS v1.6.86: onglets largeur adaptative et intitulés sur une ligne')
+print('PASS v1.6.86: 4 onglets sur une ligne, police ajustée à leur largeur')
