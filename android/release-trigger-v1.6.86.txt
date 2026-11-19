@@ -1,0 +1,3 @@
+Mon Évolution IMC v1.6.86
+20 novembre 2026
+Dans Analyse détaillée, les onglets Poids / Progression / Comparaison / Références restent sur la même ligne ; leur taille de police diminue automatiquement en fonction de la largeur de chaque bouton.
