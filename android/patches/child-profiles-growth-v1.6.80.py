@@ -137,6 +137,8 @@ body.child-profile .adult-only-goal{display:none!important}
 .child-reference-summary strong{display:block;font-size:14px}
 .child-reference-summary p{margin:7px 0;font-size:14px}
 .child-reference-summary small{color:#bdd9e2;font-size:12px;line-height:1.5}
+#profile-dialog .child-goal-hidden{display:none!important}
+#profile-dialog .child-goal-message[hidden]{display:none!important}
 #profile-dialog .child-goal-message{color:#bddedb;font-size:12px;line-height:1.45;margin:8px 0}
 </style>
 <script>
@@ -163,7 +165,7 @@ body.child-profile .adult-only-goal{display:none!important}
  if(goalLabel)goalLabel.after(hint);
  function updateCreate(){
   const child=isChildBirth(birth.value);
-  if(goalLabel)goalLabel.hidden=child;
+  if(goalLabel){goalLabel.hidden=child;goalLabel.classList.toggle('child-goal-hidden',child);}
   if(goal)goal.required=!child;
   if(sex)sex.required=child;
   hint.hidden=!child;
