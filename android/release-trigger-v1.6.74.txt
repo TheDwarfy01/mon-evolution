@@ -1,0 +1,6 @@
+Mon Évolution IMC v1.6.74
+19 novembre 2026
+Page Résumé : suppression visuelle du bloc Statistiques avancées en conservant les fonctions de calcul et les bilans PDF.
+Dans Évolution et statistiques, remplacer Restant par Perte par mois (comparaison de la première et de la dernière pesée du mois courant).
+Courbe Évolution de mon poids : Tout est sélectionné par défaut au lancement.
+Reprend la simplification du poids actuel de la v1.6.73.
