@@ -1,0 +1,6 @@
+Mon Évolution IMC v1.6.78
+Poids final attendu indépendant de l'objectif intermédiaire (poids/date).
+Traitements : début, changement, arrêt ; fréquence hebdomadaire, bimensuelle, mensuelle, quotidienne ou sans répétition.
+Sur la courbe : repères récurrents programmés, jamais considérés comme prises confirmées.
+Options de la courbe : Moyenne des pesées tracée en droite oblique de régression linéaire sur les pesées de la période.
+Les données personnelles, traitements enregistrés, graphiques et correctifs précédents sont conservés.
