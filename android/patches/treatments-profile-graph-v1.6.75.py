@@ -24,7 +24,7 @@ once(
   :[];"""
 )
 once(
- " panel.append(heading,tabs,toolbar,plot,pointInfo,zoneLegend,zoomHelp,leg,info);",
+ "panel.append(heading,tabs,toolbar,plot,pointInfo,zoneLegend,zoomHelp,leg,info);",
  """ panel.append(heading,tabs,toolbar,plot,pointInfo,zoneLegend,zoomHelp,leg,info);
  const treatmentSwitch=document.createElement('label');treatmentSwitch.className='treatment-graph-switch';
  const treatmentCheck=document.createElement('input');treatmentCheck.type='checkbox';treatmentCheck.checked=true;
