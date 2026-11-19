@@ -1,0 +1,4 @@
+Mon Évolution IMC v1.6.82
+19 novembre 2026
+L'objectif intermédiaire comporte une date de départ, un poids de départ prérempli depuis la première pesée, une date d'arrivée et un poids cible, tous distincts de l'objectif final.
+L'objectif intermédiaire se trace en une seule ligne oblique entre les deux points, sans ligne horizontale ni prolongation.
