@@ -2,3 +2,4 @@ Mon Évolution IMC v1.6.80
 19 novembre 2026
 Profils enfants sans objectif de poids. Courbes de croissance par âge et sexe, repères IOTF du surpoids et de l’obésité, sans badges ni objectifs adultes.
 Les données existantes restent conservées.
+Relance après correction de l'insertion du graphique enfant.
