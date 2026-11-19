@@ -2,3 +2,4 @@ Mon Évolution IMC v1.6.87
 20 novembre 2026
 Zoom à deux doigts en temps réel avec recalcul des deux axes pendant le geste, sans transformation CSS. Graphiques agrandis sur téléphone.
 Dans Modifier le profil : Homme / Femme dès 18 ans, Garçon / Fille jusqu'à 17 ans, Non précisé toujours possible. Idem à la création de profil.
+Relance de compilation après ajustement de la vérification du moteur de zoom.
