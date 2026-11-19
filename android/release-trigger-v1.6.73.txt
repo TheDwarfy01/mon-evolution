@@ -2,3 +2,4 @@ Mon Évolution IMC v1.6.73
 19 novembre 2026
 Résumé Poids actuel : bilan poids perdu/restant inclus dans la carte, indicateurs redondants masqués.
 Les historiques, calculs et données personnelles ne changent pas.
+Relance après correction du workflow de compilation (correctifs 1.6.73).
