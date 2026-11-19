@@ -1,0 +1,3 @@
+Mon Évolution IMC v1.6.85
+19 novembre 2026
+Zoom tactile à deux doigts sur tous les graphiques, recalcul des axes de date, poids, IMC et taille, avec réinitialisation par graphique. Les autres fonctions sont conservées.
