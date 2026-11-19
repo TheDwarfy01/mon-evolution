@@ -1,0 +1,5 @@
+Mon Évolution IMC v1.6.81
+19 novembre 2026
+Mode enfant jusqu’à 17 ans inclus ; dès le 18e anniversaire, mode adulte.
+Encadré rouge avec pictogramme ⚠️ et avertissement médical sous les graphiques pédiatriques.
+Données personnelles et fonctionnalités précédentes conservées.
