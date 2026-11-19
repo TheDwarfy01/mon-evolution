@@ -45,7 +45,7 @@ part=part.replace(origin,viewport,1)
 # Attach handlers to the SVG itself. One finger continues to scroll the page.
 # Two fingers preview visually, then redraw chart with real X/Y axes after
 # release. A different panel has its own independent zoom and reset button.
-endmark='\n }\n '
+endmark='\n }\n'
 assert part.endswith(endmark),'Graph closing brace unexpected'
 handlers=r'''  // Two-finger pinch: magnify/contract the visible date and weight/IMC/height
   // bounds, anchored to the midpoint between the fingers.
@@ -112,7 +112,7 @@ handlers=r'''  // Two-finger pinch: magnify/contract the visible date and weight
    target.append(reset);
   }
 '''
-part=part[:-len(endmark)]+'\n'+handlers+' }\n '
+part=part[:-len(endmark)]+'\n'+handlers+' }\n'
 assert part.count("graphZoomStore.views.set(graphId")==1
 assert part.count("root.addEventListener('touchend',applyGraphPinch")==1
 assert part.count("  if(false&&opts.touchZoom){")==2
