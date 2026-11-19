@@ -17,7 +17,7 @@ anchor="   target.append(node('p','advanced-help','Références de croissance OM
 replacement="""   const safety=document.createElement('p');
    safety.className='pediatric-medical-warning';
    safety.setAttribute('role','note');
-   safety.textContent='Information médicale importante — Les résultats affichés sur ces courbes ne constituent pas un diagnostic médical et ne remplacent pas l’interprétation d’un pédiatre ou d’un médecin.';
+   safety.textContent='⚠️ Attention — Information médicale importante : Les résultats affichés sur ces courbes ne constituent pas un diagnostic médical et ne remplacent pas l’interprétation d’un pédiatre ou d’un médecin.';
    target.append(safety);
 """ + anchor
 once(anchor,replacement)
@@ -42,8 +42,8 @@ addon=r'''
 <style id="mon-evolution-pediatric-disclaimer-v181">
 .pediatric-medical-warning{
  margin:14px 0 16px;padding:13px 14px;
- border:1px solid #6a8392;border-radius:12px;
- color:#e1eff6;background:#173346;
+ border:2px solid #e46d70;border-radius:12px;
+ color:#fff0f0;background:#4b252e;
  font-size:13px;line-height:1.6
 }
 .pediatric-medical-warning strong{font-weight:750}
@@ -58,7 +58,7 @@ addon=r'''
  if(!topPlot)return;
  const note=document.createElement('p');
  note.className='pediatric-medical-warning';
- note.textContent='Information médicale importante — Les résultats affichés sur ces courbes ne constituent pas un diagnostic médical et ne remplacent pas l’interprétation d’un pédiatre ou d’un médecin.';
+ note.textContent='⚠️ Attention — Information médicale importante : Les résultats affichés sur ces courbes ne constituent pas un diagnostic médical et ne remplacent pas l’interprétation d’un pédiatre ou d’un médecin.';
  topPlot.after(note);
  const refresh=()=>{
   const active=typeof unifiedCurrent==='string'&&unifiedCurrent.startsWith('received:');
