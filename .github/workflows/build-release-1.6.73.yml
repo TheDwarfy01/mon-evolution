@@ -151,6 +151,11 @@ jobs:
               new=Path('android/patches/'+name+'-v1.6.73.py')
               assert old.exists(), str(old)
               new.write_text(old.read_text(encoding='utf-8').replace('1.6.67','1.6.73'),encoding='utf-8')
+          for name in ('compare-graph-ux','nav-responsive','smart-weight-import'):
+              old=Path('android/patches/'+name+'-v1.6.72.py')
+              new=Path('android/patches/'+name+'-v1.6.73.py')
+              assert old.exists(), str(old)
+              new.write_text(old.read_text(encoding='utf-8').replace('1.6.72','1.6.73'),encoding='utf-8')
           PY
       - name: Ajouter le bilan hebdomadaire A4 paysage à deux pages
         run: |
