@@ -60,9 +60,7 @@ once(
 # For unknown sex, calculate the actual z-score curve for each sex at every
 # age and then average the two values. DO NOT average LMS coefficients,
 # which is mathematically incorrect for percentile or z-score curves.
-old="""   const sexBoy=p.sex==='male';
-   const table=window.GROWTH_WHO2007||[];
-   const low=Math.max(61,Math.floor(lo-6)),high=Math.min(228,Math.ceil(hi+6));
+old="""   const low=Math.max(61,Math.floor(lo-6)),high=Math.min(228,Math.ceil(hi+6));
    const indices=healthMetric==='height'?(sexBoy?[1,2]:[3,4]):
       healthMetric==='weight'?(sexBoy?[5,6,7]:[8,9,10]):
       (sexBoy?[11,12,13]:[14,15,16]);
@@ -76,10 +74,7 @@ old="""   const sexBoy=p.sex==='male';
     return Math.abs(L)<.00001?M*Math.exp(S*z):M*Math.pow(1+L*S*z,1/L);
    };
    const reference=table.filter(q=>q[0]>=low&&q[0]<=high);"""
-new="""   const sexBoy=p.sex==='male';
-   const sexUnknown=p.sex!=='male'&&p.sex!=='female';
-   const table=window.GROWTH_WHO2007||[];
-   const low=Math.max(61,Math.floor(lo-6)),high=Math.min(228,Math.ceil(hi+6));
+new="""   const low=Math.max(61,Math.floor(lo-6)),high=Math.min(228,Math.ceil(hi+6));
    const indicesFor=boy=>healthMetric==='height'?(boy?[1,2]:[3,4]):
       healthMetric==='weight'?(boy?[5,6,7]:[8,9,10]):
       (boy?[11,12,13]:[14,15,16]);
