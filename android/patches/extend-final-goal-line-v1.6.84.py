@@ -6,8 +6,8 @@ s=path.read_text(encoding='utf-8')
 a=s.index(" function primaryGraph(target,p){")
 b=s.index(" function progressGraph(target,p){",a)
 part=s[a:b]
-before="""  graph(target,series,{title:'Poids réel, tendance, objectif, repère et projection',xMin:minWindow,xMax:maxWindow,yMode:advancedZoom,touchZoom:true});"""
-after="""  // The horizontal final goal is an ongoing reference, not a dated segment.
+anchor="  graph(target,series,{"
+addon="""  // The horizontal final goal is an ongoing reference, not a dated segment.
   // Extend it to the exact displayed x-axis limits, including future dates
   // added by the intermediate dated objective or the forecast.
   const finalGoalLine=series.find(item=>item.label==='Objectif');
@@ -16,9 +16,9 @@ after="""  // The horizontal final goal is an ongoing reference, not a dated seg
    const through=Number.isFinite(maxWindow)?Math.max(from+1,maxWindow):Math.max(from+1,wEnd);
    finalGoalLine.points=[{x:from,y:p.goal},{x:through,y:p.goal}];
   }
-  graph(target,series,{title:'Poids réel, tendance, objectif, repère et projection',xMin:minWindow,xMax:maxWindow,yMode:advancedZoom,touchZoom:true});"""
-assert part.count(before)==1,"Chart anchor not unique"
-part=part.replace(before,after,1)
+"""
+assert part.count(anchor)==1,"Chart anchor not unique"
+part=part.replace(anchor,addon+anchor,1)
 assert "Trajectoire de l’objectif intermédiaire" in part
 assert "finalGoalLine.points=[{x:from,y:p.goal},{x:through,y:p.goal}]" in part
 s=s[:a]+part+s[b:]
