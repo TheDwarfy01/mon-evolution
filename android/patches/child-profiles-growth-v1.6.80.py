@@ -96,10 +96,11 @@ once(
 a=s.index(" function primaryGraph(target,p){")
 b=s.index(" function progressGraph(target,p){",a)
 part=s[a:b]
-head="  target.append(sectionTitle('Évolution du poids'));"
-assert part.count(head)==1
+head=" function primaryGraph(target,p){"
+assert part.startswith(head)
 part=part.replace(head,head+"""
   if(window.MonEvolutionChild?.isChildBirth?.(p.birthDate)){
+   target.append(sectionTitle('Suivi de croissance'));
    const explanation=node('p','advanced-help',
     'Suivi de croissance : les courbes d’IMC dépendent de l’âge, du sexe et de la taille. Aucun objectif de perte de poids.');
    target.append(explanation);
