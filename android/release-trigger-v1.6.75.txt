@@ -1,0 +1,5 @@
+Mon Évolution IMC 1.6.75
+19 novembre 2026
+Ajout de la section Traitements par profil personnel : nom, date, dose et unité, injection, début/changement et arrêt.
+Affichage sur Évolution de mon poids : traits verticaux pour chaque événement, bandes de périodes entre changements de dose et possibilité de consulter le détail au toucher.
+Édition/suppression des enregistrements. Sauvegarde privée existante conservée.
