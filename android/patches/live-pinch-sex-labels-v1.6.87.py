@@ -100,7 +100,8 @@ tail=part.index('  if(graphZoomStore.views.has(graphId)){',start)
 close=part.index('  }\n }\n',tail)
 part=part[:close+4]+'  }\n'+part[close+4:]
 assert "graph(tmp,series,{...opts,livePinchFrame:true})" in part
-assert "style.transform='scale(" not in part
+assert "graph(tmp,series,{...opts,livePinchFrame:true})" in part
+assert "liveHolder.setPointerCapture" in part
 s=s[:a]+part+s[b:]
 
 # Compact main chart: capture pointers on the fixed parent, then redraw
