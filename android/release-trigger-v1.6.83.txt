@@ -1,3 +1,4 @@
 Mon Évolution IMC v1.6.83
 19 novembre 2026
 Création des profils : date de naissance obligatoire avant l'objectif, pas d'objectif pour les mineurs, garçon/fille/non précisé. Références moyennées fille/garçon à titre purement illustratif lorsque le sexe est non précisé.
+Relance après correction du calcul des références moyennes.
