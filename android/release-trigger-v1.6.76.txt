@@ -2,3 +2,5 @@ Mon Évolution IMC v1.6.76
 Objectif profil avec poids et date cible, trajectoire sur graphiques, comparaison réelle vs prévue et rythme indicatif.
 Options de courbe : moyenne arithmétique des pesées, et non moyenne glissante.
 Conservation des traitements, historique, données et sauvegardes.
+
+Nouvelle tentative après correction de compatibilité avec le graphique avancé.
