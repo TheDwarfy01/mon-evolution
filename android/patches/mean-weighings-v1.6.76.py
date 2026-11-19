@@ -7,7 +7,7 @@ label="Moyenne glissante des pesées (tendance)"
 assert s.count(label)==1, "Missing moving-average option"
 s=s.replace(label,"Moyenne des pesées",1)
 start=s.index("  if(trend){",s.index(" function primaryGraph(target,p){"))
-end=s.index("  if(referenceBand){",start)
+end=s.index("  const goalPlan=window.MonEvolutionGoal?.get?.(p)||null;",start)
 section=s[start:end]
 assert "trendPoints" in section and "Tendance (7 jours / 3 pesées)" in section, "Unexpected trend body"
 new="""  if(trend){
