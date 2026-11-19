@@ -4,3 +4,5 @@ Options de courbe : moyenne arithmétique des pesées, et non moyenne glissante.
 Conservation des traitements, historique, données et sauvegardes.
 
 Nouvelle tentative après correction de compatibilité avec le graphique avancé.
+
+Reprise après correction de l'ancre du calcul de moyenne des pesées.
