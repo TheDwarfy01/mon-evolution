@@ -9,16 +9,16 @@
   <meta property="og:description" content="Votre poids, vos repas et vos objectifs réunis dans une application Android privée.">
   <title>Mon Évolution IMC — Suivi du poids et des repas sur Android</title>
   <link rel="icon" href="logo.png" type="image/png">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=20261120-3">
 </head>
-<body>
+<body class="landing">
   <a class="skip" href="#contenu">Aller au contenu</a>
   <header class="container site-header">
     <a class="brand" href="index.html"><img src="logo.png" alt=""> <span>Mon Évolution <b>IMC</b></span></a>
     <nav class="links" aria-label="Navigation principale">
-      <a href="#fonctionnalites">Fonctionnalités</a>
-      <a href="#installation">Installation</a>
-      <a href="confidentialite.html">Confidentialité</a>
+      <a href="#fonctionnalites">▦ Fonctionnalités</a>
+      <a href="#installation">↓ Installation</a>
+      <a href="confidentialite.html">♢ Confidentialité</a>
       <a href="https://github.com/TheDwarfy01/mon-evolution" target="_blank" rel="noopener noreferrer">GitHub</a>
     </nav>
   </header>
@@ -28,7 +28,7 @@
       <div class="hero-copy">
         <div class="eyebrow"><span class="pulse" aria-hidden="true"></span> Application Android · Suivi personnel</div>
         <h1>Votre évolution.<br><em>À votre rythme.</em></h1>
-        <p class="lead">Suivez votre poids, vos repas et vos objectifs au même endroit. Une interface pensée pour rester claire, avec des profils personnels et des partages en lecture seule.</p>
+        <p class="lead">Suivez votre poids, vos repas et vos objectifs au même endroit. Une interface claire, pensée pour un usage simple au quotidien.</p>
         <div class="cta-row">
           <a class="button" id="download-apk" href="https://github.com/TheDwarfy01/mon-evolution/releases/latest">↓ Télécharger pour Android</a>
           <a class="button outline" id="download-release" href="https://github.com/TheDwarfy01/mon-evolution/releases/latest">Voir la dernière version</a>
@@ -46,28 +46,52 @@
       </div>
     </section>
 
-    <section class="section-intro" id="fonctionnalites">
-      <span class="eyebrow">Tout au même endroit</span>
-      <h2>Conçu pour votre quotidien</h2>
-      <p class="muted">Des fonctionnalités utiles, sans multiplier les écrans ni les manipulations.</p>
-    </section>
-    <div class="cardgrid">
-      <section class="card"><div class="card-icon">⚖️</div><h3>Poids & objectifs</h3><p>Pesées datées, IMC, progression, statistiques et courbes avancées avec tendances et comparaisons.</p></section>
-      <section class="card"><div class="card-icon">📷</div><h3>Journal alimentaire</h3><p>Calendrier des repas, descriptions et photos avec aperçu agrandi. Retrouvez vos journées d’un coup d’œil.</p></section>
-      <section class="card"><div class="card-icon">♧</div><h3>Profils partagés</h3><p>Invitez un proche par lien, consultez son évolution en lecture seule et actualisez automatiquement ses données au lancement.</p></section>
-      <section class="card"><div class="card-icon">🔒</div><h3>Confidentialité</h3><p>Partage chiffré AES-256-GCM, code transmis séparément et contrôle des accès par Google Drive.</p></section>
-      <section class="card"><div class="card-icon">☁️</div><h3>Sauvegardes Drive</h3><p>Reliez un fichier de sauvegarde Google Drive, restaurez vos données et gérez les sauvegardes depuis l’application.</p></section>
-      <section class="card"><div class="card-icon">🔔</div><h3>Rappels & bilans</h3><p>Rappels personnalisables par profil, pesées, repas, photos et injections si prescrites. Bilans PDF du poids et des repas.</p></section>
-    </div>
 
-    <section class="download-panel" id="installation">
-      <div>
-        <span class="eyebrow">Commencer facilement</span>
-        <h2>Installez Mon Évolution sur Android</h2>
-        <p>L’application est distribuée depuis les publications officielles du projet sur GitHub. Pour la mettre à jour, installez la nouvelle version <strong>sans désinstaller l’ancienne</strong> afin de conserver les données du téléphone.</p>
-        <p class="muted">Sur certains Samsung, si Chrome empêche de télécharger l’APK, ouvrez GitHub Releases avec Firefox ou DuckDuckGo. Android peut demander d’autoriser l’installation depuis le navigateur choisi.</p>
+    <section class="site-section" id="fonctionnalites" aria-labelledby="features-title">
+      <h2 id="features-title">Fonctionnalités essentielles</h2>
+      <div class="feature-grid">
+        <article class="feature"><div class="fi" aria-hidden="true">⚖</div><div><h3>Poids &amp; IMC</h3><p>Suivi, objectifs et courbes</p></div></article>
+        <article class="feature"><div class="fi" aria-hidden="true">🍴</div><div><h3>Repas &amp; photos</h3><p>Calendrier et journal alimentaire</p></div></article>
+        <article class="feature"><div class="fi" aria-hidden="true">♧</div><div><h3>Partage sécurisé</h3><p>Consultation en lecture seule</p></div></article>
+        <article class="feature"><div class="fi" aria-hidden="true">☁</div><div><h3>Sauvegarde Drive</h3><p>Sauvegarde et restauration</p></div></article>
       </div>
-      <div class="download-actions"><a class="button" id="download-apk-bottom" href="https://github.com/TheDwarfy01/mon-evolution/releases/latest">↓ Télécharger l’application</a><a href="https://github.com/TheDwarfy01/mon-evolution/releases" target="_blank" rel="noopener noreferrer">Consulter toutes les versions</a></div>
+    </section>
+
+    <section class="site-section project" id="avancement" aria-labelledby="progress-title">
+      <div class="section-tag">DÉVELOPPEMENT</div>
+      <h2 id="progress-title">Avancement du projet</h2>
+      <p class="subtle">Estimations fonctionnelles au 20 novembre 2026 · sous réserve de tests réels.</p>
+      <div class="overall">
+        <div class="overall-head"><span>Niveau global actuel</span><strong>80 %</strong></div>
+        <div class="track" role="progressbar" aria-label="Avancement global estimé" aria-valuemin="0" aria-valuemax="100" aria-valuenow="80"><span style="width:80%"></span></div>
+        <p class="overall-note">Objectif final : 100 % · Moyenne arrondie des trois modules ci-dessous ; ne couvre pas toutes les fonctionnalités de l’application.</p>
+      </div>
+      <div class="mod-grid">
+        <article class="mod"><div class="mod-head"><h3>⚖ Poids adulte</h3><strong>99 %</strong></div><div class="track" role="progressbar" aria-label="Poids adulte" aria-valuemin="0" aria-valuemax="100" aria-valuenow="99"><span style="width:99%"></span></div><p>Reste à valider la fluidité des graphiques et les derniers correctifs.</p></article>
+        <article class="mod"><div class="mod-head"><h3>◌ Poids enfant</h3><strong>75 %</strong></div><div class="track" role="progressbar" aria-label="Poids enfant" aria-valuemin="0" aria-valuemax="100" aria-valuenow="75"><span style="width:75%"></span></div><p>Finaliser les références selon l’âge, les zones colorées et les courbes.</p></article>
+        <article class="mod"><div class="mod-head"><h3>▣ Nouvel appareil</h3><strong>65 %</strong></div><div class="track" role="progressbar" aria-label="Installation sur un nouvel appareil" aria-valuemin="0" aria-valuemax="100" aria-valuenow="65"><span style="width:65%"></span></div><p>Valider l’assistant initial, le rôle principal/secondaire et la synchronisation.</p></article>
+      </div>
+    </section>
+
+    <section class="site-section" id="captures" aria-labelledby="shots-title">
+      <h2 id="shots-title">Captures d’écran</h2>
+      <div class="shot-grid" aria-label="Aperçus illustratifs des différents écrans">
+        <article class="shot"><div class="shot-screen" aria-hidden="true"><div class="shot-top"><span>Mon Évolution IMC</span><span>●</span></div><div class="shot-data"><small>Suivi du poids</small><b>72,3 kg</b><small>Progression régulière</small><div class="shot-bars"><i style="--h:89%"></i><i style="--h:77%"></i><i style="--h:69%"></i><i style="--h:61%"></i><i style="--h:51%"></i><i style="--h:40%"></i></div></div><div class="shot-list">Historique des pesées <span>›</span></div></div><h3>Suivi du poids</h3><p>Évolution, objectifs et statistiques</p></article>
+        <article class="shot"><div class="shot-screen" aria-hidden="true"><div class="shot-top"><span>Journal alimentaire</span><span>＋</span></div><div class="shot-list">☀ Petit déjeuner <span>✓</span></div><div class="shot-list">🍴 Déjeuner <span>✓</span></div><div class="shot-list">☕ Collation <span>＋</span></div><div class="shot-list">☾ Dîner <span>＋</span></div><div class="shot-data"><small>Photos et descriptions des repas</small></div></div><h3>Journal alimentaire</h3><p>Repas, photos et commentaires</p></article>
+        <article class="shot"><div class="shot-screen" aria-hidden="true"><div class="shot-top"><span>Calendrier</span><span>▦</span></div><div class="shot-data"><small>Novembre 2026</small><div class="shot-cal"><span>1</span><span>2</span><span>3</span><span class="on">4</span><span>5</span><span class="on">6</span><span>7</span><span class="on">8</span><span>9</span><span>10</span><span class="on">11</span><span>12</span><span class="on">13</span><span>14</span><span>15</span><span>16</span><span>17</span><span class="on">18</span><span>19</span><span>20</span><span>21</span></div></div><div class="shot-list">Journées enregistrées <span>●</span></div></div><h3>Calendrier</h3><p>Retrouvez rapidement vos journées</p></article>
+      </div>
+      <p class="shot-disclaimer">Aperçus illustratifs avec des données fictives. Les véritables captures d’écran de l’APK seront intégrées après validation.</p>
+    </section>
+
+    <section class="site-section" id="installation" aria-labelledby="install-title">
+      <h2 id="install-title">Installation en 3 étapes</h2>
+      <div class="steps">
+        <div class="step"><span class="num">1</span><p>Ouvrir <a href="https://github.com/TheDwarfy01/mon-evolution/releases/latest">GitHub Releases</a></p></div>
+        <div class="step"><span class="num">2</span><p>Télécharger l’APK</p></div>
+        <div class="step"><span class="num">3</span><p>Installer <strong>sans désinstaller</strong> l’ancienne version</p></div>
+      </div>
+      <div class="tips"><h3>ⓘ Bon à savoir</h3><ul><li>Android 7.0 ou version ultérieure.</li><li>Sur certains Samsung, essayez Firefox ou DuckDuckGo si Chrome bloque l’APK.</li><li>Android peut demander d’autoriser l’installation depuis le navigateur choisi.</li></ul></div>
+      <div class="installation-actions"><a class="button" id="download-apk-bottom" href="https://github.com/TheDwarfy01/mon-evolution/releases/latest">↓ Télécharger l’application</a><a href="https://github.com/TheDwarfy01/mon-evolution/releases">Consulter toutes les versions</a></div>
     </section>
     <p class="disclaimer">Mon Évolution IMC est un outil personnel de suivi et ne remplace ni un avis médical, ni une prescription ou un diagnostic. Les rappels médicaux restent facultatifs.</p>
   </main>
