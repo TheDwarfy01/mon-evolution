@@ -9,17 +9,17 @@
   <meta property="og:description" content="Votre poids, vos repas et vos objectifs réunis dans une application Android privée.">
   <title>Mon Évolution IMC — Suivi du poids et des repas sur Android</title>
   <link rel="icon" href="logo.png" type="image/png">
-  <link rel="stylesheet" href="style.css?v=20261120-4">
+  <link rel="stylesheet" href="style.css?v=20261120-5">
 </head>
 <body class="landing">
   <a class="skip" href="#contenu">Aller au contenu</a>
   <header class="container site-header">
     <a class="brand" href="index.html"><img src="logo.png" alt=""> <span>Mon Évolution <b>IMC</b></span></a>
     <nav class="links" aria-label="Navigation principale">
-      <a href="#fonctionnalites">▦ Fonctionnalités</a>
-      <a href="#installation">↓ Installation</a>
-      <a href="confidentialite.html">♢ Confidentialité</a>
-      <a href="https://github.com/TheDwarfy01/mon-evolution" target="_blank" rel="noopener noreferrer">◉ GitHub</a>
+      <a href="#fonctionnalites"><span aria-hidden="true">▦</span> Fonctionnalités</a>
+      <a href="#installation"><span aria-hidden="true">↓</span> Installation</a>
+      <a href="confidentialite.html"><span aria-hidden="true">♢</span> Confidentialité</a>
+      <a href="https://github.com/TheDwarfy01/mon-evolution" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">◉</span> GitHub</a>
     </nav>
   </header>
 
@@ -81,20 +81,16 @@
       <div class="installation-actions"><a class="button" id="download-apk-bottom" href="https://github.com/TheDwarfy01/mon-evolution/releases/latest">↓ Télécharger l’application</a><a href="https://github.com/TheDwarfy01/mon-evolution/releases">Consulter toutes les versions</a></div>
     </section>
 
-    <section class="site-section project" id="avancement" aria-labelledby="progress-title">
-      <div class="section-tag">DÉVELOPPEMENT</div>
-      <h2 id="progress-title">Avancement du projet</h2>
-      <p class="subtle">Estimations fonctionnelles au 20 novembre 2026 · sous réserve de tests réels.</p>
-      <div class="overall">
-        <div class="overall-head"><span>Niveau global actuel</span><strong>80 %</strong></div>
-        <div class="track" role="progressbar" aria-label="Avancement global estimé" aria-valuemin="0" aria-valuemax="100" aria-valuenow="80"><span style="width:80%"></span></div>
-        <p class="overall-note">Objectif final : 100 % · Moyenne arrondie des trois modules ci-dessous ; ne couvre pas toutes les fonctionnalités de l’application.</p>
+    <section class="site-section project project-compact" id="avancement" aria-labelledby="progress-title">
+      <div class="project-status"><span class="status-live">✓ Application fonctionnelle</span><span class="status-dev">Développement en cours</span></div>
+      <div class="overall-head"><h2 id="progress-title">Évolution du projet</h2><strong>80 %</strong></div>
+      <div class="track overall-track" role="progressbar" aria-label="Avancement global estimé" aria-valuemin="0" aria-valuemax="100" aria-valuenow="80"><span style="width:80%"></span></div>
+      <div class="progress-mini">
+        <div><span>Poids adulte</span><b>99 %</b></div>
+        <div><span>Poids enfant</span><b>75 %</b></div>
+        <div><span>Nouvel appareil</span><b>65 %</b></div>
       </div>
-      <div class="mod-grid">
-        <article class="mod"><div class="mod-head"><h3>⚖ Poids adulte</h3><strong>99 %</strong></div><div class="track" role="progressbar" aria-label="Poids adulte" aria-valuemin="0" aria-valuemax="100" aria-valuenow="99"><span style="width:99%"></span></div><p>Reste à valider la fluidité des graphiques et les derniers correctifs.</p></article>
-        <article class="mod"><div class="mod-head"><h3>◌ Poids enfant</h3><strong>75 %</strong></div><div class="track" role="progressbar" aria-label="Poids enfant" aria-valuemin="0" aria-valuemax="100" aria-valuenow="75"><span style="width:75%"></span></div><p>Finaliser les références selon l’âge, les zones colorées et les courbes.</p></article>
-        <article class="mod"><div class="mod-head"><h3>▣ Nouvel appareil</h3><strong>65 %</strong></div><div class="track" role="progressbar" aria-label="Installation sur un nouvel appareil" aria-valuemin="0" aria-valuemax="100" aria-valuenow="65"><span style="width:65%"></span></div><p>Valider l’assistant initial, le rôle principal/secondaire et la synchronisation.</p></article>
-      </div>
+      <p class="status-note">Objectif final : 100 %. Estimations fonctionnelles, vérifications restantes sur les nouvelles installations.</p>
     </section>
 
     <section class="site-section" id="captures" aria-labelledby="shots-title">
