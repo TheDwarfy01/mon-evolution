@@ -9,7 +9,7 @@
   <meta property="og:description" content="Votre poids, vos repas et vos objectifs réunis dans une application Android privée.">
   <title>Mon Évolution IMC — Suivi du poids et des repas sur Android</title>
   <link rel="icon" href="logo.png" type="image/png">
-  <link rel="stylesheet" href="style.css?v=20261120-3">
+  <link rel="stylesheet" href="style.css?v=20261120-4">
 </head>
 <body class="landing">
   <a class="skip" href="#contenu">Aller au contenu</a>
@@ -19,7 +19,7 @@
       <a href="#fonctionnalites">▦ Fonctionnalités</a>
       <a href="#installation">↓ Installation</a>
       <a href="confidentialite.html">♢ Confidentialité</a>
-      <a href="https://github.com/TheDwarfy01/mon-evolution" target="_blank" rel="noopener noreferrer">GitHub</a>
+      <a href="https://github.com/TheDwarfy01/mon-evolution" target="_blank" rel="noopener noreferrer">◉ GitHub</a>
     </nav>
   </header>
 
@@ -36,13 +36,26 @@
         <p class="version-status" id="latest-version" aria-live="polite">Dernière version : <a href="https://github.com/TheDwarfy01/mon-evolution/releases/latest">consulter GitHub Releases</a></p>
         <p class="muted">Installation par APK · Android 7.0 ou version ultérieure · Mise à jour par-dessus l'application existante.</p>
       </div>
-      <div class="app-preview" aria-label="Présentation de l’application Mon Évolution">
-        <div class="preview-top"><img src="logo.png" alt="Logo Mon Évolution IMC"><span>MON ÉVOLUTION</span><span class="preview-tag">IMC</span></div>
-        <div class="preview-eyebrow">Un aperçu des fonctionnalités</div>
-        <div class="preview-metric"><span>Votre poids</span><strong>Suivez vos progrès</strong><small>Pesées · objectif · IMC</small></div>
-        <div class="preview-progress"><div></div></div>
-        <div class="preview-grid"><div>⌁ <b>Courbes</b><span>Tendances</span></div><div>◷ <b>Repas</b><span>Photos & calendrier</span></div><div>♧ <b>Partages</b><span>Lecture seule</span></div><div>🔔 <b>Rappels</b><span>Personnalisés</span></div></div>
-        <small class="preview-disclaimer">Illustration fonctionnelle, pas une capture réelle de l’application.</small>
+      <div class="hero-visual" aria-label="Illustration de l’interface de suivi de poids">
+        <div class="phone-glow" aria-hidden="true"></div>
+        <div class="phone-frame">
+          <div class="phone-speaker" aria-hidden="true"></div>
+          <div class="phone-header"><span>Mon Évolution <b>IMC</b></span><span class="phone-user" aria-hidden="true">◉</span></div>
+          <div class="phone-subhead">Poids</div>
+          <div class="phone-value"><strong>72,3 <small>kg</small></strong><span>↘ −4,7 kg</span></div>
+          <svg class="phone-chart" viewBox="0 0 280 126" role="img" aria-label="Exemple fictif d’une courbe de poids descendante">
+            <defs><linearGradient id="chart-fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#7fe9d0" stop-opacity=".31"/><stop offset="1" stop-color="#7fe9d0" stop-opacity="0"/></linearGradient></defs>
+            <path d="M8 28H272M8 58H272M8 88H272M8 118H272" stroke="#2f596d" stroke-width="1" stroke-dasharray="3 5"/>
+            <path d="M9 33 L45 44 L82 56 L120 54 L162 77 L206 93 L243 96 L270 108 L270 122 L9 122Z" fill="url(#chart-fill)"/>
+            <path d="M9 33 L45 44 L82 56 L120 54 L162 77 L206 93 L243 96 L270 108" fill="none" stroke="#8cebd6" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+            <g fill="#85e9d3" stroke="#0b2e3f" stroke-width="3"><circle cx="9" cy="33" r="5"/><circle cx="82" cy="56" r="5"/><circle cx="162" cy="77" r="5"/><circle cx="243" cy="96" r="5"/><circle cx="270" cy="108" r="5"/></g>
+          </svg>
+          <div class="phone-action"><span aria-hidden="true">♜</span> Repas <b aria-hidden="true">›</b></div>
+          <div class="phone-action"><span aria-hidden="true">▦</span> Calendrier <b aria-hidden="true">›</b></div>
+          <div class="phone-action"><span aria-hidden="true">▥</span> Courbes <b aria-hidden="true">›</b></div>
+          <div class="phone-home" aria-hidden="true"></div>
+        </div>
+        <span class="visually-hidden">Aperçu illustratif avec des valeurs fictives, pas une capture réelle de l’application.</span>
       </div>
     </section>
 
@@ -55,6 +68,17 @@
         <article class="feature"><div class="fi" aria-hidden="true">♧</div><div><h3>Partage sécurisé</h3><p>Consultation en lecture seule</p></div></article>
         <article class="feature"><div class="fi" aria-hidden="true">☁</div><div><h3>Sauvegarde Drive</h3><p>Sauvegarde et restauration</p></div></article>
       </div>
+    </section>
+
+    <section class="site-section" id="installation" aria-labelledby="install-title">
+      <h2 id="install-title">Installation en 3 étapes</h2>
+      <div class="steps">
+        <div class="step"><span class="num">1</span><p>Ouvrir <a href="https://github.com/TheDwarfy01/mon-evolution/releases/latest">GitHub Releases</a></p></div>
+        <div class="step"><span class="num">2</span><p>Télécharger l’APK</p></div>
+        <div class="step"><span class="num">3</span><p>Installer <strong>sans désinstaller</strong> l’ancienne version</p></div>
+      </div>
+      <div class="tips"><h3>ⓘ Bon à savoir</h3><ul><li>Android 7.0 ou version ultérieure.</li><li>Sur certains Samsung, essayez Firefox ou DuckDuckGo si Chrome bloque l’APK.</li><li>Android peut demander d’autoriser l’installation depuis le navigateur choisi.</li></ul></div>
+      <div class="installation-actions"><a class="button" id="download-apk-bottom" href="https://github.com/TheDwarfy01/mon-evolution/releases/latest">↓ Télécharger l’application</a><a href="https://github.com/TheDwarfy01/mon-evolution/releases">Consulter toutes les versions</a></div>
     </section>
 
     <section class="site-section project" id="avancement" aria-labelledby="progress-title">
@@ -83,16 +107,7 @@
       <p class="shot-disclaimer">Aperçus illustratifs avec des données fictives. Les véritables captures d’écran de l’APK seront intégrées après validation.</p>
     </section>
 
-    <section class="site-section" id="installation" aria-labelledby="install-title">
-      <h2 id="install-title">Installation en 3 étapes</h2>
-      <div class="steps">
-        <div class="step"><span class="num">1</span><p>Ouvrir <a href="https://github.com/TheDwarfy01/mon-evolution/releases/latest">GitHub Releases</a></p></div>
-        <div class="step"><span class="num">2</span><p>Télécharger l’APK</p></div>
-        <div class="step"><span class="num">3</span><p>Installer <strong>sans désinstaller</strong> l’ancienne version</p></div>
-      </div>
-      <div class="tips"><h3>ⓘ Bon à savoir</h3><ul><li>Android 7.0 ou version ultérieure.</li><li>Sur certains Samsung, essayez Firefox ou DuckDuckGo si Chrome bloque l’APK.</li><li>Android peut demander d’autoriser l’installation depuis le navigateur choisi.</li></ul></div>
-      <div class="installation-actions"><a class="button" id="download-apk-bottom" href="https://github.com/TheDwarfy01/mon-evolution/releases/latest">↓ Télécharger l’application</a><a href="https://github.com/TheDwarfy01/mon-evolution/releases">Consulter toutes les versions</a></div>
-    </section>
+
     <p class="disclaimer">Mon Évolution IMC est un outil personnel de suivi et ne remplace ni un avis médical, ni une prescription ou un diagnostic. Les rappels médicaux restent facultatifs.</p>
   </main>
   <footer><div class="container footer-row"><span>© 2026 Mon Évolution IMC · Projet indépendant</span><div><a href="confidentialite.html">Confidentialité</a><a href="conditions.html">Conditions</a><a href="https://github.com/TheDwarfy01/mon-evolution">Code & versions</a></div></div></footer>
