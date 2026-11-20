@@ -1,0 +1,3 @@
+Mon Évolution IMC v1.6.90
+20 novembre 2026
+Courbes enfants Poids par âge et Taille par âge : zones colorées selon les références OMS -2/+2 (bleu, vert, orange), avec repères qui suivent l'âge, légende, dernière mesure et texte explicatif. Les plages de référence sont limitées aux âges couverts par les tables disponibles. Aucune conclusion médicale de surpoids à partir du poids par âge seul. Améliorations précédentes conservées.
