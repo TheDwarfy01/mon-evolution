@@ -1,0 +1,3 @@
+Mon Évolution IMC v1.6.89
+20 novembre 2026
+En profil enfant : cases traitements/injections et objectif intermédiaire décochées et désactivées ; suppression de la ligne jaune objectif final et des projections d'amaigrissement. Préférences des profils adultes conservées.
