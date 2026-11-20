@@ -91,7 +91,7 @@ part=part.replace(old,new,1)
 # Draw only the portion of the planned line contained inside current dates;
 # the end marker is kept only when the real target date is in view.
 a=part.index(' if(goalChartVisible){\n  const scale=kind=',part.index(' const dataLayer='))
-b=part.index('\n // Lignes verticales interactives',a)
+b=part.index("\n if(pts.length>1)dataLayer.append(svgElement('polyline',{" ,a)
 goal=part[a:b]
 assert 'const begin=ts(scheduledGoal.startDate),finish=ts(scheduledGoal.date);' in goal
 assert "stroke:'#f3a4cc'" in goal
