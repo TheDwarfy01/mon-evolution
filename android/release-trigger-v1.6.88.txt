@@ -1,0 +1,3 @@
+Mon Évolution IMC v1.6.88
+20 novembre 2026
+Graphique IMC pédiatrique : zones de corpulence colorées (bleu, vert, orange, rouge) selon les seuils liés à l'âge/au sexe, synthèse claire sous la courbe, seuils et écarts en IMC. Pas de classement médical pour sexe non précisé et âges hors tables. Avertissement médical conservé.
