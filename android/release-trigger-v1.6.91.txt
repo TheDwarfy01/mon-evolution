@@ -1,0 +1,4 @@
+Version 1.6.91
+- Zoom et deplacement fluide a deux doigts sur tous les graphiques.
+- Traces cibles et projection bornees a la fenetre de dates visible.
+- Graphiques agrandis sans extrapolation forcee des echelles.
