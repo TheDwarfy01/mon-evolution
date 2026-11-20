@@ -517,6 +517,12 @@ jobs:
       - name: Bandes OMS colorees pour poids et taille des enfants
         run: |
           set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          previous=Path('android/patches/child-weight-height-color-zones-v1.6.90.py')
+          current=Path('android/patches/child-weight-height-color-zones-v1.6.91.py')
+          current.write_text(previous.read_text(encoding='utf-8').replace('1.6.90','1.6.91'),encoding='utf-8')
+          PY
           python3 android/patches/child-weight-height-color-zones-v1.6.91.py
           grep -Fq "const childPediatricBands=healthMetric==='bmi'?bmiBands:growthBands" android/source-1.6.91/app/src/main/assets/index.html
           grep -Fq 'const growthMetricSamples' android/source-1.6.91/app/src/main/assets/index.html
