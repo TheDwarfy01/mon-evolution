@@ -6,7 +6,6 @@
   const toggleKey = 'imc-local-meal-ai-enabled-v1';
   let lastStatus = '';
   let currentRequest = '';
-  let installedOnce = false;
   const $ai = id => document.getElementById(id);
   const enabled = () => localStorage.getItem(toggleKey) === 'yes';
   const currentProfile = () => profile();
@@ -22,7 +21,7 @@
     const obj = typeof raw === 'string' ? JSON.parse(raw) : raw;
     if (!obj || typeof obj !== 'object' || obj.error) throw Error(obj?.error || 'Réponse non exploitable');
     const r = {
-      description: String(obj.description || '').slice(0, 600),
+      description: String(obj.description || '').trim().slice(0, 240),
       kcal: asNumber(obj.kcal),
       protein: asNumber(obj.protein),
       carbs: asNumber(obj.carbs),
@@ -33,6 +32,16 @@
       throw Error('Les estimations numériques sont absentes.');
     return r;
   }
+  // Existing analyses are not changed; only their on-screen description is shortened.
+  const shortDescription = value => {
+    const raw=String(value||'').replace(/\s+/g,' ').trim();
+    if(!raw)return 'Aliments et portions estimés';
+    const sentence=raw.split(/(?<=[.!?])\s+/)[0];
+    const summary=(sentence.length>=15&&sentence.length<=115)?sentence:raw;
+    if(summary.length<=115)return summary;
+    const cut=summary.slice(0,112);
+    return cut.slice(0,Math.max(65,cut.lastIndexOf(' '))).trimEnd()+'…';
+  };
   const button = (label, handler) => {
     const b = document.createElement('button');
     b.type = 'button'; b.className = 'secondary'; b.textContent = label;
@@ -100,36 +109,50 @@
   }
   function drawResults(wrapper, saved, p, date, key) {
     const value = p.aiMeals?.[date]?.[key];
-    const photo = saved[key+'Photo'];
-    if (!photo || !enabled()) return;
+    const photo = saved[key+'Photo'] || '';
+    const originalText = String(saved[key]||'').trim();
+    if ((!photo && !originalText) || !enabled()) return;
     const box = document.createElement('div');
     box.className='ai-meal-result';
     box.style.cssText='margin:10px 0 16px;padding:12px;border:1px solid #4c7181;border-radius:12px;';
+    const heading=document.createElement('div');
+    heading.style.cssText='display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap';
     const title=document.createElement('strong');title.textContent='✦ Estimation nutritionnelle';
-    box.append(title);
+    title.style.cssText='font-size:.9rem';
+    heading.append(title);
     const s=status();
-    const analyze=button(value?'↻ Réanalyser la photo':'✦ Analyser la photo',()=>{
+    const analyze=button(value?'↻ Réanalyser':(photo?'✦ Analyser la photo':'✦ Analyser le texte'),()=>{
       if (status().state!=='ready') {alert("Installez d'abord le modèle IA et attendez sa vérification.");return;}
+      // Persist any unsaved text before asynchronous inference, without replacing the photo.
+      const typed=String($ai('meal-'+key)?.value||'').trim();
+      if(typed !== originalText) saveMealInputs(false);
+      const persisted=mealRecord(p,date);
+      const description=String(persisted[key]||'').trim();
+      const photoData=persisted[key+'Photo'] || '';
+      if(!photoData && !description){alert('Renseignez une description ou une photo du repas.');return;}
       const token=p.id+'|'+date+'|'+key;
       currentRequest=token;
-      const description=$ai('meal-'+key)?.value||saved[key]||'';
-      AndroidBackup.aiAnalyze(token,photo,description);
-      analyze.disabled=true;analyze.textContent='Analyse locale en cours…';
+      analyze.disabled=true;analyze.textContent='Analyse en cours…';
+      AndroidBackup.aiAnalyze(token,photoData,description);
     });
-    if (s.state!=='ready') analyze.disabled=true;
-    box.append(analyze);
+    analyze.style.cssText+='font-size:.78rem;padding:7px 10px;';
+    if(s.state!=='ready')analyze.disabled=true;
+    heading.append(analyze);
+    box.append(heading);
     if(value) {
-      const desc=document.createElement('p');desc.textContent=value.description||'Aliments reconnus';
-      desc.style.cssText='font-size:.87rem;margin:10px 0';box.append(desc);
+      const desc=document.createElement('p');desc.textContent=shortDescription(value.description);
+      desc.style.cssText='font-size:.84rem;line-height:1.4;margin:9px 0 5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;';
+      box.append(desc);
       const fields=document.createElement('div');
-      fields.style.cssText='display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px;';
-      for(const [prop,label,unit] of [['kcal','Calories','kcal'],['protein','Protéines','g'],
-          ['carbs','Glucides','g'],['fat','Lipides','g']]) {
-        const cell=document.createElement('label');cell.style.cssText='display:flex;flex-direction:column;gap:3px;font-size:.78rem';
-        cell.append(document.createTextNode(label+' ('+unit+')'));
+      fields.style.cssText='display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:9px;width:100%;';
+      for(const [prop,label] of [['kcal','kcal'],['protein','Prot. (g)'],
+          ['carbs','Gluc. (g)'],['fat','Lip. (g)']]) {
+        const cell=document.createElement('label');
+        cell.style.cssText='display:flex;flex-direction:column;gap:4px;font-size:clamp(.63rem,2.6vw,.75rem);min-width:0;';
+        cell.append(document.createTextNode(label));
         const input=document.createElement('input');input.type='number';input.min='0';input.max='10000';
         input.step='0.1';input.value=String(value[prop]??'');
-        input.style.cssText='width:100%;box-sizing:border-box';
+        input.style.cssText='width:100%;min-width:0;box-sizing:border-box;padding:8px 2px;text-align:center;font-size:clamp(.8rem,3.6vw,1rem);';
         input.onchange=()=>{
           const num=asNumber(input.value);
           if(num===null){alert('Valeur nutritionnelle invalide.');input.value=String(value[prop]??'');return;}
@@ -145,7 +168,7 @@
       deleteEstimate.style.marginTop='8px';box.append(deleteEstimate);
     }
     const notice=document.createElement('p');notice.style.cssText='font-size:.74rem;opacity:.7;margin:6px 0 0';
-    notice.textContent='Chiffres approximatifs à corriger selon les quantités réelles.';
+    notice.textContent=photo?'Estimation visuelle à corriger si nécessaire.':'Estimation à partir du texte, à corriger selon les quantités.';
     box.append(notice);
     wrapper.append(box);
   }
@@ -183,7 +206,8 @@
       if(!token || token!==currentRequest) return;
       const [id,date,key]=token.split('|');
       const p=data.profiles.find(q=>q.id===id);
-      if(!p||!mealTypes.some(a=>a[0]===key)||!p.meals?.[date]?.[key+'Photo'])return;
+      const meal=p?.meals?.[date];
+      if(!p||!mealTypes.some(a=>a[0]===key)||(!meal?.[key+'Photo']&&!String(meal?.[key]||'').trim()))return;
       const obj=validResult(resultJson);
       p.aiMeals ||= {};p.aiMeals[date] ||= {};
       p.aiMeals[date][key]=obj;
