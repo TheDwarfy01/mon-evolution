@@ -1,3 +1,5 @@
 Mon Évolution IMC v1.6.100
 Ajout de rotation à gauche/droite et effet miroir pour la photo du profil actif, avec enregistrement permanent des pixels JPEG, affichage dans le sélecteur de profils et sauvegarde compatible.
 Conserver les profils, photos, repas et modèle Gemma. Compilation et publication de l'APK signée.
+
+Rebuild: Gemma integration patch now available for v1.6.100.
