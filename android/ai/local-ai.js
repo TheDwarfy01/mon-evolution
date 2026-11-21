@@ -370,6 +370,7 @@
       const obj=validResult(resultJson);
       p.aiMeals ||= {};p.aiMeals[date] ||= {};
       p.aiMeals[date][key]=obj;
+      if(isAuto){autoRun.errorStreak=0;autoRun.lastError='';}
       save();
       if(profile().id===id && mealDate===date)renderMeals();
       message('Estimation du repas enregistrée ✓');
@@ -385,7 +386,6 @@
       if(isAuto){
         autoRun.done++;
         autoRun.inFlight='';
-        if(!autoRun.lastError) autoRun.errorStreak=0;
         // Native state switches to 'ready' only after the worker returns;
         // delay the next item rather than submitting a second concurrent request.
         window.setTimeout(()=>{scanSavedMeals();buildHeader();},1200);
