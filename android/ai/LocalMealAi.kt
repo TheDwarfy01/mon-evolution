@@ -22,13 +22,13 @@ import java.util.concurrent.atomic.AtomicBoolean
 /** Optional local AI; model is never packed into APK or sent over the network. */
 class LocalMealAi(private val activity: Activity, private val web: WebView) {
     companion object {
-        private const val MODEL_NAME = "gemma-4-E2B-it.litertlm"
-        private const val MODEL_BYTES = 2588147712L
-        private const val MODEL_SHA256 = "181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c"
+        private const val MODEL_NAME = "gemma-4-E4B-it.litertlm"
+        private const val MODEL_BYTES = 3659530240L
+        private const val MODEL_SHA256 = "0b2a8980ce155fd97673d8e820b4d29d9c7d99b8fa6806f425d969b145bd52e0"
         private const val MODEL_URL =
-            "https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/9262660a1676eed6d0c477ab1a86344430854664/gemma-4-E2B-it.litertlm"
+            "https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm/resolve/2eee7ac325f20eb8c9ac1d0e972f7c84663062da/gemma-4-E4B-it.litertlm"
     }
-    private val prefs = activity.getSharedPreferences("imc_local_ai", Context.MODE_PRIVATE)
+    private val prefs = activity.getSharedPreferences("imc_local_ai_e4b", Context.MODE_PRIVATE)
     private val worker = Executors.newSingleThreadExecutor()
     private val checking = AtomicBoolean(false)
     private val analyzing = AtomicBoolean(false)
@@ -39,7 +39,7 @@ class LocalMealAi(private val activity: Activity, private val web: WebView) {
 
     private fun response(state: String, detail: String = "", percent: Int = -1): String =
         JSONObject().put("state", state).put("detail", detail).put("percent", percent)
-            .put("model", "Gemma 4 E2B").toString()
+            .put("model", "Gemma 4 E4B").toString()
 
     fun status(): String {
         if (Build.SUPPORTED_ABIS.none { it == "arm64-v8a" }) {
@@ -61,7 +61,7 @@ class LocalMealAi(private val activity: Activity, private val web: WebView) {
                             val total = cursor.getLong(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_TOTAL_SIZE_BYTES))
                             val read = cursor.getLong(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR))
                             val percent = if (total > 0) (read * 100 / total).toInt().coerceIn(0, 100) else -1
-                            return response("downloading", "Téléchargement Wi-Fi recommandé (2,59 Go).", percent)
+                            return response("downloading", "Téléchargement Wi-Fi recommandé (3,66 Go).", percent)
                         }
                         if (state == DownloadManager.STATUS_FAILED)
                             return response("error", "Échec du téléchargement. Réessayez.")
@@ -81,7 +81,7 @@ class LocalMealAi(private val activity: Activity, private val web: WebView) {
             verifyInBackground(file)
             return response("checking", "Vérification de l'intégrité du modèle...")
         }
-        return response("not_installed", "Installation facultative, environ 2,59 Go.")
+        return response("not_installed", "Installation facultative, environ 3,66 Go.")
     }
 
     fun download(): String {
@@ -90,8 +90,8 @@ class LocalMealAi(private val activity: Activity, private val web: WebView) {
         if (state in setOf("ready", "analyzing", "checking", "downloading", "removing")) return status()
         try {
             directory?.mkdirs()
-            if (StatFs(directory!!.absolutePath).availableBytes < MODEL_BYTES + 600_000_000L)
-                return response("error", "Il faut environ 3,2 Go d'espace libre.")
+            if (StatFs(directory!!.absolutePath).availableBytes < MODEL_BYTES + 650_000_000L)
+                return response("error", "Il faut environ 4,3 Go d'espace libre.")
             if (file.exists()) file.delete()
             val request = DownloadManager.Request(Uri.parse(MODEL_URL))
                 .setTitle("IMC — IA alimentaire Gemma")
