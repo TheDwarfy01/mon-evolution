@@ -26,6 +26,9 @@ replace_exact(app_gradle,
 with app_gradle.open("a",encoding="utf-8") as stream:
     stream.write("\n// Optional on-device Gemma inference. Model weights are NOT in the APK.\n"
                  "dependencies { implementation 'com.google.ai.edge.litertlm:litertlm-android:0.18.0' }\n")
+with app_gradle.open("a",encoding="utf-8") as stream:
+    stream.write("\n// Align Java compile target with LiteRT-LM Kotlin compiler.\n"
+                 "android { compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 } }\n")
 manifest=app/"src/main/AndroidManifest.xml"
 replace_exact(manifest,
     '<application android:label="Mon Évolution IMC"',
