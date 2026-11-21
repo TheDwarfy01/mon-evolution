@@ -9,7 +9,12 @@
 .evo-v159-modes button{flex:1;min-width:0;padding:9px 4px;font-size:12px}
 .evo-v159-modes button[aria-pressed="true"]{background:#25675a;border-color:#77decb}
 .evo-v159-chart svg{display:block;width:100%;height:auto}
-.evo-v159-month{margin:14px 0 8px;padding:8px 0 6px;color:#7ce0c8;border-bottom:1px solid #3b5e6e;font-weight:700;font-size:14px}
+.evo-v159-month{margin:6px 0 6px;padding:4px 0 5px;color:#7ce0c8;border-bottom:1px solid #3b5e6e;font-weight:700;font-size:14px}
+/* Historique compact : espace réduit dans les cartes et sous le bouton de pesée. */
+#history .card{padding-top:13px;padding-bottom:12px}
+#history .entry{padding-top:10px;padding-bottom:10px}
+#history #add2{margin-top:12px!important}
+main:has(#history:not([hidden])){padding-bottom:12px}
 .evo-v159-details{display:block;font-size:12px;line-height:1.5;margin-top:5px;color:#b6d3dd}
 @media(min-width:650px){.evo-v159-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
 /* v1.6.60 : espaces réguliers, navigation et graphes adaptés au mobile */
@@ -348,7 +353,8 @@ function enrichHistory(){
   if(month!==lastMonth){
    const line=document.createElement('div');line.className='evo-v159-month';
    const pieces=month.split('-').map(Number);
-   line.textContent=new Date(pieces[0],pieces[1]-1,1).toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
+   const label=new Date(pieces[0],pieces[1]-1,1).toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
+   line.textContent=label.charAt(0).toLocaleUpperCase('fr-FR')+label.slice(1);
    list.insertBefore(line,items[i]);lastMonth=month;
   }
   const previous=source[source.length-2-i];
