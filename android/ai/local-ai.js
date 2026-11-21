@@ -26,7 +26,7 @@
       protein: asNumber(obj.protein),
       carbs: asNumber(obj.carbs),
       fat: asNumber(obj.fat),
-      source: 'Gemma 4 E2B (estimation)'
+      source: 'Gemma 4 E4B (estimation)'
     };
     if ([r.kcal,r.protein,r.carbs,r.fat].some(x => x === null))
       throw Error('Les estimations numériques sont absentes.');
@@ -61,7 +61,7 @@
     header.replaceChildren();
     const heading = document.createElement('div');
     heading.style.cssText = 'display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap';
-    const title = document.createElement('strong'); title.textContent = '✦ IA alimentaire locale · Gemma';
+    const title = document.createElement('strong'); title.textContent = '✦ IA alimentaire locale · Gemma E4B';
     const label = document.createElement('label'); label.style.cssText='display:flex;gap:6px;align-items:center;font-size:.86rem';
     const toggle = document.createElement('input'); toggle.type='checkbox'; toggle.checked=enabled();
     toggle.onchange = () => { localStorage.setItem(toggleKey, toggle.checked?'yes':'no'); renderMeals(); };
@@ -86,8 +86,8 @@
     }
     const actions=document.createElement('div');actions.style.cssText='display:flex;gap:8px;flex-wrap:wrap';
     if (state.state==='not_installed' || state.state==='error') {
-      actions.append(button('⬇ Installer Gemma (~2,59 Go)',() => {
-        if(!confirm("Télécharger 2,59 Go en Wi-Fi ? Le modèle sera conservé lors des mises à jour IMC."))return;
+      actions.append(button('⬇ Installer Gemma E4B (~3,66 Go)',() => {
+        if(!confirm("Télécharger 3,66 Go en Wi-Fi ? Le modèle sera conservé lors des mises à jour IMC."))return;
         const res=JSON.parse(AndroidBackup.aiDownload());
         if(res.state==='error')alert(res.detail);
         buildHeader();
