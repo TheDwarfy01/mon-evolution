@@ -176,20 +176,28 @@ class LocalMealAi(private val activity: Activity, private val web: WebView) {
                     engine = fresh
                 }
                 val mode = if (hasPhoto)
-                    "Analyse la photo et utilise le texte complémentaire si fourni."
+                    "Analyse la photo. Si elle est floue ou ne montre pas clairement les aliments, " +
+                    "utilise la description saisie pour estimer le repas si elle identifie un aliment."
                 else
-                    "Analyse UNIQUEMENT la description textuelle du repas, sans image. " +
-                    "Si les quantités manquent, utilise une portion standard et signale l'incertitude."
+                    "Analyse UNIQUEMENT le texte saisi, sans image. " +
+                    "Une description courte suffit dès qu'un aliment est reconnaissable."
                 val prompt = """
-Estime la nutrition du repas pour un journal alimentaire. """ + mode + """
-Description saisie : """ + description.take(800) + """
-Réponds EXCLUSIVEMENT avec un JSON valide :
+Tu es un estimateur nutritionnel pour un journal alimentaire en français. """ + mode + """
+Texte du repas : """ + description.take(800) + """
+Tout aliment nommé, même une collation et même sans poids précis, est identifiable :
+« 1 morceau de camembert », « 1 assiette de carbonara », « 1 carré de chocolat »,
+« bol de céréales et 2 craquottes à la fraise » sont des exemples de descriptions analysables.
+Estime une portion française habituelle en cas de quantité imprécise.
+Pour un plat cuisiné dont la recette est inconnue, utilise une estimation générique du plat,
+sans prétendre connaître précisément ses ingrédients.
+Ne refuse pas un aliment reconnu sous prétexte de quantités inconnues.
+Réponds EXCLUSIVEMENT avec un objet JSON valide, sans commentaire ni Markdown :
 {"description":"riz et poulet, portion moyenne","kcal":500,"protein":25,"carbs":40,"fat":18}
-Le champ description doit tenir en 12 mots maximum, sans phrases inutiles.
-kcal = kilocalories par repas, protein/carbs/fat = grammes.
-Il s'agit d'estimations non médicales. Ne prétends jamais mesurer exactement une portion.
-N'invente pas d'ingrédients non visibles ou non mentionnés.
-Si aucun repas n'est identifiable : {"error":"Repas non identifiable"}.
+Le champ description a au maximum 12 mots.
+kcal = kilocalories par portion, protein/carbs/fat = grammes de macronutriments.
+Ces valeurs sont des estimations approximatives et ne constituent pas un diagnostic.
+Réponds {"error":"Repas non identifiable"} UNIQUEMENT si ni la photo ni le texte
+ne permettent de reconnaître un aliment (par exemple un objet non alimentaire).
 """.trimIndent()
                 val content = if (hasPhoto) {
                     Contents.of(Content.ImageBytes(bytes!!), Content.Text(prompt))
