@@ -1,3 +1,5 @@
 Mon Evolution IMC v1.6.93
 Optional local Gemma 4 E2B meal-photo analysis via LiteRT-LM, model stored separately.
 Upgrade in place: same app ID and existing signing workflow; keep user data.
+
+Second build: align JVM targets (17) for new Kotlin runtime.
