@@ -10,7 +10,7 @@
   const autoPrefix = 'imc-local-ai-auto-v1-';
   const freshRun = (id = '') => ({
     profileId:id, queue:[], queued:new Set(), attempted:new Set(),
-    inFlight:'', done:0, failures:0, errorStreak:0, stopped:false, lastError:''
+    inFlight:'', done:0, failures:0, skipped:0, errorStreak:0, stopped:false, lastError:''
   });
   let autoRun = freshRun();
   const autoEnabled = id => !!id && localStorage.getItem(autoPrefix + id) === 'yes';
@@ -68,7 +68,7 @@
     }
     header.replaceChildren();
     const state = status(); lastStatus = state.state;
-    const compact = enabled() && !aiSettingsExpanded &&
+    const compact = enabled() && !aiSettingsExpanded && !autoRun.stopped &&
       (state.state === 'ready' || state.state === 'analyzing');
     if (compact) {
       // Keep a discreet, accessible way to reopen the configuration.
@@ -80,6 +80,7 @@
       label.textContent = autoRun.inFlight
         ? '✦ IA · '+autoRun.done+'/'+(autoRun.done+autoRun.queue.length+1)+' repas'
         : state.state==='analyzing' ? '✦ IA · analyse en cours…'
+        : autoRun.skipped ? '✦ IA active · '+autoRun.skipped+' repas non reconnu(s)'
         : '✦ IA active · Gemma E4B';
       row.append(label);
       const settings=button('⚙',()=>{
@@ -188,9 +189,11 @@
         const queued=autoRun.profileId===profileId ? autoRun.queue.length+(autoRun.inFlight?1:0) : 0;
         const done=autoRun.profileId===profileId ? autoRun.done : 0;
         const failures=autoRun.profileId===profileId ? autoRun.failures : 0;
+        const skipped=autoRun.profileId===profileId ? autoRun.skipped : 0;
         const extra=autoRun.stopped ? ' · en pause (réactiver pour reprendre)' : '';
         p.textContent='Analyse automatique : '+done+' traité(s), '+queued+' en attente'+
-          (failures ? ' · '+failures+' échec(s)' : '') + extra;
+          (skipped ? ' · '+skipped+' repas non reconnu(s)' : '') +
+          (failures ? ' · '+failures+' erreur(s)' : '') + extra;
         autoBox.append(p);
         if(autoRun.stopped && autoRun.lastError){
           const error=document.createElement('p');
@@ -377,12 +380,20 @@
       if(isAuto){autoRun.errorStreak=0;autoRun.lastError='';}
       save();
       if(profile().id===id && mealDate===date)renderMeals();
-      message('Estimation du repas enregistrée ✓');
+      if(!isAuto)message('Estimation du repas enregistrée ✓');
     }catch(error){
       if(isAuto){
-        autoRun.failures++;autoRun.errorStreak++;
-        autoRun.lastError=String(error?.message||error).slice(0,120);
-        if(autoRun.errorStreak>=3)autoRun.stopped=true;
+        const reason=String(error?.message||error);
+        // A meal the model cannot identify must never block the rest of the journal.
+        // Keep it untouched and do not retry it in the current scan.
+        if(/repas non identifiable|aucun repas identifiable|aliment non identifiable/i.test(reason)){
+          autoRun.skipped++;autoRun.errorStreak=0;autoRun.lastError='';
+        }else{
+          autoRun.failures++;autoRun.errorStreak++;
+          autoRun.lastError=reason.slice(0,120);
+          // Repeated engine/runtime failures deserve a pause; unclear meals do not.
+          if(autoRun.errorStreak>=3)autoRun.stopped=true;
+        }
       }else alert('IA alimentaire : '+(error.message||error));
       renderMeals();
     }finally{
