@@ -1,0 +1,3 @@
+Mon Evolution IMC v1.6.94
+Gemma on-device: supports both photo-based and text-only meals; shorter descriptions and single-row kcal P G L inputs.
+Upgrade over existing IMC without uninstalling; model download persists.
