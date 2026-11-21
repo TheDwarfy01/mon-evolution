@@ -1,0 +1,3 @@
+Mon Évolution IMC v1.6.99
+Correction IA alimentaire : descriptions courtes reconnues, seconde tentative sur rejet, aliments non identifiables ignorés sans arrêter les suivants.
+Build and publish signed Android APK. Existing local profiles, meals, photos, Gemma model preserved.
