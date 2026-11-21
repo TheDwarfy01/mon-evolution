@@ -6,6 +6,7 @@
   const toggleKey = 'imc-local-meal-ai-enabled-v1';
   let lastStatus = '';
   let currentRequest = '';
+  let aiSettingsExpanded = false;
   const $ai = id => document.getElementById(id);
   const enabled = () => localStorage.getItem(toggleKey) === 'yes';
   const currentProfile = () => profile();
@@ -59,15 +60,49 @@
       list.parentElement.insertBefore(header, list);
     }
     header.replaceChildren();
+    const state = status(); lastStatus = state.state;
+    const compact = enabled() && !aiSettingsExpanded &&
+      (state.state === 'ready' || state.state === 'analyzing');
+    if (compact) {
+      // Keep a discreet, accessible way to reopen the configuration.
+      header.style.cssText = 'border:1px solid #396676;border-radius:12px;padding:7px 10px;margin:8px 0;background:rgba(75,153,164,.07)';
+      const row=document.createElement('div');
+      row.style.cssText='display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:30px';
+      const label=document.createElement('span');
+      label.style.cssText='font-size:.82rem;opacity:.9';
+      label.textContent = state.state==='analyzing'
+        ? '✦ IA · analyse en cours…' : '✦ IA active · Gemma E4B';
+      row.append(label);
+      const settings=button('⚙',()=>{
+        aiSettingsExpanded=true;
+        buildHeader();
+      });
+      settings.setAttribute('aria-label','Afficher les paramètres IA');
+      settings.title='Paramètres IA';
+      settings.style.cssText='padding:4px 10px;min-width:38px;font-size:1rem;';
+      row.append(settings);
+      header.append(row);
+      return;
+    }
+    header.style.cssText = 'border:1px solid #396676;border-radius:14px;padding:13px;margin:12px 0;background:rgba(75,153,164,.07)';
     const heading = document.createElement('div');
     heading.style.cssText = 'display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap';
     const title = document.createElement('strong'); title.textContent = '✦ IA alimentaire locale · Gemma E4B';
     const label = document.createElement('label'); label.style.cssText='display:flex;gap:6px;align-items:center;font-size:.86rem';
     const toggle = document.createElement('input'); toggle.type='checkbox'; toggle.checked=enabled();
-    toggle.onchange = () => { localStorage.setItem(toggleKey, toggle.checked?'yes':'no'); renderMeals(); };
+    toggle.onchange = () => {
+      localStorage.setItem(toggleKey, toggle.checked?'yes':'no');
+      aiSettingsExpanded=false;
+      renderMeals();
+    };
     label.append(toggle, document.createTextNode('Activer'));
-    heading.append(title,label);header.append(heading);
-    const state = status();lastStatus=state.state;
+    heading.append(title,label);
+    if (enabled() && (state.state==='ready'||state.state==='analyzing')) {
+      const collapse=button('▴ Masquer',()=>{aiSettingsExpanded=false;buildHeader();});
+      collapse.style.cssText='font-size:.78rem;padding:6px 8px';
+      heading.append(collapse);
+    }
+    header.append(heading);
     const p = document.createElement('p');
     p.style.cssText='margin:9px 0;font-size:.88rem;opacity:.9';
     const labels = {ready:'Prête • 100 % hors ligne',analyzing:'Analyse en cours…',
