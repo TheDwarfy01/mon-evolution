@@ -154,17 +154,21 @@
       const autoBox=document.createElement('div');
       autoBox.style.cssText='border-top:1px solid rgba(130,180,195,.25);padding-top:10px;margin-top:12px;';
       const autoLabel=document.createElement('label');
-      autoLabel.style.cssText='display:flex;align-items:flex-start;gap:10px;font-size:.88rem;';
+      // Global input rules make every input 100% wide: force a true checkbox,
+      // so its explanation stays fully visible on narrow smartphone screens.
+      autoLabel.style.cssText='display:grid;grid-template-columns:22px minmax(0,1fr);align-items:center;column-gap:10px;width:100%;max-width:100%;box-sizing:border-box;cursor:pointer;';
       const autoToggle=document.createElement('input');
       autoToggle.type='checkbox';autoToggle.checked=autoEnabled(profileId);
-      autoToggle.style.cssText='flex:none;margin-top:3px;';
+      autoToggle.style.cssText='appearance:auto;-webkit-appearance:checkbox;display:block;position:static;float:none;flex:none;box-sizing:border-box;width:20px;min-width:20px;max-width:20px;height:20px;min-height:20px;max-height:20px;margin:0;padding:0;justify-self:start;';
+      autoToggle.setAttribute('aria-label','Analyser automatiquement les repas du profil actif');
       const autoText=document.createElement('span');
-      autoText.textContent='Analyser automatiquement les repas enregistrés (ce profil)';
+      autoText.textContent='Analyser automatiquement les repas';
+      autoText.style.cssText='display:block;min-width:0;width:100%;max-width:100%;font-weight:600;font-size:.88rem;line-height:1.35;white-space:normal;overflow-wrap:break-word;';
       autoLabel.append(autoToggle,autoText);
       autoBox.append(autoLabel);
       const helper=document.createElement('p');
-      helper.style.cssText='font-size:.78rem;opacity:.8;margin:5px 0;';
-      helper.textContent='Texte et photos, anciens et nouveaux repas. Les estimations existantes sont conservées. Analyse un repas à la fois tant que l’application reste ouverte.';
+      helper.style.cssText='font-size:.78rem;opacity:.85;margin:7px 0 3px 32px;line-height:1.45;max-width:calc(100% - 32px);overflow-wrap:break-word;';
+      helper.textContent='Une fois cochée, Gemma analyse automatiquement les anciens et nouveaux repas de ce profil (textes ou photos). Décoche pour arrêter. Les estimations existantes sont conservées.';
       autoBox.append(helper);
       autoToggle.onchange=()=>{
         localStorage.setItem(autoPrefix+profileId,autoToggle.checked?'yes':'no');
