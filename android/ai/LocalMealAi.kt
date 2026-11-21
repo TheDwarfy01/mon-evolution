@@ -147,9 +147,11 @@ class LocalMealAi(private val activity: Activity, private val web: WebView) {
     }
 
     fun analyze(token: String, base64DataUrl: String, description: String) {
-        if (token.length > 150 || !base64DataUrl.startsWith("data:image/jpeg;base64,") ||
-            base64DataUrl.length > 600_000) {
-            notifyResult(token, JSONObject().put("error", "Photo invalide.").toString())
+        val hasPhoto = base64DataUrl.isNotEmpty()
+        if (token.length > 150 || (!hasPhoto && description.isBlank()) ||
+            (hasPhoto && (!base64DataUrl.startsWith("data:image/jpeg;base64,") ||
+            base64DataUrl.length > 600_000))) {
+            notifyResult(token, JSONObject().put("error", "Ajoutez une photo ou une description du repas.").toString())
             return
         }
         if (!analyzing.compareAndSet(false, true)) {
@@ -161,7 +163,9 @@ class LocalMealAi(private val activity: Activity, private val web: WebView) {
                 val file = model ?: throw IllegalStateException("Modèle introuvable.")
                 if (!prefs.getBoolean("verified", false) || file.length() != MODEL_BYTES)
                     throw IllegalStateException("Installez et vérifiez le modèle IA avant l'analyse.")
-                val bytes = android.util.Base64.decode(base64DataUrl.substringAfter(','), android.util.Base64.DEFAULT)
+                val bytes = if (hasPhoto) android.util.Base64.decode(
+                    base64DataUrl.substringAfter(','), android.util.Base64.DEFAULT
+                ) else null
                 val e = engine ?: Engine(EngineConfig(
                     modelPath = file.absolutePath,
                     backend = Backend.CPU(),
@@ -171,16 +175,29 @@ class LocalMealAi(private val activity: Activity, private val web: WebView) {
                     fresh.initialize()
                     engine = fresh
                 }
-                val prompt = """Analyse la photo comme un journal alimentaire.
-Identifie les aliments et estime les portions. Description fournie : """ +
-                    description.take(800) + """
-Réponds EXCLUSIVEMENT avec un objet JSON valide contenant :
-{"description":"aliments et portions estimées","kcal":500,"protein":25,"carbs":40,"fat":18}
-Les nombres sont des estimations approximatives par repas (kcal et grammes).
-Si aucun aliment n'est reconnaissable : {"error":"Aucun repas identifiable"}.
-N'invente pas d'ingrédients invisibles; signale les incertitudes dans description.""".trimIndent()
+                val mode = if (hasPhoto)
+                    "Analyse la photo et utilise le texte complémentaire si fourni."
+                else
+                    "Analyse UNIQUEMENT la description textuelle du repas, sans image. " +
+                    "Si les quantités manquent, utilise une portion standard et signale l'incertitude."
+                val prompt = """
+Estime la nutrition du repas pour un journal alimentaire. """ + mode + """
+Description saisie : """ + description.take(800) + """
+Réponds EXCLUSIVEMENT avec un JSON valide :
+{"description":"riz et poulet, portion moyenne","kcal":500,"protein":25,"carbs":40,"fat":18}
+Le champ description doit tenir en 12 mots maximum, sans phrases inutiles.
+kcal = kilocalories par repas, protein/carbs/fat = grammes.
+Il s'agit d'estimations non médicales. Ne prétends jamais mesurer exactement une portion.
+N'invente pas d'ingrédients non visibles ou non mentionnés.
+Si aucun repas n'est identifiable : {"error":"Repas non identifiable"}.
+""".trimIndent()
+                val content = if (hasPhoto) {
+                    Contents.of(Content.ImageBytes(bytes!!), Content.Text(prompt))
+                } else {
+                    Contents.of(Content.Text(prompt))
+                }
                 val answer = e.createConversation().use { conversation ->
-                    conversation.sendMessage(Contents.of(Content.ImageBytes(bytes), Content.Text(prompt))).toString()
+                    conversation.sendMessage(content).toString()
                 }
                 val start = answer.indexOf('{')
                 val end = answer.lastIndexOf('}')
