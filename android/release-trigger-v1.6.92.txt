@@ -1,0 +1,5 @@
+Version 1.6.92
+- Historique de poids : affichage des noms de mois avec majuscule (Novembre 2026).
+- Réduction des marges et de l'espacement vertical des pesées.
+- Réduction de l'espace sous le bouton Ajouter une pesée.
+- Conservation des corrections de graphiques de la version 1.6.91.
