@@ -210,7 +210,32 @@ ne permettent de reconnaître un aliment (par exemple un objet non alimentaire).
                 val start = answer.indexOf('{')
                 val end = answer.lastIndexOf('}')
                 if (start < 0 || end <= start) throw IllegalStateException("Réponse IA non exploitable.")
-                val parsed = JSONObject(answer.substring(start, end + 1))
+                var parsed = JSONObject(answer.substring(start, end + 1))
+                // Some model responses incorrectly reject short but clear descriptions.
+                // Retry once with a simpler text-only request; never add an invented result.
+                if (parsed.optString("error").contains("non identifiable", ignoreCase = true)
+                    && description.isNotBlank()) {
+                    val retryPrompt = """
+Le texte suivant décrit un aliment ou un repas consommé en France :
+""" + description.take(800) + """
+Estime sa portion habituelle et ses calories, protéines, glucides, lipides.
+Un morceau de fromage, un carré de chocolat ou une assiette de pâtes sont identifiables.
+Une quantité imprécise n'est pas une raison de refuser une estimation.
+Écris uniquement ce JSON avec les 5 champs demandés, sans aucun autre texte :
+{"description":"portion de camembert","kcal":95,"protein":6,"carbs":0.1,"fat":7.5}
+Les nombres de l'exemple sont indicatifs : adapte-les à l'aliment réellement indiqué.
+""".trimIndent()
+                    val candidate = runCatching {
+                        val retryAnswer = e.createConversation().use { conversation ->
+                            conversation.sendMessage(Contents.of(Content.Text(retryPrompt))).toString()
+                        }
+                        val from = retryAnswer.indexOf('{')
+                        val to = retryAnswer.lastIndexOf('}')
+                        if (from < 0 || to <= from) null
+                        else JSONObject(retryAnswer.substring(from, to + 1))
+                    }.getOrNull()
+                    if (candidate != null && !candidate.has("error")) parsed = candidate
+                }
                 if (!parsed.has("error") && (!parsed.has("kcal") || !parsed.has("protein") ||
                             !parsed.has("carbs") || !parsed.has("fat")))
                     throw IllegalStateException("Valeurs nutritionnelles manquantes.")
