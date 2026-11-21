@@ -7,6 +7,13 @@
   let lastStatus = '';
   let currentRequest = '';
   let aiSettingsExpanded = false;
+  const autoPrefix = 'imc-local-ai-auto-v1-';
+  const freshRun = (id = '') => ({
+    profileId:id, queue:[], queued:new Set(), attempted:new Set(),
+    inFlight:'', done:0, failures:0, errorStreak:0, stopped:false, lastError:''
+  });
+  let autoRun = freshRun();
+  const autoEnabled = id => !!id && localStorage.getItem(autoPrefix + id) === 'yes';
   const $ai = id => document.getElementById(id);
   const enabled = () => localStorage.getItem(toggleKey) === 'yes';
   const currentProfile = () => profile();
@@ -70,8 +77,10 @@
       row.style.cssText='display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:30px';
       const label=document.createElement('span');
       label.style.cssText='font-size:.82rem;opacity:.9';
-      label.textContent = state.state==='analyzing'
-        ? '✦ IA · analyse en cours…' : '✦ IA active · Gemma E4B';
+      label.textContent = autoRun.inFlight
+        ? '✦ IA · '+autoRun.done+'/'+(autoRun.done+autoRun.queue.length+1)+' repas'
+        : state.state==='analyzing' ? '✦ IA · analyse en cours…'
+        : '✦ IA active · Gemma E4B';
       row.append(label);
       const settings=button('⚙',()=>{
         aiSettingsExpanded=true;
@@ -92,8 +101,11 @@
     const toggle = document.createElement('input'); toggle.type='checkbox'; toggle.checked=enabled();
     toggle.onchange = () => {
       localStorage.setItem(toggleKey, toggle.checked?'yes':'no');
+      if (!toggle.checked) autoRun.stopped = true;
+      else autoRun.stopped = false;
       aiSettingsExpanded=false;
       renderMeals();
+      if(toggle.checked) window.setTimeout(scanSavedMeals, 0);
     };
     label.append(toggle, document.createTextNode('Activer'));
     heading.append(title,label);
@@ -137,6 +149,62 @@
       }));
     }
     header.append(actions);
+    const profileId=currentProfile()?.id;
+    if (profileId) {
+      const autoBox=document.createElement('div');
+      autoBox.style.cssText='border-top:1px solid rgba(130,180,195,.25);padding-top:10px;margin-top:12px;';
+      const autoLabel=document.createElement('label');
+      autoLabel.style.cssText='display:flex;align-items:flex-start;gap:10px;font-size:.88rem;';
+      const autoToggle=document.createElement('input');
+      autoToggle.type='checkbox';autoToggle.checked=autoEnabled(profileId);
+      autoToggle.style.cssText='flex:none;margin-top:3px;';
+      const autoText=document.createElement('span');
+      autoText.textContent='Analyser automatiquement les repas enregistrés (ce profil)';
+      autoLabel.append(autoToggle,autoText);
+      autoBox.append(autoLabel);
+      const helper=document.createElement('p');
+      helper.style.cssText='font-size:.78rem;opacity:.8;margin:5px 0;';
+      helper.textContent='Texte et photos, anciens et nouveaux repas. Les estimations existantes sont conservées. Analyse un repas à la fois tant que l’application reste ouverte.';
+      autoBox.append(helper);
+      autoToggle.onchange=()=>{
+        localStorage.setItem(autoPrefix+profileId,autoToggle.checked?'yes':'no');
+        if(autoToggle.checked){
+          if(autoRun.profileId!==profileId || autoRun.stopped)autoRun=freshRun(profileId);
+          scanSavedMeals();
+        }else{
+          autoRun.stopped=true;
+          autoRun.queue.length=0;
+          // The currently running inference is allowed to finish safely.
+        }
+        buildHeader();
+      };
+      if(autoEnabled(profileId)) {
+        const p=document.createElement('p');
+        p.style.cssText='font-size:.82rem;margin:9px 0 5px;font-weight:600;';
+        const queued=autoRun.profileId===profileId ? autoRun.queue.length+(autoRun.inFlight?1:0) : 0;
+        const done=autoRun.profileId===profileId ? autoRun.done : 0;
+        const failures=autoRun.profileId===profileId ? autoRun.failures : 0;
+        const extra=autoRun.stopped ? ' · en pause (réactiver pour reprendre)' : '';
+        p.textContent='Analyse automatique : '+done+' traité(s), '+queued+' en attente'+
+          (failures ? ' · '+failures+' échec(s)' : '') + extra;
+        autoBox.append(p);
+        if(autoRun.stopped && autoRun.lastError){
+          const error=document.createElement('p');
+          error.style.cssText='font-size:.78rem;margin:4px 0;';
+          error.textContent='Dernière erreur : '+autoRun.lastError;
+          autoBox.append(error);
+        }
+        if(autoRun.profileId===profileId && (queued>0||autoRun.inFlight)){
+          const stop=button('Ⅱ Mettre en pause',()=>{
+            localStorage.setItem(autoPrefix+profileId,'no');
+            autoRun.stopped=true;autoRun.queue.length=0;buildHeader();
+          });
+          stop.style.cssText+='margin-top:7px;';
+          autoBox.append(stop);
+        }
+      }
+      header.append(autoBox);
+    }
     const note = document.createElement('p');
     note.style.cssText='font-size:.8rem;opacity:.8;margin:8px 0 0';
     note.textContent="Estimations indicatives. Huile, sauces et portions cachées ne peuvent pas être mesurées précisément à partir d'une photo.";
@@ -207,6 +275,60 @@
     box.append(notice);
     wrapper.append(box);
   }
+  // Analyze previously saved entries and future saved entries without overwriting
+  // existing estimates.  Scope is deliberately restricted to the active local profile.
+  function scanSavedMeals() {
+    if(!enabled())return;
+    const p=currentProfile();
+    if(!p?.id || !autoEnabled(p.id))return;
+    if(autoRun.profileId!==p.id) {
+      if(autoRun.inFlight)return; // Wait for previous profile's active request.
+      autoRun=freshRun(p.id);
+    }
+    if(autoRun.stopped)return;
+    const mealEntries=p.meals||{};
+    const keys=mealTypes.map(type=>type[0]);
+    // Latest saved dates first, with chronological order preserved within each day.
+    for(const date of Object.keys(mealEntries).sort().reverse()){
+      const saved=mealEntries[date];
+      if(!saved || typeof saved!=='object')continue;
+      for(const key of keys){
+        const token=p.id+'|'+date+'|'+key;
+        if(p.aiMeals?.[date]?.[key] || autoRun.attempted.has(token) || autoRun.queued.has(token))continue;
+        if(!saved[key+'Photo'] && !String(saved[key]||'').trim())continue;
+        autoRun.queue.push({token,profileId:p.id,date,key});
+        autoRun.queued.add(token);
+      }
+    }
+    advanceAutomaticQueue();
+  }
+  function advanceAutomaticQueue() {
+    if(!enabled() || autoRun.stopped || autoRun.inFlight || currentRequest || !autoRun.queue.length)return;
+    if(!autoEnabled(autoRun.profileId) || currentProfile()?.id!==autoRun.profileId)return;
+    if(status().state!=='ready')return;
+    const next=autoRun.queue.shift();
+    autoRun.queued.delete(next.token);
+    const p=data.profiles.find(q=>q.id===next.profileId);
+    const item=p?.meals?.[next.date];
+    if(!p || !item || p.aiMeals?.[next.date]?.[next.key] ||
+        (!item[next.key+'Photo'] && !String(item[next.key]||'').trim())){
+      window.setTimeout(scanSavedMeals,300);
+      return;
+    }
+    autoRun.attempted.add(next.token);
+    autoRun.inFlight=next.token;
+    currentRequest=next.token;
+    buildHeader();
+    try {
+      AndroidBackup.aiAnalyze(next.token,item[next.key+'Photo']||'',String(item[next.key]||'').trim());
+    } catch(ex){
+      currentRequest='';autoRun.inFlight='';
+      autoRun.failures++;autoRun.done++;autoRun.errorStreak++;
+      autoRun.lastError=String(ex?.message||ex).slice(0,120);
+      if(autoRun.errorStreak>=3)autoRun.stopped=true;
+      window.setTimeout(scanSavedMeals,900);
+    }
+  }
   function refreshTotal(){
     const p=currentProfile(), day = p.aiMeals?.[mealDate] || {};
     const entries=Object.values(day).filter(v => v && typeof v==='object' && Number.isFinite(Number(v.kcal)));
@@ -219,6 +341,7 @@
     const inputs=$ai('meal-inputs');if(!inputs)return;
     buildHeader();
     if (!enabled())return;
+    if (autoEnabled(currentProfile()?.id)) window.setTimeout(scanSavedMeals,0);
     let total=$ai('local-meal-ai-total');
     if(!total) {
       total=document.createElement('p');total.id='local-meal-ai-total';
@@ -237,8 +360,9 @@
   const oldRenderMeals=renderMeals;
   renderMeals=function(){oldRenderMeals();decorate();};
   window.localAiMealResult=function(token,resultJson){
+    if(!token || token!==currentRequest)return;
+    const isAuto=autoRun.inFlight===token;
     try{
-      if(!token || token!==currentRequest) return;
       const [id,date,key]=token.split('|');
       const p=data.profiles.find(q=>q.id===id);
       const meal=p?.meals?.[date];
@@ -249,8 +373,24 @@
       save();
       if(profile().id===id && mealDate===date)renderMeals();
       message('Estimation du repas enregistrée ✓');
-    }catch(error){alert('IA alimentaire : '+(error.message||error));renderMeals();}
-    finally{currentRequest='';}
+    }catch(error){
+      if(isAuto){
+        autoRun.failures++;autoRun.errorStreak++;
+        autoRun.lastError=String(error?.message||error).slice(0,120);
+        if(autoRun.errorStreak>=3)autoRun.stopped=true;
+      }else alert('IA alimentaire : '+(error.message||error));
+      renderMeals();
+    }finally{
+      currentRequest='';
+      if(isAuto){
+        autoRun.done++;
+        autoRun.inFlight='';
+        if(!autoRun.lastError) autoRun.errorStreak=0;
+        // Native state switches to 'ready' only after the worker returns;
+        // delay the next item rather than submitting a second concurrent request.
+        window.setTimeout(()=>{scanSavedMeals();buildHeader();},1200);
+      }
+    }
   };
   // Restoring the UI after selecting another date/profile leaves all prior meal data intact.
   const timer=window.setInterval(()=>{
@@ -262,6 +402,7 @@
       buildHeader();
       if(s.state==='ready' && previous!=='ready')renderMeals();
     }
+    if(autoEnabled(currentProfile()?.id)) scanSavedMeals();
   },3500);
   renderMeals();
 })();
