@@ -1,0 +1,3 @@
+IMC v1.6.96
+Collapse Gemma E4B settings panel automatically when active and ready; keep small gear shortcut to reopen settings.
+Preserve existing IMC data and previously downloaded AI model.
