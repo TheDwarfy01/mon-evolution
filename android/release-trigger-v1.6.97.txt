@@ -1,0 +1,3 @@
+IMC v1.6.97 — Analyse automatique facultative des repas
+Analyser les textes et photos deja enregistres pour le profil actif, un par un. Conserver les estimations existantes, progression, pause et reprise apres redemarrage.
+VersionCode 113, signature identique, donnees et modele IA conserves.
