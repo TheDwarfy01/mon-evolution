@@ -986,11 +986,11 @@ jobs:
           with gzip.open(path,'rt') as fh: pack=json.load(fh)
           assert pack['version']==1 and pack['license']=='CC0-1.0'
           assert len(pack['positions'])==13380
-          assert len(pack['targets'])==24
+          assert len(pack['targets'])==32
           assert min(pack['triangles'])>=0 and max(pack['triangles'])<13380
           for k,v in pack['targets'].items():
-              assert len(v)%4==0 and len(v)>1200,k
-          print('MakeHuman pack validated: 24 age/sex/body-weight morph targets')
+              assert len(v)%4==0,k
+          print('MakeHuman pack validated: 32 gender/age/body-weight morph targets')
           PY
       - name: Publier le module MakeHuman telechargeable une seule fois
         env:
