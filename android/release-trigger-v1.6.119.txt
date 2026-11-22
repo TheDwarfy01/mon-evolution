@@ -1,0 +1,12 @@
+Mon Évolution IMC v1.6.119 — 22 novembre 2026
+
+Configuration obligatoire UNIQUEMENT si « Autoriser les modifications par un autre parent » est activé sur un profil enfant.
+
+- Sans cette option, les partages restent en lecture seule et aucune vérification supplémentaire ne bloque l'application.
+- Avec cette option, le propriétaire doit valider le fichier Drive privé, son mot de passe, ses droits de lecture et d'écriture, la bonne identité de profil, les révisions et confirmer l'invitation de l'autre parent comme Éditeur (accès général Limité).
+- Android vérifie lui-même les droits SAF et le déchiffrement, pas de déduction des droits à partir d'un lien.
+- L'autorisation modifiable n'est publiée qu'après la configuration et sa publication Drive doit réussir.
+- Sur le deuxième smartphone, édition bloquée tant que le fichier privé chiffré, l'âge, l'autorisation du propriétaire et les droits Android en lecture/écriture n'ont pas été contrôlés.
+- Préserver les données, les deux silhouettes, les profils adultes, tous les partages en lecture seule et le chiffrement existant.
+
+Compiler, tester et signer l'APK v1.6.119.
