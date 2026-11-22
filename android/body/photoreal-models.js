@@ -1,161 +1,186 @@
-/* Mon Évolution IMC — photoreal adult models, frontal studio view.
-   Single source sprite: left male, right female. Both are standing upright,
-   full body visible, arms relaxed. No external images, no secondary mannequin.
-   Skin / hair / iris are recolored directly on the photograph; user metrics
-   are never changed by visual personalization. */
+/* Mon Évolution IMC — modèles haute définition, cadrés de face.
+   Deux personnages issus de la même ressource WebP 1620x1440,
+   découpée en deux vues indépendantes de 810x1440.
+   Les couleurs s'appliquent aux pixels du personnage ACTIF sans changer
+   la silhouette, le profil ni les mensurations enregistrées. */
 (() => {
   'use strict';
-  const stage=document.getElementById('bm-model');
   const root=document.getElementById('body-measurements');
+  const stage=document.getElementById('bm-model');
   const models=document.getElementById('bm-models');
-  const colorsPanel=document.getElementById('bm-colors');
-  if(!stage||!root||!models||!colorsPanel)return;
+  const palette=document.getElementById('bm-colors');
+  if(!root||!stage||!models||!palette)return;
 
-  const SOURCE='models-front-facing.webp';
-  const ORIGINAL_SKIN='#D99E78',ORIGINAL_HAIR='#4A2D22',ORIGINAL_EYES='#593826';
-  const male={face:{x:.5,y:.093},head:[.36,.65,.012,.145],arms:[[.12,.41,.17,.64],[.59,.88,.17,.64]],legs:[.28,.72,.60,.985],eyes:[.468,.532,.104]};
-  const female={face:{x:.5,y:.093},head:[.36,.65,.010,.150],arms:[[.13,.40,.17,.65],[.60,.87,.17,.65]],legs:[.27,.73,.59,.99],eyes:[.466,.534,.103]};
-  const bounds=(v,a,b)=>Math.max(a,Math.min(b,v));
-  const inBox=(x,y,v)=>x>=v[0]&&x<=v[1]&&y>=v[2]&&y<=v[3];
-  const rgb=hex=>[1,3,5].map(i=>parseInt(hex.slice(i,i+2),16));
-  let image=null,pending=false,lastKey='',requestNumber=0;
+  const FILE='models-hq-v2.webp',WIDTH=810,HEIGHT=1440;
+  const BASE={skin:'#D99E78',hair:'#4A2D22',eyes:'#593826'};
+  const figures={
+    male:{
+      eyeY:.075,eyeXs:[.470,.534],
+      hair:[.345,.666,.006,.092],face:[.397,.605,.081,.176],
+      neck:[.445,.554,.157,.218],
+      arms:[[.18,.386,.230,.605],[.616,.82,.230,.605]],
+      legs:[[.345,.492,.615,.942],[.513,.666,.615,.942]]
+    },
+    female:{
+      eyeY:.072,eyeXs:[.471,.535],
+      hair:[.344,.657,.006,.119],face:[.398,.601,.086,.174],
+      neck:[.444,.555,.157,.220],
+      arms:[[.174,.397,.218,.601],[.602,.83,.218,.601]],
+      legs:[[.342,.494,.554,.935],[.512,.666,.554,.935]]
+    }
+  };
+  const inRect=(x,y,r)=>x>=r[0]&&x<=r[1]&&y>=r[2]&&y<=r[3];
+  const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
+  const rgb=c=>[1,3,5].map(i=>parseInt(c.slice(i,i+2),16));
+  const isColor=c=>typeof c==='string'&&/^#[0-9a-fA-F]{6}$/.test(c);
+  let spritePromise=null;
+  let scheduled=false;
+  let lastKey='';
+  let serial=0;
   const style=document.createElement('style');
   style.textContent=[
-    '#bm-model{position:relative;background:#092435!important;isolation:isolate}',
+    '#bm-model{position:relative;isolation:isolate;background:linear-gradient(135deg,#283b4a,#172e40)!important}',
     '#bm-model svg.bm-man{display:none!important}',
-    '#bm-model .bm-photo-canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center;z-index:0;pointer-events:none;border-radius:13px}',
-    '#bm-model .bm-point{z-index:3}',
-    '#bm-model .bm-photo-error{position:absolute;top:35%;left:18%;right:18%;z-index:1;color:#cdece8;font-size:12px;line-height:1.5;text-align:center;background:#123548;padding:14px;border-radius:12px}',
+    '#bm-model canvas.bm-photo-canvas{position:absolute!important;inset:0;width:100%;height:100%;object-fit:contain;object-position:center;display:block!important;z-index:0;pointer-events:none;border-radius:12px}',
+    '#bm-model .bm-point{position:absolute;z-index:3}',
+    '#bm-model .bm-photo-error{position:absolute;z-index:1;top:38%;left:12%;right:12%;background:#102e41;padding:14px;border-radius:10px;color:#d5efed;font-size:12px;text-align:center}'
   ].join('\n');
   document.head.append(style);
 
-  const current=()=>{
-    const p=typeof profile==='function'?profile():{};
+  function appearance(){
+    const p=typeof profile==='function'?profile():null;
     const a=p?.bodyAppearance||{};
     return {
       id:p?.id||'',
       model:a.model==='female'?'female':a.model==='male'?'male':p?.sex==='female'?'female':'male',
-      skin:/^#[a-f0-9]{6}$/i.test(a.skin||'')?a.skin:ORIGINAL_SKIN,
-      hair:/^#[a-f0-9]{6}$/i.test(a.hair||'')?a.hair:ORIGINAL_HAIR,
-      eyes:/^#[a-f0-9]{6}$/i.test(a.eyes||'')?a.eyes:ORIGINAL_EYES
+      skin:isColor(a.skin)?a.skin:BASE.skin,
+      hair:isColor(a.hair)?a.hair:BASE.hair,
+      eyes:isColor(a.eyes)?a.eyes:BASE.eyes
     };
-  };
-  function ensureCanvas(){
+  }
+  function source(){
+    if(spritePromise)return spritePromise;
+    spritePromise=new Promise((resolve,reject)=>{
+      const image=new Image();
+      image.onload=()=>image.naturalWidth===WIDTH*2&&image.naturalHeight===HEIGHT?
+        resolve(image):reject(Error('Format du modèle invalide'));
+      image.onerror=()=>reject(Error('Images haute définition introuvables'));
+      image.src=FILE;
+    }).catch(e=>{spritePromise=null;throw e;});
+    return spritePromise;
+  }
+  function makeCanvas(){
     let c=stage.querySelector('canvas.bm-photo-canvas');
     if(!c){
       c=document.createElement('canvas');
       c.className='bm-photo-canvas';
       c.setAttribute('role','img');
-      c.setAttribute('aria-label','Silhouette photoréaliste de face pour les mensurations');
+      c.setAttribute('aria-label','Silhouette photoréaliste personnalisable');
       stage.insertBefore(c,stage.firstChild);
     }
     return c;
   }
-  function loadImage(){
-    if(image)return Promise.resolve(image);
-    if(loadImage.pending)return loadImage.pending;
-    loadImage.pending=new Promise((resolve,reject)=>{
-      const im=new Image();
-      im.onload=()=>{
-        if(im.naturalWidth!==560||im.naturalHeight!==560){
-          reject(Error('Le modèle photographique ne correspond pas au format attendu.'));return;
-        }
-        image=im;resolve(image);
-      };
-      im.onerror=()=>reject(Error('Photographies non disponibles dans cette version.'));
-      im.src=SOURCE;
-    }).catch(e=>{loadImage.pending=null;throw e});
-    return loadImage.pending;
-  }
-  function recolor(pixels,a){
-    const d=pixels.data,geo=a.model==='female'?female:male,w=pixels.width,h=pixels.height;
-    const [sr,sg,sb]=rgb(a.skin),[hr,hg,hb]=rgb(a.hair),[er,eg,eb]=rgb(a.eyes);
-    const needsSkin=a.skin.toUpperCase()!==ORIGINAL_SKIN.toUpperCase();
-    const needsHair=a.hair.toUpperCase()!==ORIGINAL_HAIR.toUpperCase();
-    const needsEyes=a.eyes.toUpperCase()!==ORIGINAL_EYES.toUpperCase();
-    if(!needsSkin&&!needsHair&&!needsEyes)return;
+  function recolor(pixels,state){
+    const d=pixels.data,w=pixels.width,h=pixels.height;
+    const f=figures[state.model];
+    const wantSkin=state.skin.toUpperCase()!==BASE.skin.toUpperCase();
+    const wantHair=state.hair.toUpperCase()!==BASE.hair.toUpperCase();
+    const wantEyes=state.eyes.toUpperCase()!==BASE.eyes.toUpperCase();
+    if(!wantSkin&&!wantHair&&!wantEyes)return;
+    const skin=rgb(state.skin),hair=rgb(state.hair),eyes=rgb(state.eyes);
+    const faceHole=f.face;
     for(let y=0;y<h;y++){
-      const yy=y/h;
+      const py=y/h;
       for(let x=0;x<w;x++){
-        const xx=x/w,idx=(y*w+x)*4;
-        const r=d[idx],g=d[idx+1],b=d[idx+2];
-        const face=inBox(xx,yy,[.38,.62,.041,.16]);
-        const neck=inBox(xx,yy,[.43,.57,.15,.22]);
-        const arms=geo.arms.some(rect=>inBox(xx,yy,rect));
-        const legs=inBox(xx,yy,geo.legs);
-        const hairRegion=inBox(xx,yy,geo.head)&&!inBox(xx,yy,[.39,.61,.075,.175]);
-        let alpha=0,target=null;
-        const skinLike=r>53&&g>27&&b>15&&r>g*1.08&&g>b*.90&&r>b*1.14;
-        if(needsSkin&&(face||neck||arms||legs)&&skinLike){
-          const light=bounds((r*.34+g*.49+b*.17)/155,.52,1.52);
-          target=[sr*light,sg*light,sb*light];alpha=.76;
+        const px=x/w,i=(y*w+x)*4;
+        const r=d[i],g=d[i+1],b=d[i+2];
+        let dst=null,alpha=0;
+        const isSkin=(inRect(px,py,f.face)||inRect(px,py,f.neck)||
+          f.arms.some(a=>inRect(px,py,a))||f.legs.some(a=>inRect(px,py,a)));
+        // The original photos have warm skin, while clothing and
+        // background are charcoal/neutral. Retain natural photographic shadows.
+        const warm=r>70&&g>35&&b>24&&r>g*1.055&&r>b*1.15&&g>b*.91;
+        if(wantSkin&&isSkin&&warm){
+          const luminosity=clamp((r*.30+g*.56+b*.14)/170,.37,1.60);
+          dst=skin.map(v=>clamp(v*luminosity,0,255));
+          alpha=.90;
         }
-        if(needsHair&&hairRegion&&(r+g+b)/3<172){
-          const light=bounds((r+g+b)/240,.34,1.42);
-          target=[hr*light,hg*light,hb*light];alpha=.80;
-        }
-        if(needsEyes){
-          const l=((xx-geo.eyes[0])/.012)**2+((yy-geo.eyes[2])/.0055)**2;
-          const t=((xx-geo.eyes[1])/.012)**2+((yy-geo.eyes[2])/.0055)**2;
-          if(Math.min(l,t)<1.0&&r<185&&g<185){
-            target=[er,eg,eb];alpha=.82;
+        if(wantHair&&inRect(px,py,f.hair)&&!inRect(px,py,faceHole)){
+          const bright=(r+g+b)/3;
+          const darkHair=bright<155&&r<g*1.75;
+          if(darkHair){
+            const light=clamp(bright/96,.24,1.65);
+            dst=hair.map(v=>clamp(v*light,0,255));
+            alpha=.94;
           }
         }
-        if(target){
-          d[idx]=Math.round(r*(1-alpha)+bounds(target[0],0,255)*alpha);
-          d[idx+1]=Math.round(g*(1-alpha)+bounds(target[1],0,255)*alpha);
-          d[idx+2]=Math.round(b*(1-alpha)+bounds(target[2],0,255)*alpha);
+        if(wantEyes){
+          const distances=f.eyeXs.map(cx=>((px-cx)/.010)**2+((py-f.eyeY)/.0048)**2);
+          if(Math.min(...distances)<1.0&&r<172&&g<168){
+            const light=clamp((r+g+b)/210,.65,1.25);
+            dst=eyes.map(v=>clamp(v*light,0,255));
+            alpha=.93;
+          }
+        }
+        if(dst){
+          d[i]=Math.round(r*(1-alpha)+dst[0]*alpha);
+          d[i+1]=Math.round(g*(1-alpha)+dst[1]*alpha);
+          d[i+2]=Math.round(b*(1-alpha)+dst[2]*alpha);
         }
       }
     }
   }
   async function paint(){
-    pending=false;
+    scheduled=false;
     if(root.hidden)return;
-    const a=current(),key=[a.id,a.model,a.skin,a.hair,a.eyes].join('|');
-    const c=ensureCanvas();
-    if(lastKey===key&&c.dataset.renderedKey===key)return;
-    const number=++requestNumber;
+    const state=appearance();
+    const key=[state.id,state.model,state.skin,state.hair,state.eyes].join('|');
+    const canvas=makeCanvas();
+    if(lastKey===key&&canvas.dataset.renderedKey===key)return;
+    const stamp=++serial;
     try{
-      const sprite=await loadImage();
-      if(number!==requestNumber)return;
-      const ctx=c.getContext('2d',{willReadFrequently:true});
-      if(!ctx)throw Error('Affichage photo non disponible');
-      // Split the composite image in two at x=280. Never show both people.
-      const x=a.model==='female'?280:0;
-      c.width=280;c.height=560;
-      ctx.clearRect(0,0,280,560);
-      ctx.drawImage(sprite,x,0,280,560,0,0,280,560);
-      const pixels=ctx.getImageData(0,0,280,560);
-      recolor(pixels,a);
+      const img=await source();
+      if(stamp!==serial)return;
+      const ctx=canvas.getContext('2d',{willReadFrequently:true});
+      if(!ctx)throw Error('Canvas indisponible');
+      canvas.width=WIDTH;canvas.height=HEIGHT;
+      const sx=state.model==='female'?WIDTH:0;
+      ctx.drawImage(img,sx,0,WIDTH,HEIGHT,0,0,WIDTH,HEIGHT);
+      const pixels=ctx.getImageData(0,0,WIDTH,HEIGHT);
+      recolor(pixels,state);
       ctx.putImageData(pixels,0,0);
-      c.dataset.renderedKey=key;lastKey=key;
+      canvas.dataset.renderedKey=key;
+      lastKey=key;
       stage.querySelector('.bm-photo-error')?.remove();
-    }catch(error){
+    }catch(e){
       if(!stage.querySelector('.bm-photo-error')){
         const box=document.createElement('div');box.className='bm-photo-error';
-        box.textContent='Impossible de charger le mannequin photo. Aucune mesure n’a été modifiée.';
+        box.textContent='Image indisponible. Vos mensurations restent enregistrées.';
         stage.append(box);
       }
     }
   }
-  const schedule=()=>{
-    if(pending)return;
-    pending=true;
+  function schedule(){
+    if(scheduled)return;
+    scheduled=true;
     requestAnimationFrame(paint);
-  };
-  const stageWatch=new MutationObserver(m=>{
-    // Rendering removes/reinserts the photo canvas; restore it after a base re-render.
-    if(m.some(x=>[...x.addedNodes].some(n=>
-      n.nodeType===1&&(n.matches?.('.bm-point,.bm-man')))))schedule();
+  }
+  // The original palette re-renders its DOM on every choice, so observing
+  // it (not only the click) is essential. This also covers profile changes.
+  const watcher=new MutationObserver(mutations=>{
+    if(mutations.some(m=>m.target===stage&&
+       [...m.addedNodes].some(n=>n.nodeType===1&&
+       n.matches?.('canvas.bm-photo-canvas,.bm-photo-error'))))return;
+    schedule();
   });
-  stageWatch.observe(stage,{childList:true,subtree:false});
-  const modelWatch=new MutationObserver(schedule);
-  modelWatch.observe(models,{childList:true,subtree:true,attributes:true,attributeFilter:['aria-pressed']});
-  // Existing palettes change in-place; listen without suppressing existing callbacks.
-  colorsPanel.addEventListener('click',()=>queueMicrotask(schedule));
+  watcher.observe(stage,{childList:true});
+  watcher.observe(models,{childList:true,subtree:true,attributes:true,attributeFilter:['aria-pressed']});
+  watcher.observe(palette,{childList:true,subtree:true});
+  palette.addEventListener('click',()=>requestAnimationFrame(schedule));
+  models.addEventListener('click',()=>requestAnimationFrame(schedule));
   document.addEventListener('click',e=>{
-    if(e.target?.closest?.('#visual-profile-picker,.profile-portrait-choice'))queueMicrotask(schedule);
+    if(e.target?.closest?.('#visual-profile-picker,.profile-portrait-choice'))requestAnimationFrame(schedule);
   });
+  window.addEventListener('pageshow',schedule);
   schedule();
 })();
