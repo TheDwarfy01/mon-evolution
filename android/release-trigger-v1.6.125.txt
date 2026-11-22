@@ -1,0 +1,5 @@
+Mon Evolution IMC 1.6.125 (versionCode 141)
+Enregistrer et effacer l'objectif intermediaire via deux icones en haut a droite du panneau.
+Conserver independants le poids final et les enregistrements de poids.
+Indications pediatriques uniquement lorsque le profil enfant est selectionne.
+Module MakeHuman independant et mode tableau de mensurations conserves.
