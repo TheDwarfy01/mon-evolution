@@ -4,3 +4,5 @@ Mon Évolution IMC 1.6.117 — correctifs des silhouettes studio (22 novembre 20
 - Corriger les repères de mensurations sur les portraits photo : taille, ventre, hanches, cuisse, mollet.
 - Conserver les données, les profils, les mensurations et la synchronisation Google Drive.
 - Exécuter les tests et compiler puis signer l'APK officiel v1.6.117.
+
+Relance du 22/11/2026 : correction des assertions obsoletes des reperes du ventre dans le workflow (42.5 homme / 42.7 femme au lieu des anciens 44 / 45).
