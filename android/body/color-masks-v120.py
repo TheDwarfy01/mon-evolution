@@ -104,30 +104,17 @@ for index,sex in enumerate(('male','female')):
         keep=cv2.dilate(keep,np.ones((5,5),np.uint8),iterations=1)
         hair*=cv2.GaussianBlur(keep.astype(np.float32),(0,0),1.1)
     hair=cv2.GaussianBlur(hair,(0,0),1.6)*person
-    # Locate each iris using photograph pixels; previous coordinates are
-    # search-window anchors, never the final recoloring centres.
-    eyeY=.088 if sex=='male' else .094
-    eyeXs=(.470,.534) if sex=='male' else (.466,.529)
-    gray=cv2.cvtColor(img[:,:,:3],cv2.COLOR_RGB2GRAY).astype(np.float32)
+    # Fixed image-space masks: four irises, always aligned with the
+    # 810x1440 original portrait, independent of Android screen size.
+    # Avoid the old dark-pixel search, which selected lower eyelids.
+    if sex=='male':
+        centers=((.467,.084),(.532,.084))
+    else:
+        centers=((.463,.091),(.529,.091))
     eyes=np.zeros((H,W),np.float32)
-    for expected_x in eyeXs:
-        cx,cy=int(expected_x*W),int(eyeY*H)
-        x0,x1=max(0,cx-10),min(W,cx+11)
-        y0,y1=max(0,cy-5),min(H,cy+7)
-        patch=gray[y0:y1,x0:x1]
-        smoothed=cv2.GaussianBlur(patch,(3,3),.75)
-        yy,xx=np.mgrid[y0:y1,x0:x1]
-        distance=((xx-cx)/9.)**2+((yy-cy)/5.)**2
-        score=smoothed+28*distance
-        py,px=np.unravel_index(np.argmin(score),score.shape)
-        ix,iy=x0+int(px),y0+int(py)
-        local=ellipse(ix/W,iy/H,.0053,.0025)
-        darkness=np.clip((150-gray)/75,0,1)
-        # The center of each detected iris must remain opaque even for
-        # naturally light eyes; darkness is only a subtle edge guide.
-        eyes=np.maximum(eyes,local*(.88+.12*darkness))
-        print(f'{sex} iris: expected ({cx},{cy}), detected ({ix},{iy})')
-    eyes=cv2.GaussianBlur(eyes,(0,0),.55)*person
+    for ix,iy in centers:
+        eyes=np.maximum(eyes,ellipse(ix,iy,.0037,.0020))
+    eyes=cv2.GaussianBlur(eyes,(0,0),.45)*person
     for key,a in [('skin',skin),('hair',hair),('eyes',eyes)]:
         rgba=np.full((H,W,4),255,dtype=np.uint8)
         rgba[:,:,3]=np.uint8(np.clip(a*255,0,255))
