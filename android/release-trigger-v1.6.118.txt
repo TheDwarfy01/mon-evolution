@@ -10,3 +10,5 @@ Fonction principale : partage collaboratif facultatif des profils enfants.
 - Conserver les autres fonctionnalités et la signature de l'APK 1.6.117.
 
 Compiler, tester et publier un APK signe v1.6.118.
+
+Deuxième compilation corrective (22/11/2026) : inviter le parent comme Éditeur, textes de l'interface mis à jour, vérification des changements au retour dans l'application, et raccourcis depuis les vues des profils reçus.
