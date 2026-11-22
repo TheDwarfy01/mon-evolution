@@ -9,7 +9,55 @@
   panel.id='backup-conflict-panel';
   panel.style.cssText='display:none;margin:12px 0;padding:14px;border:1px solid #deaf67;border-radius:12px;background:#283646;color:#f3f6f9;line-height:1.5;';
   card.insertAdjacentElement('afterend',panel);
-  let pending=null, notified=false, resolving=false;
+  let pending=null, notified=false, resolving=false, loadingRemote=false;
+  // A linked backup is validated BEFORE the main application is usable.
+  // This gate is intentionally not dismissible while a Drive conflict exists.
+  const gate=document.createElement('div');
+  gate.id='backup-startup-gate';
+  gate.setAttribute('role','dialog');
+  gate.setAttribute('aria-modal','true');
+  gate.setAttribute('aria-label','Vérification obligatoire de la sauvegarde');
+  gate.hidden=true;
+  gate.style.cssText='position:fixed;inset:0;z-index:2147483646;overflow:auto;background:#081725f2;padding:max(20px,env(safe-area-inset-top)) 14px max(20px,env(safe-area-inset-bottom));display:flex;align-items:center;justify-content:center';
+  const sheet=document.createElement('div');
+  sheet.style.cssText='width:min(100%,570px);max-height:94vh;overflow:auto;background:#123048;border:1px solid #4e798e;border-radius:18px;padding:18px;color:#f0fbff;box-shadow:0 15px 50px #000b';
+  const gateTitle=document.createElement('h2');
+  gateTitle.textContent='Synchronisation des données';
+  gateTitle.style.cssText='font-size:21px;margin:0 0 9px;color:#e8fff9';
+  const gateText=document.createElement('p');
+  gateText.textContent='Contrôle obligatoire avant d’ouvrir Mon Évolution IMC. Aucune version de tes données ne sera écrasée sans vérification.';
+  gateText.style.cssText='font-size:13px;line-height:1.5;color:#b9d5e2;margin:0 0 10px';
+  sheet.append(gateTitle,gateText);
+  gate.append(sheet);
+  document.body.append(gate);
+  let originalScroll='',gateActive=false;
+  function openGate(){
+    if(!gateActive){originalScroll=document.body.style.overflow;document.body.style.overflow='hidden';}
+    gateActive=true;gate.hidden=false;
+    // If hidden is overridden by display:flex, explicitly control it.
+    gate.style.display='flex';
+    if(panel.parentElement!==sheet)sheet.append(panel);
+  }
+  function closeGate(){
+    gateActive=false;gate.hidden=true;gate.style.display='none';
+    document.body.style.overflow=originalScroll;
+    if(panel.parentElement!==card.parentElement)card.insertAdjacentElement('afterend',panel);
+  }
+  gate.style.display='none';
+  function beginRead(){
+    if(loadingRemote||resolving)return;
+    loadingRemote=true;pending=null;
+    show('pending','Comparaison du fichier Drive et des données de ce téléphone…');
+    AndroidBackup.readBackupForMerge();
+  }
+  function disconnectAndContinue(){
+    if(!confirm('Dissocier la sauvegarde Drive ? Les données présentes sur ce téléphone restent conservées. La synchronisation sera désactivée jusqu’à une nouvelle liaison.'))return;
+    AndroidBackup.disconnect();
+    resolving=false;loadingRemote=false;pending=null;notified=false;
+    panel.style.display='none';closeGate();
+    refreshDriveState();
+    message('Sauvegarde Drive dissociée. Données locales conservées.');
+  }
   const isObj = x => x !== null && typeof x === 'object' && !Array.isArray(x);
   const copy = x => JSON.parse(JSON.stringify(x));
   const same = (a,b) => JSON.stringify(a)===JSON.stringify(b);
@@ -55,11 +103,16 @@
       actions.append(btn('Privilégier Drive',()=>commit('remote')));
       actions.append(btn('Annuler',()=>{pending=null;show('conflict')}));
     } else {
-      actions.append(btn('Comparer et fusionner',()=>{
+      actions.append(btn(gateActive?'Réessayer la vérification':'Comparer et fusionner',()=>{
         if(resolving)return;
-        pending=null;show('pending');
-        AndroidBackup.readBackupForMerge();
+        if(gateActive)AndroidBackup.verifyBackupOnStartup();
+        else beginRead();
       }));
+    }
+    if(gateActive && (state==='error'||state==='review'||state==='conflict')){
+      const offline=btn('Utiliser ce téléphone hors ligne (dissocier Drive)',disconnectAndContinue);
+      offline.style.cssText+=';flex-basis:100%;font-size:12px;opacity:.9';
+      actions.append(offline);
     }
     panel.append(actions);
   }
@@ -124,14 +177,26 @@
     return stats;
   }
   window.backupConflict=()=>{
-    // A banner replaces repeated modal alerts on each local change.
-    if(!resolving && !pending)show('conflict');
-    if(!notified){
-      notified=true;
-      message('⚠ Sauvegarde Drive suspendue : comparer et fusionner dans Profils.');
+    if(resolving)return;
+    openGate();
+    if(!pending && !loadingRemote)beginRead();
+  };
+  window.backupStartupChecked=state=>{
+    if(state==='ready'||state==='unlinked'){
+      if(!resolving){
+        loadingRemote=false;pending=null;notified=false;
+        panel.style.display='none';closeGate();
+        if(typeof refreshDriveState==='function')refreshDriveState();
+      }
+    }else if(state==='conflict'){
+      openGate();beginRead();
+    }else{
+      openGate();loadingRemote=false;
+      show('error','Impossible de vérifier la sauvegarde Drive. Les données locales sont conservées, aucune écriture distante n’est autorisée.');
     }
   };
   window.backupMergeLoaded=(encoded,remoteHash)=>{
+    loadingRemote=false;
     try {
       const bytes=Uint8Array.from(atob(encoded),c=>c.charCodeAt(0));
       const doc=JSON.parse(new TextDecoder().decode(bytes));
@@ -140,14 +205,19 @@
       if(typeof remoteHash!=='string'||!remoteHash.trim())throw Error('Empreinte Drive manquante');
       const stats=evaluate(doc.data);
       pending={remote:doc.data,hash:remoteHash,stats};
-      show('review');
+      if(gateActive && stats.conflicts===0){
+        // Safe union only: no competing values. Never silently decide
+        // which device wins if the same field has two different values.
+        commit('local',true);
+      }else show('review');
     }catch(e){pending=null;show('error','Lecture ou validation impossible : '+(e.message||e));}
   };
   window.backupMergeReadFailed=(reason)=>{
-    pending=null;show('error','Impossible de lire le fichier Drive. Aucune donnée locale n’a été modifiée. '+String(reason||''));
+    loadingRemote=false;pending=null;show('error','Impossible de lire le fichier Drive. Aucune donnée locale n’a été modifiée. '+String(reason||''));
   };
-  function commit(preference) {
+  function commit(preference,autoSafe=false) {
     if(!pending || resolving)return;
+    if(autoSafe && pending.stats.conflicts!==0)return;
     try{
       const plan=pending;
       const currentStats={profiles:0,entries:0,measurements:0,meals:0,ai:0,conflicts:0};
@@ -159,7 +229,7 @@
         'Différences sur les mêmes champs : '+currentStats.conflicts+
         '. Priorité : '+(preference==='local'?'ce téléphone':'Drive')+'.\n\n'+
         'Une fusion sera enregistrée localement d’abord. Drive ne sera modifié que si son fichier n’a pas changé entre-temps.';
-      if(!confirm(description))return;
+      if(!autoSafe && !confirm(description))return;
       // Keep a copy of the ORIGINAL local version for a possible recovery.
       const beforeMerge=JSON.stringify({format:'mon-evolution',version:1,
         exportedAt:new Date().toISOString(),data});
@@ -176,14 +246,23 @@
     }
   }
   window.backupMergeSaved=()=>{
-    resolving=false;pending=null;notified=false;
-    panel.style.display='none';
+    resolving=false;loadingRemote=false;pending=null;notified=false;
+    panel.style.display='none';closeGate();
     refreshDriveState();
     if(typeof renderBackupVerification==='function')renderBackupVerification();
     message('✓ Fusion Drive enregistrée. Données des deux appareils conservées.');
   };
   window.backupMergeSaveFailed=(reason)=>{
-    resolving=false;pending=null;
+    resolving=false;loadingRemote=false;pending=null;
+    openGate();
     show('error','La fusion locale est conservée, mais Drive n’a pas été remplacé. '+String(reason||'Vérifie puis recommence la comparaison.'));
   };
+  // Calling the native bridge is asynchronous; this checks the linked
+  // storage even when the user has not edited any measurements yet.
+  setTimeout(()=>{
+    if(!AndroidBackup.isLinked?.())return;
+    openGate();
+    show('pending','Vérification automatique de la sauvegarde Drive au démarrage…');
+    AndroidBackup.verifyBackupOnStartup();
+  },0);
 })();
