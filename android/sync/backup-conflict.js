@@ -13,6 +13,15 @@
   const isObj = x => x !== null && typeof x === 'object' && !Array.isArray(x);
   const copy = x => JSON.parse(JSON.stringify(x));
   const same = (a,b) => JSON.stringify(a)===JSON.stringify(b);
+  // Use a genuine per-record edit timestamp when both versions have one.
+  // A weighing's calendar date is NOT an edit timestamp.
+  const editedAt = x => {
+    if(!isObj(x))return null;
+    const value=x.updatedAt||x.modifiedAt||x.lastModifiedAt;
+    if(typeof value!=='string' || !/^\d{4}-\d{2}-\d{2}T/.test(value))return null;
+    const ms=Date.parse(value);
+    return Number.isFinite(ms) ? ms : null;
+  };
   const btn = (text, click) => {
     const b=document.createElement('button');b.className='secondary';b.type='button';
     b.textContent=text;b.style.cssText='padding:11px 13px;min-height:44px;white-space:normal;flex:1 1 190px';
@@ -40,7 +49,7 @@
       summary.textContent='Données à réunir : '+count.profiles+' profil(s), '+count.entries+' pesée(s) supplémentaires, '+count.meals+' donnée(s) de repas, '+count.ai+' estimation(s) IA. '+count.conflicts+' valeur(s) différente(s) présentes des deux côtés.';
       actions.append(summary);
       const explain=document.createElement('p');explain.style.cssText='font-size:.82rem;margin:0 0 7px;flex-basis:100%;';
-      explain.textContent='En cas de valeur différente pour un même champ, choisis celle à conserver. Les éléments uniques des deux copies restent présents. Les suppressions ne sont pas automatiquement propagées.';
+      explain.textContent='Si une date de modification fiable existe des deux côtés, la plus récente est retenue. Sinon, choisis une priorité pour les différences. Les données uniques sont réunies sans propager automatiquement les suppressions.';
       actions.append(explain);
       actions.append(btn('Privilégier ce téléphone',()=>commit('local')));
       actions.append(btn('Privilégier Drive',()=>commit('remote')));
@@ -56,7 +65,7 @@
   }
   function reconcile(local, remote, preference, stats) {
     const prefer = (a,b) => copy(preference==='local'?a:b);
-    function merge(a,b,path) {
+    function merge(a,b,path, lastEdited=null) {
       if(a===undefined)return copy(b);
       if(b===undefined)return copy(a);
       if(same(a,b))return copy(a);
@@ -71,6 +80,8 @@
         return out;
       }
       if(isObj(a)&&isObj(b)) {
+        const ta=editedAt(a),tb=editedAt(b);
+        const newest=ta!==null&&tb!==null&&ta!==tb?(ta>tb?'local':'remote'):lastEdited;
         const out={};
         for(const key of new Set([...Object.keys(a),...Object.keys(b)])){
           if(a[key]===undefined) {
@@ -78,11 +89,13 @@
             if(path.endsWith('.meals'))stats.meals++;
             if(path.endsWith('.aiMeals'))stats.ai++;
           }else if(b[key]===undefined)out[key]=copy(a[key]);
-          else out[key]=merge(a[key],b[key],path+'.'+key);
+          else out[key]=merge(a[key],b[key],path+'.'+key,newest);
         }
         return out;
       }
       stats.conflicts++;
+      if(lastEdited==='local')return copy(a);
+      if(lastEdited==='remote')return copy(b);
       return prefer(a,b);
     }
     const profiles=copy(local.profiles);
@@ -92,7 +105,15 @@
         lookup.set(p.id,profiles.length);profiles.push(copy(p));stats.profiles++;
       }else {
         const i=lookup.get(p.id);
-        profiles[i]=merge(profiles[i],p,'profile');
+        if(profiles[i].name !== p.name) {
+          // An accidentally reused ID must not combine two different people.
+          const clone=copy(p);
+          let n=1;
+          let fresh='import_'+String(p.id).replace(/[^a-zA-Z0-9_-]/g,'')+'_'+n;
+          while(lookup.has(fresh)){n++;fresh='import_'+String(p.id).replace(/[^a-zA-Z0-9_-]/g,'')+'_'+n}
+          clone.id=fresh;
+          lookup.set(fresh,profiles.length);profiles.push(clone);stats.profiles++;
+        } else profiles[i]=merge(profiles[i],p,'profile');
       }
     }
     return {...copy(local),profiles,active:local.active};
