@@ -405,24 +405,75 @@
  function renderData(){
   renderMannequin();paintColors();renderHistory();renderGraph();dateChosen();
  }
- function refreshAccess(){
-  const eligible=adult(profile()),readonly=!local();
-  const allowed=eligible===true&&!readonly;
-  nav.hidden=eligible===false||readonly;
-  get('bm-main').hidden=!allowed;get('bm-lock').hidden=allowed;
-  if(!allowed){
-   get('bm-lock').textContent=readonly?'Les mensurations de ce profil partagé ne sont pas modifiables.':
-      eligible===false?'Les mensurations corporelles sont réservées aux adultes (18 ans et plus).':
-      'Pour activer le suivi adulte, renseigne la date de naissance dans Profils.';
-   if(!section.hidden && eligible===false){
-    section.hidden=true;
-    const home=document.querySelector('.nav [data-tab="home"]');
-    if(home)home.click();
+ // Shared profiles may optionally contain measurements with the owner's consent.
+ // Never display the active PERSONAL profile's measurements for a received profile.
+ const receivedMeasurements=new Map();
+ const priorSharedLoaded=window.sharedLoaded;
+ window.sharedLoaded=function(encoded,key){
+   try{
+     const raw=new TextDecoder().decode(Uint8Array.from(atob(encoded),x=>x.charCodeAt(0)));
+     const doc=JSON.parse(raw);
+     if(doc.format==='mon-evolution-lecture-seule'&&doc.version===1&&
+        doc.profile && Array.isArray(doc.profile.bodyMeasurements)){
+       const list=doc.profile.bodyMeasurements.filter(r=>r && typeof r==='object' &&
+         /^\d{4}-\d{2}-\d{2}$/.test(r.date||'') &&
+         METRICS.some(m=>Number.isFinite(r[m.key])&&r[m.key]>=m.min&&r[m.key]<=m.max));
+       receivedMeasurements.set(key,list.slice(-3000));
+     }else receivedMeasurements.delete(key);
+   }catch(e){receivedMeasurements.delete(key)}
+   const result=typeof priorSharedLoaded==='function'?priorSharedLoaded.apply(this,arguments):undefined;
+   if(!section.hidden && !local())queueMicrotask(refreshAccess);
+   return result;
+ };
+ function showReadOnly(){
+   const parent=get('bm-lock');parent.replaceChildren();
+   const key=(typeof unifiedCurrent==='string'&&unifiedCurrent.startsWith('received:'))?
+     unifiedCurrent.slice(9):'';
+   const friend=typeof getReceivedList==='function'?getReceivedList().find(f=>f.key===key):null;
+   const heading=document.createElement('h3');heading.textContent='Mensurations de '+(friend?.name||'ce profil partagé');
+   parent.append(heading);
+   const readOnly=document.createElement('p');
+   readOnly.className='bm-hint';
+   readOnly.textContent='Consultation en lecture seule. Aucune modification du profil personnel ou du fichier Drive.';
+   parent.append(readOnly);
+   const list=receivedMeasurements.get(key)||[];
+   if(!list.length){
+     const note=document.createElement('p');
+     note.textContent='Aucune mensuration partagée pour le moment. Les mesures du propriétaire ne sont pas visibles sans son autorisation.';
+     parent.append(note);
+     return;
    }
-   return;
-  }
-  if(!get('bm-date').value) get('bm-date').value=editingDate;
-  renderData();
+   for(const r of list.slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,45)){
+     const line=document.createElement('div');line.className='bm-history-row';
+     const date=document.createElement('strong');date.textContent=day(r.date);
+     const details=document.createElement('span');
+     details.textContent=METRICS.filter(m=>Number.isFinite(r[m.key]))
+       .map(m=>m.short+' : '+format(r[m.key])+' cm').join(' · ');
+     line.append(date,details);parent.append(line);
+   }
+ }
+ function refreshAccess(){
+   const readonly=!local();
+   const eligible=readonly?null:adult(profile());
+   const allowed=eligible===true&&!readonly;
+   // Never disappear simply because a SHARED profile is selected.
+   // A verified local child is excluded; unspecified age shows an explanation.
+   nav.hidden=!readonly && eligible===false;
+   get('bm-main').hidden=!allowed;get('bm-lock').hidden=allowed;
+   if(!allowed){
+     if(readonly)showReadOnly();
+     else get('bm-lock').textContent=eligible===false?
+       'Les mensurations corporelles sont réservées aux adultes (18 ans et plus).':
+       'Pour activer le suivi adulte, renseigne la date de naissance dans Profils.';
+     if(!section.hidden && eligible===false){
+       section.hidden=true;
+       const home=document.querySelector('.nav [data-tab="home"]');
+       if(home)home.click();
+     }
+     return;
+   }
+   if(!get('bm-date').value) get('bm-date').value=editingDate;
+   renderData();
  }
  drawFields();
  get('bm-date').value=editingDate;
@@ -487,8 +538,18 @@
    return result;
   };
  }
+ window.showSharedBodyMeasurements=function(){
+   if(local())return;
+   if(typeof showUnifiedTab==='function')showUnifiedTab('body-measurements');
+   else{
+     document.querySelectorAll('main>section').forEach(s=>s.hidden=s!==section);
+     document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('on',b===nav));
+   }
+   section.hidden=false;refreshAccess();
+ };
  nav.addEventListener('click',e=>{
-  if(adult(profile())!==true || !local()){e.preventDefault();return;}
+  if(!local()){e.preventDefault();window.showSharedBodyMeasurements();return;}
+  if(adult(profile())!==true){e.preventDefault();refreshAccess();return;}
   if(typeof showUnifiedTab==='function')showUnifiedTab('body-measurements');
   else{
    document.querySelectorAll('main>section').forEach(s=>s.hidden=s!==section);
