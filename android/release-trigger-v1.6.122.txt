@@ -1,0 +1,4 @@
+Mon Évolution IMC v1.6.122
+Nouvelle version avec code 138 et APK signé.
+Masques fixes des iris, retouches des contours des cheveux, rendu canvas à dimensions communes aux masques pour affichage adaptatif.
+Ne pas considérer les corrections visuelles comme validées avant essais sur appareil.
