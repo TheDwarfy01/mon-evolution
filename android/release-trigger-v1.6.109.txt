@@ -1,0 +1,2 @@
+Mon Évolution IMC v1.6.109
+Reprendre l’interface de référence des captures avec Homme/Femme, un seul mannequin adulte photoréaliste au centre, repères cliquables et lignes pointillées anatomiques, trois cartes saisie/historique/courbes, trois raccourcis en bas de la silhouette. Réglages uniquement des couleurs de peau, cheveux et yeux, appliquées à la photo avec conservation des ombres. Aucun double mannequin. Conserver les données et toutes les fonctions précédentes. Compiler, signer et publier l'APK.
