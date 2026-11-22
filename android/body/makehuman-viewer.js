@@ -1,5 +1,5 @@
 /* Mon Évolution IMC — WebGL MakeHuman viewer, opt-in offline pack.
- * Mesh and all 24 morph targets are derived from CC0 MakeHuman assets.
+ * Mesh and 32 morph targets are derived from CC0 MakeHuman assets.
  * No adult BMI classifications are applied to children's silhouettes.
  */
 (()=>{
@@ -15,8 +15,8 @@ css.textContent=[
  '#bm-model canvas.bm-makehuman-canvas{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;z-index:2!important;display:none;touch-action:pan-y;pointer-events:auto;border-radius:12px}',
  '#bm-model.bm-makehuman-active canvas.bm-photo-canvas{display:none!important}',
  '#bm-model.bm-makehuman-active canvas.bm-makehuman-canvas{display:block!important}',
- '.bm-mh-panel{position:absolute;bottom:8px;left:8px;right:8px;z-index:9;display:flex;align-items:center;justify-content:center;gap:7px;flex-wrap:wrap;pointer-events:none}',
- '.bm-mh-panel button{pointer-events:auto;background:#134d58;color:#e6fff9;border:1px solid #77efd4;border-radius:999px;padding:7px 12px;font-size:12px;max-width:98%}',
+ '.bm-mh-panel{position:relative;z-index:9;display:flex;align-items:center;justify-content:center;gap:7px;flex-wrap:wrap;margin:5px 0 8px;min-height:34px}',
+ '.bm-mh-panel button{background:#134d58;color:#e6fff9;border:1px solid #77efd4;border-radius:999px;padding:7px 12px;font-size:12px;max-width:98%}',
  '.bm-mh-panel span{padding:5px 8px;color:#e5fff9;text-align:center;border-radius:6px;background:#092e42dd;font-size:11px}'
 ].join('\n');
 document.head.append(css);
@@ -31,7 +31,18 @@ const button=document.createElement('button');
 button.type='button';button.textContent='Installer le mannequin 3D';
 const note=document.createElement('span');
 note.textContent='Module 3D optionnel • téléchargement unique';
-panel.append(button,note);stage.append(panel);
+panel.append(button,note);stage.before(panel);
+function keepViewerMounted(){
+ // The historic photo renderer replaces #bm-model.innerHTML when settings
+ // change. Restore the 3D canvas, preserving its WebGL context and status UI.
+ if(!stage.contains(canvas)){
+   stage.append(canvas);
+   if(pack&&renderer)requestAnimationFrame(refresh);
+ }
+ if(!panel.isConnected)stage.before(panel);
+}
+const keepAlive=new MutationObserver(keepViewerMounted);
+keepAlive.observe(stage,{childList:true});
 let pack=null,gl=null,renderer=null,loading=false,currentKey='',yaw=0,gesture=null,failed=false;
 const clamp=(v,min,max)=>Math.min(max,Math.max(min,v));
 const hex=s=>{
