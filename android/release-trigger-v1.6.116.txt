@@ -1,0 +1,6 @@
+Mon Évolution IMC v1.6.116 — corriger la colorisation des mannequins photo.
+La v1.6.115 dessine de grands rectangles de carnation sur le cou et les cuisses, et une tache grise rectangulaire dans les cheveux.
+Remplacer le repli source-atop à coordonnées rectangulaires par des masques souples de peau, cheveux et iris calculés depuis les photographies détourées, séparément pour l'homme et la femme.
+Les couleurs doivent être visibles immédiatement et limitées aux zones anatomiques exactes, avec les détails du portrait conservés.
+Conserver les repères de mensurations, les profils, les données Google Drive et la signature existante.
+Compiler, signer et publier l'APK 1.6.116.
