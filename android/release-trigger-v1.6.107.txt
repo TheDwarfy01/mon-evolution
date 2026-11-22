@@ -1,0 +1,3 @@
+Mon Évolution IMC v1.6.107
+Correctif de navigation : 5 onglets lisibles avec icônes SVG 22px ; Mensurations accessible pour les profils adultes et visible en lecture seule dans les profils partagés. L'onglet reste masqué pour les enfants ayant une date de naissance valide. Propriétés du profil et données conservées. Corrections IA, photos, Drive de v1.6.106 maintenues.
+Compiler, signer et publier APK.
