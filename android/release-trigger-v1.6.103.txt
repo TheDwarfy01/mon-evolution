@@ -1,0 +1,3 @@
+Mon Évolution IMC v1.6.103
+Version finale de la rubrique adulte Mensurations : mannequins masculin/féminin, choix carnation-cheveux-yeux, 9 mesures en cm, photos, courbes, historique, fusion Drive et sauvegardes. Correction de la visibilité quand on change vers un enfant ou un profil partagé.
+Compilation, tests et signature officielle.
