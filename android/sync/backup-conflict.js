@@ -160,13 +160,16 @@
         '. Priorité : '+(preference==='local'?'ce téléphone':'Drive')+'.\n\n'+
         'Une fusion sera enregistrée localement d’abord. Drive ne sera modifié que si son fichier n’a pas changé entre-temps.';
       if(!confirm(description))return;
-      // Protect locally merged data first, even if remote write fails or app closes.
+      // Keep a copy of the ORIGINAL local version for a possible recovery.
+      const beforeMerge=JSON.stringify({format:'mon-evolution',version:1,
+        exportedAt:new Date().toISOString(),data});
+      // Protect the merged result locally first, even if the remote write fails.
       data=merged;
       save(false);
       render();
       resolving=true;
-      show('saving','Fusion locale conservée. Vérification finale du fichier Drive avant l’écriture.');
-      AndroidBackup.resolveBackupMerge(backupPayload(),plan.hash);
+      show('saving','Fusion locale conservée. Copies de sécurité et vérification finale avant écriture Drive.');
+      AndroidBackup.resolveBackupMerge(backupPayload(),plan.hash,beforeMerge);
       pending=null;
     }catch(e){
       resolving=false;show('error','Fusion non effectuée : '+(e.message||e));
