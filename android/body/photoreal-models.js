@@ -82,84 +82,48 @@
     }
     return c;
   }
-  function recolor(pixels,state){
-    const d=pixels.data,w=pixels.width,h=pixels.height;
-    const f=figures[state.model];
-    const wantSkin=state.skin.toUpperCase()!==BASE.skin.toUpperCase();
-    const wantHair=state.hair.toUpperCase()!==BASE.hair.toUpperCase();
-    const wantEyes=state.eyes.toUpperCase()!==BASE.eyes.toUpperCase();
-    if(!wantSkin&&!wantHair&&!wantEyes)return;
-    const skin=rgb(state.skin),hair=rgb(state.hair),eyes=rgb(state.eyes);
-    const faceHole=f.face;
-    for(let y=0;y<h;y++){
-      const py=y/h;
-      for(let x=0;x<w;x++){
-        const px=x/w,i=(y*w+x)*4;
-        const r=d[i],g=d[i+1],b=d[i+2];
-        let dst=null,alpha=0;
-        const isSkin=(inRect(px,py,f.face)||inRect(px,py,f.neck)||
-          f.arms.some(a=>inRect(px,py,a))||f.legs.some(a=>inRect(px,py,a)));
-        // The original photos have warm skin, while clothing and
-        // background are charcoal/neutral. Retain natural photographic shadows.
-        const warm=r>70&&g>35&&b>24&&r>g*1.055&&r>b*1.15&&g>b*.91;
-        if(wantSkin&&isSkin&&warm){
-          const luminosity=clamp((r*.30+g*.56+b*.14)/170,.37,1.60);
-          dst=skin.map(v=>clamp(v*luminosity,0,255));
-          alpha=.90;
-        }
-        if(wantHair&&inRect(px,py,f.hair)&&!inRect(px,py,faceHole)){
-          const bright=(r+g+b)/3;
-          const darkHair=bright<155&&r<g*1.75;
-          if(darkHair){
-            const light=clamp(bright/96,.24,1.65);
-            dst=hair.map(v=>clamp(v*light,0,255));
-            alpha=.94;
-          }
-        }
-        if(wantEyes){
-          const distances=f.eyeXs.map(cx=>((px-cx)/.010)**2+((py-f.eyeY)/.0048)**2);
-          if(Math.min(...distances)<1.0&&r<172&&g<168){
-            const light=clamp((r+g+b)/210,.65,1.25);
-            dst=eyes.map(v=>clamp(v*light,0,255));
-            alpha=.93;
-          }
-        }
-        if(dst){
-          d[i]=Math.round(r*(1-alpha)+dst[0]*alpha);
-          d[i+1]=Math.round(g*(1-alpha)+dst[1]*alpha);
-          d[i+2]=Math.round(b*(1-alpha)+dst[2]*alpha);
-        }
+  // Accurate segment masks are generated from the original transparent
+  // portraits at build time. Drawing alpha masks never requires reading pixels
+  // from Android WebView canvases, which previously caused rectangular patches.
+  const featureNames=['skin','hair','eyes'];
+  let maskPromise=null;
+  function maskSources(){
+    if(maskPromise)return maskPromise;
+    const urls=window.MonEvolutionStudioMasks||{};
+    maskPromise=Promise.all(featureNames.map(key=>new Promise((resolve,reject)=>{
+      const url=urls[key];
+      if(typeof url!=='string'||!url.startsWith('data:image/png;base64,')){
+        reject(Error('Masque de couleur absent: '+key));return;
       }
-    }
+      const img=new Image();
+      img.onload=()=>img.naturalWidth===WIDTH*2&&img.naturalHeight===HEIGHT?
+        resolve([key,img]):reject(Error('Dimension du masque invalide: '+key));
+      img.onerror=()=>reject(Error('Masque illisible: '+key));
+      img.src=url;
+    }))).then(entries=>Object.fromEntries(entries))
+      .catch(error=>{maskPromise=null;throw error;});
+    return maskPromise;
   }
-  // No-readback fallback for Android WebViews with a tainted canvas.
-  // Draw-only rectangles clip to the existing alpha and blend subtly.
-  function paintFallback(ctx,state){
-    const shape=figures[state.model];
-    const areas=[
-      ['skin',[
-        shape.face,shape.neck,...shape.arms,...shape.legs
-      ],.55],
-      ['hair',[shape.hair],.75],
-      ['eyes',shape.eyeXs.map(x=>[
-        x-.009,x+.009,shape.eyeY-.0045,shape.eyeY+.0045
-      ]),.68]
-    ];
+  const layers=document.createElement('canvas');
+  layers.width=WIDTH;layers.height=HEIGHT;
+  const layerCtx=layers.getContext('2d');
+  function tintMaskedPart(ctx,mask,model,color,kind){
+    if(!layerCtx)return;
+    layerCtx.clearRect(0,0,WIDTH,HEIGHT);
+    layerCtx.globalCompositeOperation='source-over';
+    layerCtx.globalAlpha=1;
+    const sx=model==='female'?WIDTH:0;
+    layerCtx.drawImage(mask,sx,0,WIDTH,HEIGHT,0,0,WIDTH,HEIGHT);
+    // Apply chosen color inside only the alpha of the semantic mask.
+    // This replaces rectangular source-atop fills with accurate edges.
+    layerCtx.globalCompositeOperation='source-in';
+    layerCtx.fillStyle=color;
+    layerCtx.fillRect(0,0,WIDTH,HEIGHT);
+    layerCtx.globalCompositeOperation='source-over';
     ctx.save();
-    try{
-      ctx.globalCompositeOperation='source-atop';
-      for(const [key,rects,strength] of areas){
-        if(state[key].toUpperCase()===BASE[key].toUpperCase())continue;
-        ctx.fillStyle=state[key];
-        ctx.globalAlpha=strength;
-        for(const r of rects){
-          ctx.fillRect(r[0]*WIDTH,r[2]*HEIGHT,
-                       (r[1]-r[0])*WIDTH,(r[3]-r[2])*HEIGHT);
-        }
-      }
-    }finally{
-      ctx.restore();
-    }
+    ctx.globalAlpha=kind==='skin'?.82:kind==='hair'?.9:.84;
+    ctx.drawImage(layers,0,0);
+    ctx.restore();
   }
   async function paint(){
     scheduled=false;
@@ -184,18 +148,19 @@
       canvas.width=WIDTH;canvas.height=HEIGHT;
       const sx=state.model==='female'?WIDTH:0;
       ctx.drawImage(img,sx,0,WIDTH,HEIGHT,0,0,WIDTH,HEIGHT);
-      // A WebView can fail to read pixels although drawing the offline HD
-      // photo succeeded. Keep that valid photo on screen rather than masking it.
+      // The source photo stays untouched; color changes are drawn as
+      // precisely segmented overlays. No getImageData or block-shaped fill.
       try{
-        const pixels=ctx.getImageData(0,0,WIDTH,HEIGHT);
-        recolor(pixels,state);
-        ctx.putImageData(pixels,0,0);
-      }catch(pixelError){
-        // Some WebViews restrict image pixel reads. Use a draw-only fallback,
-        // which needs no getImageData: never make color choices appear inert.
-        // It is deliberately conservative and retains the original photo.
-        console.warn('Lecture des pixels indisponible, colorisation de secours',pixelError);
-        paintFallback(ctx,state);
+        const masks=await maskSources();
+        if(stamp!==serial||!stage.contains(canvas)){schedule();return;}
+        for(const kind of featureNames){
+          if(state[kind].toUpperCase()!==BASE[kind].toUpperCase()){
+            tintMaskedPart(ctx,masks[kind],state.model,state[kind],kind);
+          }
+        }
+      }catch(maskError){
+        // Never hide or corrupt the original portrait if optional colors fail.
+        console.warn('Masques de couleurs non disponibles',maskError);
       }
       if(stamp!==serial||!stage.contains(canvas)){schedule();return;}
       canvas.dataset.renderedKey=key;
