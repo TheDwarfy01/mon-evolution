@@ -1,0 +1,5 @@
+Mon Évolution IMC v1.6.112
+Remplacement des anciens mannequins basse définition par les deux images HD (810 x 1440 par personne) générées pour l’utilisateur.
+Correction du rafraîchissement des couleurs de peau, cheveux et yeux sur le seul modèle visible, même après changement de modèle ou de profil.
+Les photos sont intégrées hors ligne dans l’APK. Préserver mensurations, profils, IA, Drive, rotation et mises à jour existantes.
+Compiler, signer et publier l’APK officielle.
