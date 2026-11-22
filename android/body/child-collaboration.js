@@ -74,6 +74,18 @@
     window.render=function(...args){const out=oldRender.apply(this,args);redraw();return out};
   }
   redraw();
+  // Check for remote changes on launch / when Android returns to the foreground.
+  // Import still requires a visible owner confirmation if values differ.
+  let lastCheck=0;
+  function checkOnResume(){
+    const p=current();
+    if(!minor(p)||native.sharedStatus?.(p.id)!=='1'||!native.childEditEnabled?.(p.id))return;
+    if(Date.now()-lastCheck<45000)return;
+    lastCheck=Date.now();
+    native.syncOwnedChild?.(p.id);
+  }
+  window.addEventListener('pageshow',checkOnResume);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkOnResume()});
 
   let receivedKey='',receivedDocument=null;
   const reader=document.createElement('div');
