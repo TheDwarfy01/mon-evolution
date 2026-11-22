@@ -81,23 +81,25 @@
  // Separate calibrations ensure that the dotted lines reach real anatomical
  // landmarks on each portrait. Waist = narrow natural waist; belly = abdomen
  // below it, never the shorts/crotch; hip = lateral pelvis, not the groin.
+ // Every coordinate is a percent of the 810x1440 studio portrait
+ // (drawn with object-fit:contain). Targets refer to anatomy, not label height.
  const malePositions={
-  chest:{buttonY:27,originX:26,targetX:50,targetY:30},
-  arm:{buttonY:33,originX:74,targetX:70,targetY:34},
-  waist:{buttonY:42,originX:26,targetX:49,targetY:40},
-  belly:{buttonY:51,originX:74,targetX:50,targetY:44},
-  hips:{buttonY:57,originX:26,targetX:39,targetY:53},
-  thigh:{buttonY:70,originX:26,targetX:43,targetY:66},
-  calf:{buttonY:85,originX:74,targetX:57,targetY:81}
+  chest:{buttonY:27,originX:26,targetX:50,targetY:28.7},
+  arm:{buttonY:33,originX:74,targetX:69,targetY:33.8},
+  waist:{buttonY:42,originX:26,targetX:49,targetY:39.7},
+  belly:{buttonY:51,originX:74,targetX:50,targetY:42.5},
+  hips:{buttonY:57,originX:26,targetX:39,targetY:49.2},
+  thigh:{buttonY:70,originX:26,targetX:43,targetY:62.5},
+  calf:{buttonY:85,originX:74,targetX:58,targetY:78.6}
  };
  const femalePositions={
-  chest:{buttonY:27,originX:26,targetX:50,targetY:31},
-  arm:{buttonY:33,originX:74,targetX:70,targetY:34},
-  waist:{buttonY:42,originX:26,targetX:49,targetY:40},
-  belly:{buttonY:51,originX:74,targetX:50,targetY:45},
-  hips:{buttonY:57,originX:26,targetX:40,targetY:54},
-  thigh:{buttonY:70,originX:26,targetX:43,targetY:66},
-  calf:{buttonY:85,originX:74,targetX:57,targetY:81}
+  chest:{buttonY:27,originX:26,targetX:50,targetY:28.7},
+  arm:{buttonY:33,originX:74,targetX:69,targetY:33.8},
+  waist:{buttonY:42,originX:26,targetX:49,targetY:39.5},
+  belly:{buttonY:51,originX:74,targetX:50,targetY:42.7},
+  hips:{buttonY:57,originX:26,targetX:39,targetY:49.3},
+  thigh:{buttonY:70,originX:26,targetX:42,targetY:60.7},
+  calf:{buttonY:85,originX:74,targetX:57,targetY:78.5}
  };
  function activeFigure(){
   const selected=[...toggles.querySelectorAll('button')].find(b=>b.getAttribute('aria-pressed')==='true');
