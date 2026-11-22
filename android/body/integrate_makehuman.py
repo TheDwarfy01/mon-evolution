@@ -15,7 +15,7 @@ if not assets.is_dir() or not activity.is_file():
     raise RuntimeError("Android source directory is incomplete")
 
 for name in ("makehuman-morph-adapter.js", "makehuman-viewer.js",
-             "makehuman-table-mode.js"):
+             "makehuman-table-mode.js", "intermediate-goal-icons-v125.js"):
     shutil.copyfile("android/body/"+name, assets/name)
 html=assets/"index.html"
 src=html.read_text(encoding="utf-8")
@@ -39,6 +39,7 @@ for obsolete in ("models-hq-v2.webp", "studio-skin-mask.png",
 src=src.replace(needle, """<script src="makehuman-morph-adapter.js"></script>
 <script src="makehuman-viewer.js"></script>
 <script src="makehuman-table-mode.js"></script>
+<script src="intermediate-goal-icons-v125.js"></script>
 </body></html>""")
 html.write_text(src,encoding="utf-8")
 
