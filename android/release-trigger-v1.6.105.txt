@@ -1,0 +1,6 @@
+Mon Évolution IMC v1.6.105
+1) Rotation locale gauche/droite/miroir/réinitialisation des portraits des profils partagés (lecture seule Drive propriétaire).
+2) Mannequin homme et femme en mode photo réaliste inclus dans les ressources APK, avec illustration personnalisable en alternative.
+3) Saisie de mensuration directe au tap sur chaque repère du corps, dans un dialogue court, sans défilement.
+4) Maintenir fonctionnalités, données, synchronisation et sécurité v1.6.104.
+Compilation, signature et publication.
