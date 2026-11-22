@@ -21,10 +21,9 @@ shutil.copyfile("android/body/measurements-ui.js",root/"measurements-ui.js")
 script=(root/"measurements-ui.js").read_text(encoding="utf-8")
 for fragment in [
  "bodyMeasurements","bodyAppearance","'Carnation'","'Couleur des cheveux'",
- "'Couleur des yeux'","'Mesures du '+day", "photoPicked=function(token,photo)",
- "MonEvolutionChild","function renderGraph()", "function renderHistory()"
+ "'Couleur des yeux'","photoPicked=function(token,photo)",
+ "function renderGraph()", "function renderHistory()"
 ]:
- if fragment=="'Mesures du '+day": continue
  assert fragment in script,fragment
 source=source.replace(end,'<script src="measurements-ui.js"></script>\n'+end)
 html.write_text(source,encoding="utf-8")
