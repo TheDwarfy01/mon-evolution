@@ -9,7 +9,7 @@
   panel.id='backup-conflict-panel';
   panel.style.cssText='display:none;margin:12px 0;padding:14px;border:1px solid #deaf67;border-radius:12px;background:#283646;color:#f3f6f9;line-height:1.5;';
   card.insertAdjacentElement('afterend',panel);
-  let pending=null, notified=false, resolving=false, loadingRemote=false;
+  let pending=null, notified=false, resolving=false, loadingRemote=false, startupChecking=false;
   // A linked backup is validated BEFORE the main application is usable.
   // This gate is intentionally not dismissible while a Drive conflict exists.
   const gate=document.createElement('div');
@@ -105,7 +105,7 @@
     } else {
       actions.append(btn(gateActive?'Réessayer la vérification':'Comparer et fusionner',()=>{
         if(resolving)return;
-        if(gateActive)AndroidBackup.verifyBackupOnStartup();
+        if(gateActive){startupChecking=true;AndroidBackup.verifyBackupOnStartup();}
         else beginRead();
       }));
     }
@@ -179,9 +179,10 @@
   window.backupConflict=()=>{
     if(resolving)return;
     openGate();
-    if(!pending && !loadingRemote)beginRead();
+    if(!startupChecking && !pending && !loadingRemote)beginRead();
   };
   window.backupStartupChecked=state=>{
+    startupChecking=false;
     if(state==='ready'||state==='unlinked'){
       if(!resolving){
         loadingRemote=false;pending=null;notified=false;
@@ -263,6 +264,6 @@
     if(!AndroidBackup.isLinked?.())return;
     openGate();
     show('pending','Vérification automatique de la sauvegarde Drive au démarrage…');
-    AndroidBackup.verifyBackupOnStartup();
+    startupChecking=true;AndroidBackup.verifyBackupOnStartup();
   },0);
 })();
