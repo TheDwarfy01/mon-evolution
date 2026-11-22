@@ -114,6 +114,27 @@
     }catch(e){reader.hidden=true;receivedDocument=null;receivedKey=''}
     return out;
   };
+  // The regular received-profile tabs intentionally remain read-only.
+  // Offer a clear, explicit jump to the private child editing panel.
+  const friendObserver=new MutationObserver(()=>{
+    if(!receivedKey||reader.hidden)return;
+    document.querySelectorAll('.friend-view').forEach(view=>{
+      if(view.querySelector('.child-edit-jump'))return;
+      const target=view.parentElement?.id;
+      if(!['history','meals','profiles'].includes(target))return;
+      const action=document.createElement('button');
+      action.type='button';action.className='secondary child-edit-jump';
+      action.style.cssText='display:block;width:100%;margin:10px 0';
+      action.textContent='✎ Modifier ce profil enfant';
+      action.onclick=()=>{
+        if(typeof showUnifiedTab==='function')showUnifiedTab('shared');
+        else document.querySelector('.nav [data-tab="shared"]')?.click();
+        reader.scrollIntoView({behavior:'smooth',block:'center'});
+      };
+      view.insertBefore(action,view.children[1]||null);
+    });
+  });
+  friendObserver.observe(document.querySelector('main')||document.body,{subtree:true,childList:true});
   el('child-edit-save').onclick=()=>{
     if(!receivedKey||!receivedDocument)return;
     const d=date.value;
