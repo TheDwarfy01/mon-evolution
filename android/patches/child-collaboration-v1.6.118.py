@@ -61,7 +61,9 @@ bridge=r'''
                     JSONObject doc=readFriendDocument(item,key);
                     JSONObject policy=doc.optJSONObject("collaboration");
                     JSONObject p=doc.getJSONObject("profile");
-                    if(policy==null||!policy.optBoolean("editable",false)||!isMinorProfile(p)){
+                    if(policy==null||!policy.optBoolean("editable",false)||
+                       !policy.optString("profileId","").matches("[a-zA-Z0-9_-]{1,75}")||
+                       !isMinorProfile(p)){
                         childResult(key,"denied",null);return;
                     }
                     JSONArray entries=p.getJSONArray("entries");
@@ -164,6 +166,9 @@ bridge=r'''
                         readSecret("share_pass_"+id));
                     if(!isMinorProfile(doc.getJSONObject("profile")))
                         throw new Exception("Not a child");
+                    JSONObject receivedPolicy=doc.optJSONObject("collaboration");
+                    if(receivedPolicy!=null && !id.equals(receivedPolicy.optString("profileId",id)))
+                        throw new Exception("Wrong profile");
                     JSONObject policy=doc.optJSONObject("collaboration");
                     long actual=policy==null?0:policy.optLong("revision",0);
                     long known=prefs.getLong("child_revision_"+id,0);
@@ -218,6 +223,8 @@ helpers=r'''
         JSONObject remote=decodeShared(readSafJson(uri,40_000_000),
             readSecret("share_pass_"+id));
         JSONObject policy=remote.optJSONObject("collaboration");
+        if(policy!=null&&!id.equals(policy.optString("profileId",id)))
+            throw new Exception("Another child profile");
         return policy==null?0:policy.optLong("revision",0);
     }
     private void childResult(String key,String status,JSONObject document) {
@@ -245,6 +252,7 @@ swap('''        document.put("profile",profile);
         SharedPreferences prefs=getPreferences(MODE_PRIVATE);
         if(isMinorProfile(profile) && prefs.contains("child_revision_"+id)){
             JSONObject permission=new JSONObject();
+            permission.put("profileId",id);
             permission.put("editable",prefs.getBoolean("child_edit_"+id,false));
             permission.put("revision",prefs.getLong("child_revision_"+id,0)+1);
             document.put("collaboration",permission);
