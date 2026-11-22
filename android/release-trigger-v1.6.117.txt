@@ -1,0 +1,6 @@
+Mon Évolution IMC 1.6.117 — correctifs des silhouettes studio (22 novembre 2026)
+- Corriger les masques des iris homme et femme : y=0,075 de l'image (et non y=0,11 sur les joues).
+- Masques doux et détourés pour changer la peau et les cheveux sans rectangles.
+- Corriger les repères de mensurations sur les portraits photo : taille, ventre, hanches, cuisse, mollet.
+- Conserver les données, les profils, les mensurations et la synchronisation Google Drive.
+- Exécuter les tests et compiler puis signer l'APK officiel v1.6.117.
