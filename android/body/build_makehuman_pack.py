@@ -73,8 +73,8 @@ def build():
                         continue
                     dx, dy, dz = (round(float(v), 4) for v in parts[1:4])
                     if dx or dy or dz:
-                        sparse.append((vertex, dx, dy, dz))
-                if len(sparse) < 300:
+                        sparse.extend((vertex, dx, dy, dz))
+                if len(sparse) < 1200:
                     raise RuntimeError("Incomplete MakeHuman target: " + name)
                 targets[sex + "-" + age + "-" + weight] = sparse
     data = {"version": 1, "upstream": "makehumancommunity/makehuman@" + REV,
