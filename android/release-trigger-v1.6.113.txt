@@ -5,3 +5,5 @@ Correction commune des mannequins homme et femme :
 - conserver la photo haute définition si la lecture des pixels pour les couleurs échoue ;
 - conserver le suivi des mensurations, les profils et Drive.
 Compiler, signer et publier l'APK officielle.
+
+Nouvel essai de compilation : inclure les scripts de migration de v1.6.112 vers v1.6.113.
