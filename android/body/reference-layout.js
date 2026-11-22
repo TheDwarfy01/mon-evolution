@@ -25,7 +25,8 @@
   '#body-measurements .bm-original-lead{display:none!important}',
   '#body-measurements #bm-models{display:flex;justify-content:center;gap:5px;margin:5px auto 10px}',
   '#body-measurements #bm-models .bm-button{border-radius:999px;font-size:12px;min-width:92px;padding:5px 10px;min-height:32px}',
-  '#body-measurements .bm-stage{height:535px;max-width:440px;margin:0 auto;border-radius:13px;isolation:isolate;overflow:hidden}',
+  '#body-measurements .bm-stage{height:535px;max-width:440px;margin:0 auto;border-radius:13px;isolation:isolate;overflow:hidden;background:transparent!important}',
+  '#body-measurements #bm-model{background:transparent!important}',
   '#body-measurements .bm-stage .bm-photo-canvas,#body-measurements .bm-stage .bm-photo-fallback{object-fit:contain;object-position:center}',
   '#body-measurements .bm-measure-lines{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-events:none;overflow:visible}',
   '#body-measurements .bm-point{z-index:3;min-width:83px;max-width:27%;padding:6px 6px;min-height:39px;border-radius:9px;border:1px solid #397d95;background:#062537e8;box-shadow:0 4px 12px #00132080;text-align:left}',
@@ -76,23 +77,39 @@
 
  // Dotted lines from each measurement label to the precise intended body zone.
  const metrics=['chest','arm','waist','belly','hips','thigh','calf','neck','forearm'];
- // Target positions calibrated against BOTH frontal studio photographs:
- // chest / upper arm / natural waist / abdomen / widest hips / thigh / calf.
- // Coordinates are relative to the mannequin stage; both models use exactly
- // the same neutral standing pose and framing.
- const position={
-  chest:{buttonY:27,originX:26,targetX:49,targetY:30},
+ // The height coordinates refer to the photographed figure, not the tag.
+ // Separate calibrations ensure that the dotted lines reach real anatomical
+ // landmarks on each portrait. Waist = narrow natural waist; belly = abdomen
+ // below it, never the shorts/crotch; hip = lateral pelvis, not the groin.
+ const malePositions={
+  chest:{buttonY:27,originX:26,targetX:50,targetY:30},
   arm:{buttonY:33,originX:74,targetX:70,targetY:34},
-  waist:{buttonY:42,originX:26,targetX:50,targetY:44},
-  belly:{buttonY:51,originX:74,targetX:50,targetY:49},
-  hips:{buttonY:57,originX:26,targetX:50,targetY:56},
-  thigh:{buttonY:70,originX:26,targetX:45,targetY:70},
-  calf:{buttonY:85,originX:74,targetX:57,targetY:85}
+  waist:{buttonY:42,originX:26,targetX:49,targetY:40},
+  belly:{buttonY:51,originX:74,targetX:50,targetY:44},
+  hips:{buttonY:57,originX:26,targetX:39,targetY:53},
+  thigh:{buttonY:70,originX:26,targetX:43,targetY:66},
+  calf:{buttonY:85,originX:74,targetX:57,targetY:81}
  };
+ const femalePositions={
+  chest:{buttonY:27,originX:26,targetX:50,targetY:31},
+  arm:{buttonY:33,originX:74,targetX:70,targetY:34},
+  waist:{buttonY:42,originX:26,targetX:49,targetY:40},
+  belly:{buttonY:51,originX:74,targetX:50,targetY:45},
+  hips:{buttonY:57,originX:26,targetX:40,targetY:54},
+  thigh:{buttonY:70,originX:26,targetX:43,targetY:66},
+  calf:{buttonY:85,originX:74,targetX:57,targetY:81}
+ };
+ function activeFigure(){
+  const selected=[...toggles.querySelectorAll('button')].find(b=>b.getAttribute('aria-pressed')==='true');
+  if(selected)return /femme/i.test(selected.textContent||'')?'female':'male';
+  const p=typeof profile==='function'?profile():null;
+  return p?.bodyAppearance?.model==='female'||(!p?.bodyAppearance?.model&&p?.sex==='female')?'female':'male';
+ }
  const NS='http://www.w3.org/2000/svg';
  function connectors(){
   const buttons=stage.querySelectorAll('.bm-point');
   if(!buttons.length)return;
+  const position=activeFigure()==='female'?femalePositions:malePositions;
   for(let i=0;i<buttons.length;i++){
    const button=buttons[i];
    const key=metrics[i];
@@ -128,6 +145,9 @@
      n.nodeType===1&&n.classList?.contains('bm-point'))))connectors();
  });
  observer.observe(stage,{childList:true});
+ // A sex switch can update button attributes before the stage is rerendered.
+ const sexObserver=new MutationObserver(()=>connectors());
+ sexObserver.observe(toggles,{childList:true,subtree:true,attributes:true,attributeFilter:['aria-pressed']});
  connectors();
 
  // The reference has a short row of History / Evolution / Photo actions
