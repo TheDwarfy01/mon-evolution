@@ -734,14 +734,14 @@ jobs:
           data=base64.b64encode(photo.read_bytes()).decode('ascii')
           assert len(data)>100000
           (assets/'models-hq-inline.js').write_text(
-             "window.MonEvolutionStudioSpriteData='data:image/webp;base64,"+data+"';\\n",
+             "window.MonEvolutionStudioSpriteData='data:image/webp;base64,"+data+"';\n",
              encoding='utf-8')
           html=assets/'index.html'
           source=html.read_text(encoding='utf-8')
           needle='<script src="photoreal-models.js"></script>'
           assert source.count(needle)==1
           html.write_text(source.replace(needle,
-              '<script src="models-hq-inline.js"></script>\\n'+needle),
+              '<script src="models-hq-inline.js"></script>\n'+needle),
               encoding='utf-8')
           print('WebP transparent intégré en data URI : compatible avec les pixels Canvas')
           PY
