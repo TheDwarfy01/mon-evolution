@@ -42,6 +42,34 @@
   return age>=18;
  };
  const local=()=>!(typeof unifiedCurrent==='string'&&unifiedCurrent.startsWith('received:'));
+ // An optional profile extension. Existing backups remain fully compatible.
+ const priorValidate=validate;
+ validate=function(v){
+  priorValidate(v);
+  for(const p of v.profiles){
+   const list=p.bodyMeasurements;
+   if(list===undefined)continue;
+   if(!Array.isArray(list)||list.length>3000)throw Error('Mensurations invalides');
+   const ids=new Set();
+   for(const r of list){
+    if(!r||typeof r!=='object'||Array.isArray(r)||
+       typeof r.date!=='string'||!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(r.date)||
+       typeof r.id!=='string'||r.id!=='m-'+r.date||ids.has(r.id))
+       throw Error('Mensuration datée invalide');
+    ids.add(r.id);
+    for(const m of METRICS){
+     if(r[m.key]===undefined)continue;
+     if(typeof r[m.key]!=='number'||!Number.isFinite(r[m.key])||
+        r[m.key]<m.min||r[m.key]>m.max)throw Error('Valeur de mensuration invalide');
+    }
+    if(r.photo!==undefined &&
+      (typeof r.photo!=='string'||!r.photo.startsWith('data:image/jpeg;base64,')||r.photo.length>=250000))
+      throw Error('Photo de mensuration invalide');
+    if(r.updatedAt!==undefined && (typeof r.updatedAt!=='string'||r.updatedAt.length>80))
+      throw Error('Date de modification invalide');
+   }
+  }
+ };
  const appearance=p=>{
   const preferred=p?.sex==='female'?'female':'male';
   const a=p?.[APPEARANCE]||{};
@@ -407,6 +435,11 @@
  get('bm-save').onclick=saveMeasurements;
  get('bm-pick-photo').onclick=()=>{
   if(adult(profile())!==true)return;
+  if(draftDirty){
+   if(!confirm('Enregistrer les mensurations saisies avant de choisir la photo ?'))return;
+   saveMeasurements();
+   if(draftDirty)return;
+  }
   const d=get('bm-date').value;
   if(!/^\d{4}-\d{2}-\d{2}$/.test(d)||d>dateNow()){get('bm-status').textContent='Choisis une date valide.';return;}
   if(!window.AndroidBackup?.pickPhoto){get('bm-status').textContent='Photo disponible dans l’application Android.';return}
@@ -445,7 +478,6 @@
  }
  nav.addEventListener('click',e=>{
   if(adult(profile())!==true || !local()){e.preventDefault();return;}
-  if(draftDirty&&!(section.hidden)&&!confirm('Des mensurations sont modifiées sans être enregistrées. Les quitter ?'))return;
   if(typeof showUnifiedTab==='function')showUnifiedTab('body-measurements');
   else{
    document.querySelectorAll('main>section').forEach(s=>s.hidden=s!==section);
@@ -453,6 +485,25 @@
   }
   section.hidden=false;refreshAccess();
  });
+ // Prevent accidental loss when leaving the page or switching a profile.
+ document.addEventListener('click',e=>{
+  if(section.hidden||!draftDirty)return;
+  const clicked=e.target?.closest?.('.nav [data-tab],#visual-profile-picker .profile-portrait-choice');
+  if(!clicked||clicked===nav)return;
+  if(!confirm('Des mensurations sont modifiées sans être enregistrées. Quitter cette saisie ?')){
+   e.preventDefault();e.stopImmediatePropagation();
+  }else draftDirty=false;
+ },true);
+ document.addEventListener('change',e=>{
+  if(section.hidden||!draftDirty)return;
+  const el=e.target;
+  if(el?.id!=='unified-profile-picker'&&el?.id!=='profile-picker')return;
+  if(!confirm('Des mensurations sont modifiées sans être enregistrées. Changer de profil ?')){
+   e.preventDefault();e.stopImmediatePropagation();
+   if(el.id==='unified-profile-picker')el.value=unifiedCurrent;
+   else el.value=data.active;
+  }else draftDirty=false;
+ },true);
  document.addEventListener('click',e=>{
   const button=e.target?.closest?.('.nav [data-tab]');
   if(button&&button!==nav){section.hidden=true;}
