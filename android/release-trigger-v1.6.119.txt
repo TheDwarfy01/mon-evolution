@@ -10,3 +10,5 @@ Configuration obligatoire UNIQUEMENT si « Autoriser les modifications par un au
 - Préserver les données, les deux silhouettes, les profils adultes, tous les partages en lecture seule et le chiffrement existant.
 
 Compiler, tester et signer l'APK v1.6.119.
+
+Relance corrective 22/11/2026 : compilation Java echouait a cause de deux references prefs hors de portée dans le bloc catch du partage enfant; remplacement par getPreferences(MODE_PRIVATE) et ajout d'un test anti-regression avant Gradle.
