@@ -1,0 +1,3 @@
+Mon Évolution IMC v1.6.106
+Correctif : l'onglet Mensurations ne doit pas disparaître quand un profil partagé est sélectionné (lecture seule ; ne jamais afficher les données locales d'un autre profil). Exclure toujours les profils enfants. Rendre les icônes de navigation lisibles en 22 px, avec libellés visibles et cinq onglets. Conserver toutes les fonctions de la 1.6.105.
+Compilation et publication signée.
