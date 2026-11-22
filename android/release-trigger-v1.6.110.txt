@@ -1,0 +1,6 @@
+Mon Évolution IMC v1.6.110
+Supprimer entièrement les deux photos Pexels mal cadrées.
+Intégrer les deux personnages originaux adultes générés de face, debout, en pied, tenue de sport sobre sur fond bleu sombre, depuis le sprite WebP inclus hors ligne (sha256 vérifié).
+Afficher uniquement le personnage Homme ou Femme sélectionné, 7 repères anatomiques recalibrés avec pointillés, saisie immédiate et adaptation peau/cheveux/yeux directement sur la personne.
+Maintenir toutes les données et fonctions existantes (IA Gemma, profils, Drive, mensurations, photos, historique, courbes, raccourcis).
+Compiler, signer et publier l'APK.
