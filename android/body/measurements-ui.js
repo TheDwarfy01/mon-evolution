@@ -81,6 +81,9 @@
  const safeUpdate=(p,key,value)=>{
   p[APPEARANCE]={...appearance(p),[key]:value};
   save();renderMannequin();paintColors();
+  // Explicitly repaint the full-resolution photo after the legacy SVG
+  // resets the stage; do not rely only on asynchronous MutationObserver.
+  window.dispatchEvent(new Event('mon-evolution-appearance-changed'));
  };
  const style=document.createElement('style');
  style.textContent=[
