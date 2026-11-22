@@ -187,7 +187,7 @@
    '</g></svg>';
  };
  section.innerHTML='<div class="bm-title"><span>📏</span><h2 style="margin:0">Mensurations</h2></div>'+
-  '<p class="muted">Suivi des mensurations corporelles, réservé aux profils adultes. Toutes les valeurs sont en centimètres.</p>'+
+  '<p class="muted">Suivi des mensurations corporelles pour adultes et enfants. Toutes les valeurs sont en centimètres.</p>'+
   '<div id="bm-lock" class="bm-locked" hidden></div>'+
   '<div id="bm-main" class="bm-layout">'+
    '<div class="bm-card"><h3>📏 Ma silhouette</h3><p class="bm-hint">Appuie sur une zone du mannequin pour saisir ou consulter sa mesure.</p>'+
@@ -219,7 +219,12 @@
  };
  function renderMannequin() {
   const p=profile(),a=appearance(p),stage=get('bm-model');
+  // Preserve the independently downloaded MakeHuman viewer on every repaint.
+  // Discarding the WebGL canvas here silently reverted the UI to old photos
+  // whenever a profile, measure or appearance changed.
+  const makeHumanCanvas=stage.querySelector(':scope > canvas.bm-makehuman-canvas');
   stage.innerHTML=svg(a.model,a.skin,a.hair,a.eyes);
+  if(makeHumanCanvas)stage.append(makeHumanCanvas);
   const modelButtons=get('bm-models');
   modelButtons.replaceChildren();
   for(const [key,name] of [['male','♂ Homme'],['female','♀ Femme']]){
