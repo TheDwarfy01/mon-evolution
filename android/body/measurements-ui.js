@@ -33,13 +33,13 @@
   return r?{value:r[key],date:r.date}:null;
  };
  const validBirth=raw=>typeof raw==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(raw) && Number.isFinite(new Date(raw+'T12:00:00').getTime()) && raw<=dateNow();
- const adult=p=>{
+ const adult=p=>{ // Kept as a compatibility name; accepts adults AND children
   if(!validBirth(p?.birthDate))return null;
   const now=new Date(dateNow()+'T12:00:00');
   const born=new Date(p.birthDate+'T12:00:00');
   let age=now.getFullYear()-born.getFullYear();
   if(now.getMonth()<born.getMonth()||(now.getMonth()===born.getMonth()&&now.getDate()<born.getDate()))age--;
-  return age>=18;
+  return age>=0; // measurements are allowed at every age, without weight-loss goals
  };
  const local=()=>!(typeof unifiedCurrent==='string'&&unifiedCurrent.startsWith('received:'));
  // An optional profile extension. Existing backups remain fully compatible.
@@ -472,8 +472,8 @@
    if(!allowed){
      if(readonly)showReadOnly();
      else get('bm-lock').textContent=eligible===false?
-       'Les mensurations corporelles sont réservées aux adultes (18 ans et plus).':
-       'Pour activer le suivi adulte, renseigne la date de naissance dans Profils.';
+       'Renseigne une date de naissance valide pour accéder aux mensurations.':
+       'Pour activer les mensurations, renseigne la date de naissance dans Profils.';
      if(!section.hidden && eligible===false){
        section.hidden=true;
        const home=document.querySelector('.nav [data-tab="home"]');
