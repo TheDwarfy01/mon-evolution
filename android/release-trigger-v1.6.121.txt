@@ -1,0 +1,15 @@
+Mon Évolution IMC v1.6.121 — Assistant de partage parental simple, fichier Drive exact.
+22 novembre 2026
+
+Retour utilisateur: sur la page de partage parental, 'Aucun partage configuré' coexiste avec la case 'j'ai autorisé Éditeur' déjà cochée. La procédure ne désigne pas le fichier.
+
+Correctifs:
+1. Quand le mode Éditeur du profil enfant est activé et qu'aucun fichier n'est relié, afficher un bouton direct 'Créer le fichier de [enfant]' ainsi qu'une option 'Relier fichier existant'.
+2. Le bouton 'Ouvrir CE fichier dans Google Drive' utilise le lien du fichier exact enregistré ou sa référence Android SAF exacte; pas la racine Drive.
+3. Afficher le nom réel du fichier de partage à côté des boutons.
+4. Expliquer dans l'app Drive: menu ⋮ > Partager/Gérer l'accès > deuxième parent > Éditeur, Accès général Limité.
+5. La confirmation et la validation du partage Éditeur restent impossibles sans fichier relié et mot de passe présent.
+6. En lecture seule, aucune vérification supplémentaire ni étape obligatoire.
+7. Conserver les corrections visuelles de la v1.6.120, toutes les données personnelles et la signature officielle.
+
+Compiler, signer et publier l'APK 1.6.121.
