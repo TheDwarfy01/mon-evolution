@@ -146,6 +146,29 @@ helper=r'''
 swap('''    private boolean isMinorProfile(JSONObject p) {''',
 helper+'''    private boolean isMinorProfile(JSONObject p) {''')
 
+# A successful preflight is not the same as a successfully published edit
+# grant. Keep the wizard open until the existing asynchronous Drive write ends.
+swap('''                        if(prefs.contains("child_revision_"+id))
+                            prefs.edit().putLong("child_revision_"+id,
+                                prefs.getLong("child_revision_"+id,0)+1).apply();
+                        runOnUiThread(() -> web.evaluateJavascript("sharedUpdated()",null));
+                    } catch(Exception e) {
+                        // A broken Drive permission must not interrupt meal editing.
+                        js("sharedSyncFailed()");''',
+'''                        if(prefs.contains("child_revision_"+id))
+                            prefs.edit().putLong("child_revision_"+id,
+                                prefs.getLong("child_revision_"+id,0)+1).apply();
+                        if(prefs.getBoolean("child_setup_verified_"+id,false))
+                            js("childOwnerSetupPublished("+JSONObject.quote(id)+")");
+                        runOnUiThread(() -> web.evaluateJavascript("sharedUpdated()",null));
+                    } catch(Exception e) {
+                        // A broken Drive permission must not interrupt meal editing.
+                        if(prefs.getBoolean("child_setup_verified_"+id,false)){
+                            prefs.edit().putBoolean("child_setup_verified_"+id,false).apply();
+                            js("childOwnerSetupPublishFailed("+JSONObject.quote(id)+")");
+                        }
+                        js("sharedSyncFailed()");''')
+
 java.write_text(src,encoding="utf-8")
 page=assets/"index.html"
 html=page.read_text(encoding="utf-8")
