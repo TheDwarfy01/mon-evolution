@@ -1,0 +1,4 @@
+Mon Évolution IMC v1.6.111
+Alignement adaptatif en haut à droite : Profil centré exactement sous Amis, Partagés centré exactement sous Version, icône Informations toujours à droite, titres et proportions de l'en-tête préservés.
+Conserve les boutons originaux avec leur comportement, synchronisations, données et toutes les fonctionnalités précédentes.
+Construire, signer et publier la nouvelle APK.
