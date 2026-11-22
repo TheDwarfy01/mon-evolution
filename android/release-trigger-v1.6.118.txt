@@ -1,0 +1,12 @@
+Mon Évolution IMC — version 1.6.118 (22 novembre 2026)
+
+Fonction principale : partage collaboratif facultatif des profils enfants.
+- Réglage Lecture seule ou modification autorisée pour l'enfant.
+- Destinataire privé Google Drive avec droits Editeur, mot de passe de chiffrement existant.
+- Saisie pesées, taille et repas, sauvegardée uniquement dans le document chiffré de l'enfant.
+- Relecture distante, refus d'ecraser une mesure concurrente, revision partagée.
+- Synchronisation du propriétaire avec aperçu et confirmation des conflits.
+- Aucune migration ni suppression des profils actuels, pas de droit d'écriture public ni pour les adultes.
+- Conserver les autres fonctionnalités et la signature de l'APK 1.6.117.
+
+Compiler, tester et publier un APK signe v1.6.118.
