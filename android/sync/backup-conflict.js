@@ -46,7 +46,7 @@
       const summary=document.createElement('div');
       summary.style.cssText='font-size:.86rem;flex-basis:100%;margin:0 0 6px;';
       const count=pending.stats;
-      summary.textContent='Données à réunir : '+count.profiles+' profil(s), '+count.entries+' pesée(s) supplémentaires, '+count.meals+' donnée(s) de repas, '+count.ai+' estimation(s) IA. '+count.conflicts+' valeur(s) différente(s) présentes des deux côtés.';
+      summary.textContent='Données à réunir : '+count.profiles+' profil(s), '+count.entries+' pesée(s), '+count.measurements+' mensuration(s), '+count.meals+' donnée(s) de repas, '+count.ai+' estimation(s) IA. '+count.conflicts+' valeur(s) différente(s) présentes des deux côtés.';
       actions.append(summary);
       const explain=document.createElement('p');explain.style.cssText='font-size:.82rem;margin:0 0 7px;flex-basis:100%;';
       explain.textContent='Si une date de modification fiable existe des deux côtés, la plus récente est retenue. Sinon, choisis une priorité pour les différences. Les données uniques sont réunies sans propager automatiquement les suppressions.';
@@ -74,7 +74,7 @@
         const seen=new Map(out.map((item,i)=>[String(item.id),i]));
         for(const item of b){
           const id=String(item.id);
-          if(!seen.has(id)){seen.set(id,out.length);out.push(copy(item));stats.entries++}
+          if(!seen.has(id)){seen.set(id,out.length);out.push(copy(item));if(path.endsWith('.bodyMeasurements'))stats.measurements++;else stats.entries++}
           else out[seen.get(id)]=merge(out[seen.get(id)],item,path+'.entry');
         }
         return out;
@@ -119,7 +119,7 @@
     return {...copy(local),profiles,active:local.active};
   }
   function evaluate(remote) {
-    const stats={profiles:0,entries:0,meals:0,ai:0,conflicts:0};
+    const stats={profiles:0,entries:0,measurements:0,meals:0,ai:0,conflicts:0};
     reconcile(data,remote,'local',stats);
     return stats;
   }
@@ -150,12 +150,12 @@
     if(!pending || resolving)return;
     try{
       const plan=pending;
-      const currentStats={profiles:0,entries:0,meals:0,ai:0,conflicts:0};
+      const currentStats={profiles:0,entries:0,measurements:0,meals:0,ai:0,conflicts:0};
       const merged=reconcile(data,plan.remote,preference,currentStats);
       if(merged.profiles.length>50)throw Error('Plus de 50 profils après fusion');
       validate(merged);
       const description='Fusionner la sauvegarde Drive avec les données de ce téléphone ?\n\n'+
-        'Éléments supplémentaires : '+currentStats.profiles+' profils, '+currentStats.entries+' pesées, '+currentStats.meals+' entrées de repas.\n'+
+        'Éléments supplémentaires : '+currentStats.profiles+' profils, '+currentStats.entries+' pesées, '+currentStats.measurements+' mensurations, '+currentStats.meals+' entrées de repas.\n'+
         'Différences sur les mêmes champs : '+currentStats.conflicts+
         '. Priorité : '+(preference==='local'?'ce téléphone':'Drive')+'.\n\n'+
         'Une fusion sera enregistrée localement d’abord. Drive ne sera modifié que si son fichier n’a pas changé entre-temps.';
