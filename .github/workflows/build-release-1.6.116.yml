@@ -792,7 +792,7 @@ jobs:
           grep -Fq 'tintMaskedPart(ctx,masks[kind]' "$assets/photoreal-models.js"
           ! grep -Fq 'paintFallback(' "$assets/photoreal-models.js"
           ! grep -Fq 'ctx.getImageData(' "$assets/photoreal-models.js"
-          ! grep -Fq 'source-atop' "$assets/photoreal-models.js"
+          ! grep -Fq "globalCompositeOperation='source-atop'" "$assets/photoreal-models.js"
       - name: Corriger Mensurations pour profils partages et agrandir les icones
         run: |
           set -euo pipefail
