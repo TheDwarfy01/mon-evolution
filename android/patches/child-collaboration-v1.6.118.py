@@ -68,7 +68,7 @@ bridge=r'''
                     JSONObject row=null;
                     for(int i=0;i<entries.length();i++){
                         JSONObject old=entries.getJSONObject(i);
-                        if(date.equals(old.optString("date")))row=old;
+                        if(date.equals(old.optString("date")) && (row==null || old.optLong("id",0)>=row.optLong("id",0)))row=old;
                     }
                     boolean changeWeight=request.has("weight"),changeHeight=request.has("heightCm");
                     String kind=request.optString("mealKey","");
