@@ -854,8 +854,9 @@ jobs:
           grep -Fq "const featureNames=['skin','hair','eyes']" "$assets/photoreal-models.js"
           grep -Fq "maskSources()" "$assets/photoreal-models.js"
           grep -Fq "layerCtx.globalCompositeOperation='source-in'" "$assets/photoreal-models.js"
-          grep -Fq "belly:{buttonY:51,originX:74,targetX:50,targetY:44}" "$assets/reference-layout.js"
-          grep -Fq "belly:{buttonY:51,originX:74,targetX:50,targetY:45}" "$assets/reference-layout.js"
+          # Compare against the actual revised anatomical anchors, not 1.6.116 values.
+          grep -Fq "belly:{buttonY:51,originX:74,targetX:50,targetY:42.5}" "$assets/reference-layout.js"
+          grep -Fq "belly:{buttonY:51,originX:74,targetX:50,targetY:42.7}" "$assets/reference-layout.js"
           grep -Fq "function activeFigure()" "$assets/reference-layout.js"
           grep -Fq "background:transparent!important" "$assets/reference-layout.js"
           grep -Fq "bm-measure-lines" "$assets/reference-layout.js"
