@@ -9,24 +9,24 @@
   function parameters(profile){
     const p=profile||{};
     const heightCm=Number(p.height), weightKg=Number(p.weight);
-    if(!(heightCm>=80&&heightCm<=230&&weightKg>=15&&weightKg<=350))
+    if(!(heightCm>=40&&heightCm<=230&&weightKg>=2&&weightKg<=350))
       return {valid:false,reason:'height_weight_missing'};
-    const age=Number(p.age);
-    const birth=p.birthDate||p.birth||p.dob;
+    const age=(p.age===undefined||p.age===null||p.age==='')?NaN:Number(p.age);
+    const birth=p.birthDate||p.birth||p.dob||p.dateNaissance;
     let ageYears=age;
     if(!Number.isFinite(ageYears)&&typeof birth==='string'){
       const parsed=new Date(birth),today=new Date();
       if(!Number.isNaN(parsed.getTime()))
         ageYears=(today-parsed)/(365.2425*24*60*60*1000);
     }
-    const child=Number.isFinite(ageYears)&&ageYears>=0&&ageYears<18;
+    const child=(p.isChild===true||p.child===true)||(Number.isFinite(ageYears)&&ageYears>=0&&ageYears<18);
     const bmi=weightKg/Math.pow(heightCm/100,2);
     if(child){
       // Never derive a child's body shape from adult BMI cutoffs.
       // An age-appropriate MakeHuman child model with validated morphs
       // is required; only height scaling is exposed until then.
       return {valid:true,child:true,ageYears,
-        heightScale:clamp(heightCm/140,.45,1.65),
+        heightScale:clamp(heightCm/140,.25,1.65),
         weightShape:null,waistShape:null,
         bmi:Number(bmi.toFixed(2)),
         indicativeOnly:true,weightLossGoalAllowed:false,
@@ -51,6 +51,7 @@
     const index=dict.body_weight;
     if(!Number.isInteger(index))return false;
     influences[index]=clamp(params.weightShape,0,1);
+    if(Number.isInteger(dict.body_slim))influences[dict.body_slim]=clamp(-params.weightShape,0,1);
     if(Number.isInteger(dict.body_waist)&&params.waistShape!==null)
       influences[dict.body_waist]=clamp(params.waistShape,0,1);
     return true;
