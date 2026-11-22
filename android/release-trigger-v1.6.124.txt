@@ -1,0 +1,5 @@
+Version 1.6.124 - versionCode 140
+Mensurations en tableau (adultes et enfants) sans ancien modèle homme/femme.
+MakeHuman facultatif 3D uniquement après activation, fichier indépendant et conservé hors ligne.
+Suppression des fichiers des anciens mannequins photographiques dans l'APK.
+Respect des sauvegardes existantes et des règles profil enfant sans objectif de perte de poids.
