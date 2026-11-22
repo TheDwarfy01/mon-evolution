@@ -4,3 +4,5 @@ Remplacer le repli source-atop à coordonnées rectangulaires par des masques so
 Les couleurs doivent être visibles immédiatement et limitées aux zones anatomiques exactes, avec les détails du portrait conservés.
 Conserver les repères de mensurations, les profils, les données Google Drive et la signature existante.
 Compiler, signer et publier l'APK 1.6.116.
+
+Nouveau lancement : contrôle syntaxique ajusté pour accepter les commentaires expliquant l'ancien défaut.
