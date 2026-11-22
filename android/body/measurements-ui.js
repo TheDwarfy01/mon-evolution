@@ -90,6 +90,7 @@
   '#body-measurements .bm-title{display:flex;gap:9px;align-items:center;color:#f0fcff}',
   '#body-measurements .bm-title span{color:#75f1d8}',
   '.bm-layout{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:13px;margin-top:16px}',
+  '#body-measurements .bm-layout[hidden]{display:none!important}',
   '.bm-card{border:1px solid #315e74;background:linear-gradient(145deg,#122f45,#10283c);border-radius:18px;padding:16px;min-width:0}',
   '.bm-card h3{margin:0 0 8px;font-size:17px}',
   '.bm-hint{font-size:12px;color:#a9cad8;line-height:1.5}',
@@ -474,6 +475,16 @@
   showUnifiedTab=function(tab){
    const result=oldShowUnified.apply(this,arguments);
    section.hidden=tab!=='body-measurements';return result;
+  };
+ }
+ // Hide sensitive local body measurements when switching to a shared profile.
+ const oldSelectUnified=typeof selectUnified==='function'?selectUnified:null;
+ if(oldSelectUnified){
+  selectUnified=function(){
+   const result=oldSelectUnified.apply(this,arguments);
+   if(!local())section.hidden=true;
+   refreshAccess();
+   return result;
   };
  }
  nav.addEventListener('click',e=>{
