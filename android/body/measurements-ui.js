@@ -408,6 +408,7 @@
  // Shared profiles may optionally contain measurements with the owner's consent.
  // Never display the active PERSONAL profile's measurements for a received profile.
  const receivedMeasurements=new Map();
+ const receivedBirths=new Map();
  const priorSharedLoaded=window.sharedLoaded;
  window.sharedLoaded=function(encoded,key){
    try{
@@ -419,8 +420,12 @@
          /^\d{4}-\d{2}-\d{2}$/.test(r.date||'') &&
          METRICS.some(m=>Number.isFinite(r[m.key])&&r[m.key]>=m.min&&r[m.key]<=m.max));
        receivedMeasurements.set(key,list.slice(-3000));
-     }else receivedMeasurements.delete(key);
-   }catch(e){receivedMeasurements.delete(key)}
+       if(typeof doc.profile.birthDate==='string')receivedBirths.set(key,doc.profile.birthDate);
+     }else{
+       receivedMeasurements.delete(key);
+       if(typeof doc.profile?.birthDate==='string')receivedBirths.set(key,doc.profile.birthDate);
+     }
+   }catch(e){receivedMeasurements.delete(key);receivedBirths.delete(key)}
    const result=typeof priorSharedLoaded==='function'?priorSharedLoaded.apply(this,arguments):undefined;
    if(!section.hidden && !local())queueMicrotask(refreshAccess);
    return result;
@@ -454,11 +459,12 @@
  }
  function refreshAccess(){
    const readonly=!local();
-   const eligible=readonly?null:adult(profile());
+   const key=readonly&&typeof unifiedCurrent==='string'?unifiedCurrent.slice(9):'';
+   const eligible=readonly?(receivedBirths.has(key)?adult({birthDate:receivedBirths.get(key)}):null):adult(profile());
    const allowed=eligible===true&&!readonly;
    // Never disappear simply because a SHARED profile is selected.
    // A verified local child is excluded; unspecified age shows an explanation.
-   nav.hidden=!readonly && eligible===false;
+   nav.hidden=eligible===false;
    get('bm-main').hidden=!allowed;get('bm-lock').hidden=allowed;
    if(!allowed){
      if(readonly)showReadOnly();
