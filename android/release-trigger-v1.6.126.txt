@@ -1,3 +1,5 @@
 Version 1.6.126 - versionCode 142
 Verifie la sauvegarde Drive au demarrage, affiche la resolution obligatoire des divergences, fusionne automatiquement les donnees sans conflit et bloque les ecritures distantes tant que la copie n'a pas ete verifiee.
 Sauvegardes originales locales et distantes conservees avant une fusion; reconnexion et deconnexion manuelle avec confirmation.
+
+Relance après renforcement de la sécurité: copie locale originale archivée sur disque avant toute fusion.
