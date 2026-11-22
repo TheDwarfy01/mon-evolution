@@ -1,0 +1,7 @@
+Mon Évolution IMC v1.6.113
+Correction commune des mannequins homme et femme :
+- ne plus superposer « Image indisponible » à une photo déjà visible ;
+- ignorer les erreurs de chargement périmées après un changement de modèle/profil ;
+- conserver la photo haute définition si la lecture des pixels pour les couleurs échoue ;
+- conserver le suivi des mensurations, les profils et Drive.
+Compiler, signer et publier l'APK officielle.
