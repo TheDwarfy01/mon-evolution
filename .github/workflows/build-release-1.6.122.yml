@@ -164,47 +164,47 @@ jobs:
               assert old.exists(), str(old)
               new.write_text(old.read_text(encoding='utf-8').replace('1.6.78','1.6.122'),encoding='utf-8')
           old=Path('android/patches/period-and-intermediate-goal-v1.6.79.py')
-          new=Path('android/patches/period-and-intermediate-goal-v1.6.122.py')
+          new=Path('android/patches/period-and-intermediate-goal-v1.6.121.py')
           assert old.exists()
           new.write_text(old.read_text(encoding='utf-8').replace('1.6.79','1.6.122'),encoding='utf-8')
           old=Path('android/patches/child-profiles-growth-v1.6.80.py')
-          new=Path('android/patches/child-profiles-growth-v1.6.122.py')
+          new=Path('android/patches/child-profiles-growth-v1.6.121.py')
           assert old.exists(), str(old)
           new.write_text(old.read_text(encoding='utf-8').replace('1.6.80','1.6.122'),encoding='utf-8')
           old=Path('android/patches/child-medical-disclaimer-v1.6.81.py')
-          new=Path('android/patches/child-medical-disclaimer-v1.6.122.py')
+          new=Path('android/patches/child-medical-disclaimer-v1.6.121.py')
           assert old.exists()
           new.write_text(old.read_text(encoding='utf-8').replace('1.6.81','1.6.122'),encoding='utf-8')
           old=Path('android/patches/intermediate-goal-dated-segment-v1.6.82.py')
-          new=Path('android/patches/intermediate-goal-dated-segment-v1.6.122.py')
+          new=Path('android/patches/intermediate-goal-dated-segment-v1.6.121.py')
           assert old.exists(), str(old)
           new.write_text(old.read_text(encoding='utf-8').replace('1.6.82','1.6.122'),encoding='utf-8')
           old=Path('android/patches/profile-order-unspecified-sex-v1.6.83.py')
-          new=Path('android/patches/profile-order-unspecified-sex-v1.6.122.py')
+          new=Path('android/patches/profile-order-unspecified-sex-v1.6.121.py')
           assert old.exists(), str(old)
           new.write_text(old.read_text(encoding='utf-8').replace('1.6.83','1.6.122'),encoding='utf-8')
           old=Path('android/patches/extend-final-goal-line-v1.6.84.py')
-          new=Path('android/patches/extend-final-goal-line-v1.6.122.py')
+          new=Path('android/patches/extend-final-goal-line-v1.6.121.py')
           assert old.exists(),str(old)
           new.write_text(old.read_text(encoding='utf-8').replace('1.6.84','1.6.122'),encoding='utf-8')
           old=Path('android/patches/pinch-axis-all-graphs-v1.6.85.py')
-          new=Path('android/patches/pinch-axis-all-graphs-v1.6.122.py')
+          new=Path('android/patches/pinch-axis-all-graphs-v1.6.121.py')
           assert old.exists(),str(old)
           new.write_text(old.read_text(encoding='utf-8').replace('1.6.85','1.6.122'),encoding='utf-8')
           old=Path('android/patches/responsive-analysis-tabs-v1.6.86.py')
-          new=Path('android/patches/responsive-analysis-tabs-v1.6.122.py')
+          new=Path('android/patches/responsive-analysis-tabs-v1.6.121.py')
           assert old.exists(),str(old)
           new.write_text(old.read_text(encoding='utf-8').replace('1.6.86','1.6.122'),encoding='utf-8')
           old=Path('android/patches/live-pinch-sex-labels-v1.6.87.py')
-          new=Path('android/patches/live-pinch-sex-labels-v1.6.122.py')
+          new=Path('android/patches/live-pinch-sex-labels-v1.6.121.py')
           assert old.exists(),str(old)
           new.write_text(old.read_text(encoding='utf-8').replace('1.6.87','1.6.122'),encoding='utf-8')
           old=Path('android/patches/child-bmi-colored-zones-v1.6.88.py')
-          new=Path('android/patches/child-bmi-colored-zones-v1.6.122.py')
+          new=Path('android/patches/child-bmi-colored-zones-v1.6.121.py')
           assert old.exists(),str(old)
           new.write_text(old.read_text(encoding='utf-8').replace('1.6.88','1.6.122'),encoding='utf-8')
           old=Path('android/patches/child-disable-treatment-goal-v1.6.89.py')
-          new=Path('android/patches/child-disable-treatment-goal-v1.6.122.py')
+          new=Path('android/patches/child-disable-treatment-goal-v1.6.121.py')
           assert old.exists(),str(old)
           new.write_text(old.read_text(encoding='utf-8').replace('1.6.89','1.6.122'),encoding='utf-8')
           # Features introduced in 1.6.112 have standalone reusable scripts
@@ -233,7 +233,7 @@ jobs:
       - name: Ajouter le bilan hebdomadaire A4 paysage à deux pages
         run: |
           set -euo pipefail
-          python3 android/patches/weekly-meal-pdf-v1.6.122.py
+          python3 android/patches/weekly-meal-pdf-v1.6.121.py
           grep -q 'WEEKLY_MEALS_PDF' android/source-1.6.122/app/src/main/java/fr/monevolution/app/MainActivity.java
           grep -q 'weekly-meal-report' android/source-1.6.122/app/src/main/assets/index.html
           grep -q 'drawWeeklyMealPhoto' android/source-1.6.122/app/src/main/java/fr/monevolution/app/MainActivity.java
@@ -241,20 +241,20 @@ jobs:
       - name: Corriger le remplacement et la suppression des photos des repas
         run: |
           set -euo pipefail
-          python3 android/patches/fix-meal-photo-replacement-v1.6.122.py
+          python3 android/patches/fix-meal-photo-replacement-v1.6.121.py
           grep -q 'photoPickerBusy' android/source-1.6.122/app/src/main/java/fr/monevolution/app/MainActivity.java
           grep -q 'meal-photo-recovery' android/source-1.6.122/app/src/main/assets/index.html
           grep -q 'Remplacer la photo du' android/source-1.6.122/app/src/main/assets/index.html
       - name: Importation ciblée sans modification des autres données
         run: |
           set -euo pipefail
-          python3 android/patches/import-weights-only-v1.6.122.py
+          python3 android/patches/import-weights-only-v1.6.121.py
           grep -q 'importWeightsOnlyBase64' android/source-1.6.122/app/src/main/assets/index.html
           grep -q 'IMPORT_WEIGHTS' android/source-1.6.122/app/src/main/java/fr/monevolution/app/MainActivity.java
       - name: Périodes dynamiques et zoom des graphiques avancés
         run: |
           set -euo pipefail
-          python3 android/patches/adaptive-advanced-graphs-v1.6.122.py
+          python3 android/patches/adaptive-advanced-graphs-v1.6.121.py
           grep -Fq 'availablePeriods(p)' android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq 'Afficher les zones de santé (poids / IMC)' android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq 'touchZoom:true' android/source-1.6.122/app/src/main/assets/index.html
@@ -262,7 +262,7 @@ jobs:
       - name: Unifier les commandes de santé et séparer l'analyse
         run: |
           set -euo pipefail
-          python3 android/patches/unified-health-controls-v1.6.122.py
+          python3 android/patches/unified-health-controls-v1.6.121.py
           grep -Fq "mon-evolution-health-zones-changed" android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq "Analyse détaillée" android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq "['Références',view==='health'" android/source-1.6.122/app/src/main/assets/index.html
@@ -270,7 +270,7 @@ jobs:
       - name: Simplifier la periode du graphe avance et agrandir les boutons
         run: |
           set -euo pipefail
-          python3 android/patches/advanced-cycle-font-v1.6.122.py
+          python3 android/patches/advanced-cycle-font-v1.6.121.py
           grep -Fq "advanced-period-cycle" android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq "periodButton=button(" android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq "mon-evolution-readable-buttons-165" android/source-1.6.122/app/src/main/assets/index.html
@@ -278,7 +278,7 @@ jobs:
       - name: Deux lignes de boutons pour les analyses detaillees
         run: |
           set -euo pipefail
-          python3 android/patches/two-row-advanced-tabs-v1.6.122.py
+          python3 android/patches/two-row-advanced-tabs-v1.6.121.py
           grep -Fq "advancedTabs.classList.add('advanced-view-tabs')" android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq "target.insertBefore(zoomRow,periodRow)" android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq "grid-template-columns:repeat(4,minmax(0,1fr))" android/source-1.6.122/app/src/main/assets/index.html
@@ -286,7 +286,7 @@ jobs:
       - name: Deux rangées compactes dans les références
         run: |
           set -euo pipefail
-          python3 android/patches/reference-two-row-v1.6.122.py
+          python3 android/patches/reference-two-row-v1.6.121.py
           grep -Fq "advanced-reference-toolbar" android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq "advancedTabs.style.setProperty('display','grid','important')" android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq "target.insertBefore(combined,advancedTabs.nextSibling)" android/source-1.6.122/app/src/main/assets/index.html
@@ -318,11 +318,11 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           old=Path('android/patches/simplify-trend-projection-v1.6.69.py')
-          new=Path('android/patches/simplify-trend-projection-v1.6.122.py')
+          new=Path('android/patches/simplify-trend-projection-v1.6.121.py')
           assert old.exists(), str(old)
           new.write_text(old.read_text(encoding='utf-8').replace('1.6.69','1.6.122'),encoding='utf-8')
           PY
-          python3 android/patches/simplify-trend-projection-v1.6.122.py
+          python3 android/patches/simplify-trend-projection-v1.6.121.py
           grep -Fq 'advanced-real-weekly' android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq 'forecastReady=p.rows.length>=4&&historySpan>=21' android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq 'Fiabilité indicative de la projection' android/source-1.6.122/app/src/main/assets/index.html
@@ -331,7 +331,7 @@ jobs:
       - name: Ameliorer l ergonomie des comparaisons de profils
         run: |
           set -euo pipefail
-          python3 android/patches/compare-graph-ux-v1.6.122.py
+          python3 android/patches/compare-graph-ux-v1.6.121.py
           grep -Fq 'compare-metric-grid' android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq 'compare-zoom-row' android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq 'compare-svg' android/source-1.6.122/app/src/main/assets/index.html
@@ -341,34 +341,34 @@ jobs:
       - name: Corriger la barre de navigation sur tous les smartphones
         run: |
           set -euo pipefail
-          python3 android/patches/nav-responsive-v1.6.122.py
+          python3 android/patches/nav-responsive-v1.6.121.py
           grep -Fq 'mon-evolution-nav-responsive-172' android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq 'nav.classList.add' android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq 'nav-tab-icon' android/source-1.6.122/app/src/main/assets/index.html
       - name: Import JSON de pesées depuis le chargement classique
         run: |
           set -euo pipefail
-          python3 android/patches/smart-weight-import-v1.6.122.py
+          python3 android/patches/smart-weight-import-v1.6.121.py
           grep -Fq "mon-evolution-smart-json-172" android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq "window.importWeightsOnlyBase64(base64)" android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq "previousRestore.call(this,base64)" android/source-1.6.122/app/src/main/assets/index.html
       - name: Simplifier la carte Poids actuel
         run: |
           set -euo pipefail
-          python3 android/patches/home-summary-cleanup-v1.6.122.py
+          python3 android/patches/home-summary-cleanup-v1.6.121.py
           grep -Fq 'mon-evolution-summary-cleanup-178' android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq 'balance.append(lost,remaining)' android/source-1.6.122/app/src/main/assets/index.html
       - name: Afficher la perte du mois et sélectionner Tout par défaut
         run: |
           set -euo pipefail
-          python3 android/patches/summary-month-all-v1.6.122.py
+          python3 android/patches/summary-month-all-v1.6.121.py
           grep -Fq "tile('Perte par mois',monthText)" android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq "periodChoice='all'" android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq 'legacy-advanced-stats' android/source-1.6.122/app/src/main/assets/index.html
       - name: Ajouter le journal des traitements et leurs repères sur la courbe
         run: |
           set -euo pipefail
-          python3 android/patches/treatments-profile-graph-v1.6.122.py
+          python3 android/patches/treatments-profile-graph-v1.6.121.py
           grep -Fq 'mon-evolution-treatments-178' android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq 'treatment-graph-switch' android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq 'traitementEvents' android/source-1.6.122/app/src/main/assets/index.html || grep -Fq 'treatmentEvents' android/source-1.6.122/app/src/main/assets/index.html
@@ -376,7 +376,7 @@ jobs:
       - name: Objectif daté dans le profil et comparaison avec le poids réel
         run: |
           set -euo pipefail
-          python3 android/patches/dated-weight-target-v1.6.122.py
+          python3 android/patches/dated-weight-target-v1.6.121.py
           grep -Fq 'mon-evolution-goal-plan-178' android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq 'goalStartWeight' android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq 'Trajectoire de l’objectif daté' android/source-1.6.122/app/src/main/assets/index.html
@@ -384,27 +384,27 @@ jobs:
       - name: Remplacer la moyenne glissante par moyenne des pesées
         run: |
           set -euo pipefail
-          python3 android/patches/mean-weighings-v1.6.122.py
+          python3 android/patches/mean-weighings-v1.6.121.py
           grep -Fq "Moyenne des pesées" android/source-1.6.122/app/src/main/assets/index.html
           ! grep -Fq 'Moyenne glissante des pesées' android/source-1.6.122/app/src/main/assets/index.html
       - name: Harmoniser les pertes mensuelle et hebdomadaire dans les statistiques
         run: |
           set -euo pipefail
-          python3 android/patches/loss-metric-order-v1.6.122.py
+          python3 android/patches/loss-metric-order-v1.6.121.py
           grep -Fq "tile('Perte / mois',monthText)" android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq "tile('Perte / semaine',rate===null?'—'" android/source-1.6.122/app/src/main/assets/index.html
           ! grep -Fq "tile('Perte / semaine (28 j)'" android/source-1.6.122/app/src/main/assets/index.html
       - name: Séparer les poids finaux et objectifs intermédiaires datés
         run: |
           set -euo pipefail
-          python3 android/patches/separate-final-intermediate-goals-v1.6.122.py
+          python3 android/patches/separate-final-intermediate-goals-v1.6.121.py
           grep -Fq 'Poids final attendu (kg)' android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq 'edit-intermediate-goal' android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq 'p.intermediateGoalWeight=weight' android/source-1.6.122/app/src/main/assets/index.html
       - name: Rythme des traitements avec repères planifiés
         run: |
           set -euo pipefail
-          python3 android/patches/treatment-interval-schedule-v1.6.122.py
+          python3 android/patches/treatment-interval-schedule-v1.6.121.py
           grep -Fq 'Début du traitement' android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq 'treatment-frequency' android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq 'Prise prévue (non confirmée)' android/source-1.6.122/app/src/main/assets/index.html
@@ -417,14 +417,14 @@ jobs:
       - name: Périodes à partir d'un mois et objectif intermédiaire sur la courbe
         run: |
           set -euo pipefail
-          python3 android/patches/period-and-intermediate-goal-v1.6.122.py
+          python3 android/patches/period-and-intermediate-goal-v1.6.121.py
           grep -Fq 'const candidates=[30,60,90,180,365,730]' android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq "Objectif intermédiaire · " android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq 'Trajectoire vers l’objectif intermédiaire daté' android/source-1.6.122/app/src/main/assets/index.html
       - name: Créer des profils enfants sans objectif et afficher les références de croissance
         run: |
           set -euo pipefail
-          python3 android/patches/child-profiles-growth-v1.6.122.py
+          python3 android/patches/child-profiles-growth-v1.6.121.py
           grep -Fq "noWeightGoal:window.MonEvolutionChild" android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq "child-reference-summary" android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq "GROWTH_IOTF2012" android/source-1.6.122/app/src/main/assets/index.html
@@ -433,7 +433,7 @@ jobs:
       - name: Signaler sous les courbes pédiatriques le caractère non diagnostique
         run: |
           set -euo pipefail
-          python3 android/patches/child-medical-disclaimer-v1.6.122.py
+          python3 android/patches/child-medical-disclaimer-v1.6.121.py
           grep -Fq 'mon-evolution-pediatric-disclaimer-v181' android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq 'border:2px solid #e46d70' android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq '⚠️ Attention' android/source-1.6.122/app/src/main/assets/index.html
@@ -442,7 +442,7 @@ jobs:
       - name: Objectif intermédiaire avec dates et poids indépendants
         run: |
           set -euo pipefail
-          python3 android/patches/intermediate-goal-dated-segment-v1.6.122.py
+          python3 android/patches/intermediate-goal-dated-segment-v1.6.121.py
           grep -Fq 'edit-goal-start-date' android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq 'edit-goal-start-weight' android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq 'p.goalStartDate=startDate' android/source-1.6.122/app/src/main/assets/index.html
@@ -453,7 +453,7 @@ jobs:
       - name: Naissance avant objectif et sexe non précisé avec références moyennées
         run: |
           set -euo pipefail
-          python3 android/patches/profile-order-unspecified-sex-v1.6.122.py
+          python3 android/patches/profile-order-unspecified-sex-v1.6.121.py
           grep -Fq 'form.insertBefore(birthRow,heightField)' android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq 'birth.required=true' android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq "value:'unknown',label:'Non précisé'" android/source-1.6.122/app/src/main/assets/index.html
@@ -463,14 +463,14 @@ jobs:
       - name: Prolonger l'objectif final jusqu'au bord du graphique
         run: |
           set -euo pipefail
-          python3 android/patches/extend-final-goal-line-v1.6.122.py
+          python3 android/patches/extend-final-goal-line-v1.6.121.py
           grep -Fq 'const finalGoalLine=series.find(item=>item.label' android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq 'finalGoalLine.points=[{x:from,y:p.goal},{x:through,y:p.goal}]' android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq 'Trajectoire de l’objectif intermédiaire' android/source-1.6.122/app/src/main/assets/index.html
       - name: Zoom tactile deux doigts avec changement d'échelle de tous les graphiques
         run: |
           set -euo pipefail
-          python3 android/patches/pinch-axis-all-graphs-v1.6.122.py
+          python3 android/patches/pinch-axis-all-graphs-v1.6.121.py
           grep -Fq "graphZoomStore.views.set(graphId" android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq "root.addEventListener('touchend',applyGraphPinch" android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq "spanY=bounded((currentViewport.yMax-currentViewport.yMin)/g.scale" android/source-1.6.122/app/src/main/assets/index.html
@@ -479,7 +479,7 @@ jobs:
       - name: Adapter la taille de Comparaison à la largeur du smartphone
         run: |
           set -euo pipefail
-          python3 android/patches/responsive-analysis-tabs-v1.6.122.py
+          python3 android/patches/responsive-analysis-tabs-v1.6.121.py
           grep -Fq 'mon-evolution-responsive-advanced-tabs-v186' android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq "measure.measureText(b.textContent.trim())" android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq "grid-template-columns','repeat(4,minmax(0,1fr))'" android/source-1.6.122/app/src/main/assets/index.html
@@ -488,7 +488,7 @@ jobs:
       - name: Zoom fluent en temps reel et sexes ages dans les profils
         run: |
           set -euo pipefail
-          python3 android/patches/live-pinch-sex-labels-v1.6.122.py
+          python3 android/patches/live-pinch-sex-labels-v1.6.121.py
           grep -Fq 'liveHolder.setPointerCapture' android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq 'graph(tmp,series,{...opts,livePinchFrame:true})' android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq 'plot.setPointerCapture' android/source-1.6.122/app/src/main/assets/index.html
@@ -500,7 +500,7 @@ jobs:
       - name: Ajouter les zones d'IMC pédiatriques et la lecture sous la courbe
         run: |
           set -euo pipefail
-          python3 android/patches/child-bmi-colored-zones-v1.6.122.py
+          python3 android/patches/child-bmi-colored-zones-v1.6.121.py
           grep -Fq 'ageBands:childPediatricBands' android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq 'const getPediatricLimits=month' android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq 'Zone verte : corpulence normale' android/source-1.6.122/app/src/main/assets/index.html
@@ -528,7 +528,7 @@ jobs:
       - name: Desactiver les options objectif et traitement pour les profils enfants
         run: |
           set -euo pipefail
-          python3 android/patches/child-disable-treatment-goal-v1.6.122.py
+          python3 android/patches/child-disable-treatment-goal-v1.6.121.py
           grep -Fq "treatmentCheck.checked=false" android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq "goalCheck.checked=false" android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq "treatmentCheck.disabled=isMinor" android/source-1.6.122/app/src/main/assets/index.html
@@ -542,10 +542,10 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           previous=Path('android/patches/child-weight-height-color-zones-v1.6.90.py')
-          current=Path('android/patches/child-weight-height-color-zones-v1.6.122.py')
+          current=Path('android/patches/child-weight-height-color-zones-v1.6.121.py')
           current.write_text(previous.read_text(encoding='utf-8').replace('1.6.90','1.6.122'),encoding='utf-8')
           PY
-          python3 android/patches/child-weight-height-color-zones-v1.6.122.py
+          python3 android/patches/child-weight-height-color-zones-v1.6.121.py
           grep -Fq "const childPediatricBands=healthMetric==='bmi'?bmiBands:growthBands" android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq 'const growthMetricSamples' android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq 'Lecture ' android/source-1.6.122/app/src/main/assets/index.html
@@ -571,10 +571,10 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           previous=Path('android/patches/pan-and-local-projection-v1.6.91.py')
-          current=Path('android/patches/pan-and-local-projection-v1.6.122.py')
+          current=Path('android/patches/pan-and-local-projection-v1.6.121.py')
           current.write_text(previous.read_text(encoding='utf-8').replace('1.6.91','1.6.122'),encoding='utf-8')
           PY
-          python3 android/patches/pan-and-local-projection-v1.6.122.py
+          python3 android/patches/pan-and-local-projection-v1.6.121.py
           grep -Fq 'panX=(mx-g.startMidX)/g.pixelW' android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq 'panX=(midX-g.startMidX)/g.pixelW' android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq 'xMax:chartRight' android/source-1.6.122/app/src/main/assets/index.html
@@ -582,7 +582,7 @@ jobs:
       - name: Ajouter l'IA alimentaire locale Gemma (facultative, sans migration)
         run: |
           set -euo pipefail
-          python3 android/patches/local-ai-v1.6.122.py
+          python3 android/patches/local-ai-v1.6.121.py
           grep -Fq "private LocalMealAi mealAi;" android/source-1.6.122/app/src/main/java/fr/monevolution/app/MainActivity.java
           grep -Fq "aiAnalyze(String token" android/source-1.6.122/app/src/main/java/fr/monevolution/app/MainActivity.java
           grep -Fq "local-ai.js" android/source-1.6.122/app/src/main/assets/index.html
@@ -621,7 +621,7 @@ jobs:
       - name: Activer la rotation des portraits (sans toucher aux autres donnees)
         run: |
           set -euo pipefail
-          python3 android/patches/profile-avatar-rotate-v1.6.122.py
+          python3 android/patches/profile-avatar-rotate-v1.6.121.py
           test -f android/source-1.6.122/app/src/main/assets/avatar-rotate.js
           grep -Fq '<script src="avatar-rotate.js"></script>' android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq 'target.avatar = result;' android/source-1.6.122/app/src/main/assets/avatar-rotate.js
@@ -633,7 +633,7 @@ jobs:
       - name: Résoudre les conflits Drive par comparaison et fusion sécurisée
         run: |
           set -euo pipefail
-          python3 android/patches/backup-conflict-v1.6.122.py
+          python3 android/patches/backup-conflict-v1.6.121.py
           grep -Fq "void readBackupForMerge()" android/source-1.6.122/app/src/main/java/fr/monevolution/app/MainActivity.java
           grep -Fq 'void resolveBackupMerge(String mergedJson,String remoteHash,String originalLocalJson)' android/source-1.6.122/app/src/main/java/fr/monevolution/app/MainActivity.java
           grep -Fq "remoteHash.equals(currentHash)" android/source-1.6.122/app/src/main/java/fr/monevolution/app/MainActivity.java
@@ -646,7 +646,7 @@ jobs:
       - name: Installer les mannequins personnalisables et les mensurations adultes
         run: |
           set -euo pipefail
-          python3 android/patches/body-measurements-v1.6.122.py
+          python3 android/patches/body-measurements-v1.6.121.py
           test -f android/source-1.6.122/app/src/main/assets/measurements-ui.js
           grep -Fq 'data-tab="body-measurements"' android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq 'id="body-measurements"' android/source-1.6.122/app/src/main/assets/index.html
@@ -667,7 +667,7 @@ jobs:
       - name: Déplacer Profil et Partagés en haut à droite et supprimer Bonjour
         run: |
           set -euo pipefail
-          python3 android/patches/header-shortcuts-v1.6.122.py
+          python3 android/patches/header-shortcuts-v1.6.121.py
           test -s android/source-1.6.122/app/src/main/assets/header-shortcuts.js
           grep -Fq '<script src="header-shortcuts.js"></script>' android/source-1.6.122/app/src/main/assets/index.html
           grep -Fq "shortcuts.append(button)" android/source-1.6.122/app/src/main/assets/header-shortcuts.js
@@ -679,7 +679,7 @@ jobs:
       - name: Ajouter la rotation des photos de profils partagés
         run: |
           set -euo pipefail
-          python3 android/patches/received-avatar-rotation-v1.6.122.py
+          python3 android/patches/received-avatar-rotation-v1.6.121.py
           grep -Fq 'rotateReceivedAvatar(String key,String action)' android/source-1.6.122/app/src/main/java/fr/monevolution/app/MainActivity.java
           grep -Fq 'friend_turns_' android/source-1.6.122/app/src/main/java/fr/monevolution/app/MainActivity.java
           grep -Fq 'friend_mirror_' android/source-1.6.122/app/src/main/java/fr/monevolution/app/MainActivity.java
@@ -687,7 +687,7 @@ jobs:
       - name: Intégrer les photos réalistes et la saisie rapide sur mannequin
         run: |
           set -euo pipefail
-          python3 android/patches/shared-photos-quick-v1.6.122.py
+          python3 android/patches/shared-photos-quick-v1.6.121.py
           assets=android/source-1.6.122/app/src/main/assets
           node --check "$assets/quick-measure.js"
           node --check "$assets/received-portrait-rotate.js"
@@ -826,7 +826,7 @@ jobs:
       - name: Corriger Mensurations pour profils partages et agrandir les icones
         run: |
           set -euo pipefail
-          python3 android/patches/nav-readable-v1.6.122.py
+          python3 android/patches/nav-readable-v1.6.121.py
           assets=android/source-1.6.122/app/src/main/assets
           node --check "$assets/measurements-ui.js"
           node --check "$assets/nav-readable.js"
@@ -844,7 +844,7 @@ jobs:
       - name: Deplacer Amis et Version dans la ligne TON PARCOURS en haut a droite
         run: |
           set -euo pipefail
-          python3 android/patches/status-topbar-v1.6.122.py
+          python3 android/patches/status-topbar-v1.6.121.py
           assets=android/source-1.6.122/app/src/main/assets
           node --check "$assets/status-topbar.js"
           grep -Fq "container.id='imc-header-status-row'" "$assets/status-topbar.js"
@@ -856,7 +856,7 @@ jobs:
       - name: Afficher exactement un mannequin photo avec les reperes pointilles de la reference
         run: |
           set -euo pipefail
-          python3 android/patches/reference-layout-v1.6.122.py
+          python3 android/patches/reference-layout-v1.6.121.py
           assets=android/source-1.6.122/app/src/main/assets
           node --check "$assets/reference-layout.js"
           node --check "$assets/photoreal-models.js"
@@ -887,7 +887,7 @@ jobs:
       - name: Aligner Profil sous Amis et Partages sous Version
         run: |
           set -euo pipefail
-          python3 android/patches/align-header-actions-v1.6.122.py
+          python3 android/patches/align-header-actions-v1.6.121.py
           assets=android/source-1.6.122/app/src/main/assets
           node --check "$assets/align-header-actions.js"
           grep -Fq "const deltaProfile=center(amis)-center(profile)" "$assets/align-header-actions.js"
@@ -899,8 +899,8 @@ jobs:
       - name: Activer partage parental en lecture et ecriture pour les profils enfants
         run: |
           set -euo pipefail
-          python3 -m py_compile android/patches/child-collaboration-v1.6.122.py
-          python3 android/patches/child-collaboration-v1.6.122.py
+          python3 -m py_compile android/patches/child-collaboration-v1.6.121.py
+          python3 android/patches/child-collaboration-v1.6.121.py
           assets=android/source-1.6.122/app/src/main/assets
           java=android/source-1.6.122/app/src/main/java/fr/monevolution/app/MainActivity.java
           node --check "$assets/child-collaboration.js"
