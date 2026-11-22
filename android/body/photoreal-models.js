@@ -136,23 +136,43 @@
     const state=appearance();
     const key=[state.id,state.model,state.skin,state.hair,state.eyes].join('|');
     const canvas=makeCanvas();
-    if(lastKey===key&&canvas.dataset.renderedKey===key)return;
+    // A completed draw is authoritative: an older async error must never
+    // cover an already visible portrait (male or female).
+    if(lastKey===key&&canvas.dataset.renderedKey===key){
+      stage.querySelector('.bm-photo-error')?.remove();
+      return;
+    }
     const stamp=++serial;
     try{
       const img=await source();
-      if(stamp!==serial)return;
-      const ctx=canvas.getContext('2d',{willReadFrequently:true});
+      // Switching model/profile can replace the canvas while the WebP loads.
+      // Never let a response for an old canvas overwrite the current view.
+      if(stamp!==serial||!stage.contains(canvas)){schedule();return;}
+      const ctx=canvas.getContext('2d',{willReadFrequently:true})||canvas.getContext('2d');
       if(!ctx)throw Error('Canvas indisponible');
       canvas.width=WIDTH;canvas.height=HEIGHT;
       const sx=state.model==='female'?WIDTH:0;
       ctx.drawImage(img,sx,0,WIDTH,HEIGHT,0,0,WIDTH,HEIGHT);
-      const pixels=ctx.getImageData(0,0,WIDTH,HEIGHT);
-      recolor(pixels,state);
-      ctx.putImageData(pixels,0,0);
+      // A WebView can fail to read pixels although drawing the offline HD
+      // photo succeeded. Keep that valid photo on screen rather than masking it.
+      try{
+        const pixels=ctx.getImageData(0,0,WIDTH,HEIGHT);
+        recolor(pixels,state);
+        ctx.putImageData(pixels,0,0);
+      }catch(pixelError){
+        console.warn('Personnalisation photo indisponible ; photo HD conservée',pixelError);
+      }
+      if(stamp!==serial||!stage.contains(canvas)){schedule();return;}
       canvas.dataset.renderedKey=key;
       lastKey=key;
       stage.querySelector('.bm-photo-error')?.remove();
     }catch(e){
+      if(stamp!==serial||!stage.contains(canvas)){schedule();return;}
+      // Transient failures must not cover a portrait successfully drawn before.
+      if(canvas.dataset.renderedKey){
+        stage.querySelector('.bm-photo-error')?.remove();
+        return;
+      }
       if(!stage.querySelector('.bm-photo-error')){
         const box=document.createElement('div');box.className='bm-photo-error';
         box.textContent='Image indisponible. Vos mensurations restent enregistrées.';
