@@ -1,0 +1,7 @@
+Mon Évolution IMC v1.6.115 — correction sélection couleur des mannequins
+- Conserver les deux photos transparentes en haute définition.
+- Charger chaque photo via une URL de données d'origine sûre dans Android WebView (Canvas peut lire et modifier les pixels même avec l'accès file:// restreint).
+- Déclencher un nouveau rendu après chaque sélection de peau, cheveux ou yeux.
+- Ajouter un recoloriage de secours si la lecture des pixels reste interdite.
+- Ne pas modifier les mensurations, le suivi du poids, les profils ou la synchronisation.
+- Construire, signer et publier la version 1.6.115.
