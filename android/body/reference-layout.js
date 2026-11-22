@@ -76,14 +76,18 @@
 
  // Dotted lines from each measurement label to the precise intended body zone.
  const metrics=['chest','arm','waist','belly','hips','thigh','calf','neck','forearm'];
+ // Target positions calibrated against BOTH frontal studio photographs:
+ // chest / upper arm / natural waist / abdomen / widest hips / thigh / calf.
+ // Coordinates are relative to the mannequin stage; both models use exactly
+ // the same neutral standing pose and framing.
  const position={
-  chest:{buttonY:28,originX:26,targetX:50,targetY:29},
-  arm:{buttonY:33,originX:74,targetX:66,targetY:35},
-  waist:{buttonY:41,originX:26,targetX:50,targetY:43},
-  belly:{buttonY:49,originX:74,targetX:51,targetY:48},
-  hips:{buttonY:55,originX:26,targetX:51,targetY:55},
-  thigh:{buttonY:69,originX:26,targetX:46,targetY:69},
-  calf:{buttonY:82,originX:74,targetX:55,targetY:82}
+  chest:{buttonY:27,originX:26,targetX:49,targetY:30},
+  arm:{buttonY:33,originX:74,targetX:70,targetY:34},
+  waist:{buttonY:42,originX:26,targetX:50,targetY:44},
+  belly:{buttonY:51,originX:74,targetX:50,targetY:49},
+  hips:{buttonY:57,originX:26,targetX:50,targetY:56},
+  thigh:{buttonY:70,originX:26,targetX:45,targetY:70},
+  calf:{buttonY:85,originX:74,targetX:57,targetY:85}
  };
  const NS='http://www.w3.org/2000/svg';
  function connectors(){
