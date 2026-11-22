@@ -123,7 +123,9 @@ for index,sex in enumerate(('male','female')):
         ix,iy=x0+int(px),y0+int(py)
         local=ellipse(ix/W,iy/H,.0053,.0025)
         darkness=np.clip((150-gray)/75,0,1)
-        eyes=np.maximum(eyes,local*darkness)
+        # The center of each detected iris must remain opaque even for
+        # naturally light eyes; darkness is only a subtle edge guide.
+        eyes=np.maximum(eyes,local*(.88+.12*darkness))
         print(f'{sex} iris: expected ({cx},{cy}), detected ({ix},{iy})')
     eyes=cv2.GaussianBlur(eyes,(0,0),.55)*person
     for key,a in [('skin',skin),('hair',hair),('eyes',eyes)]:
