@@ -1,0 +1,3 @@
+Mon Évolution IMC v1.6.104
+Déplacer les onglets existants Profil et Partagés vers deux boutons visibles en haut à droite. Supprimer le Bonjour redondant. Préserver les boutons d'origine, leurs événements et tous les onglets; ne modifier aucune donnée. Maintenir toutes les fonctionnalités 1.6.103 dont mensurations, IA Gemma et sauvegarde Drive.
+Générer une nouvelle APK Android signée.
