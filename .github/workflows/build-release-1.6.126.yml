@@ -1038,6 +1038,8 @@ jobs:
           grep -Fq 'backupStartupVerified=false' "$java"
           grep -Fq 'if (!backupStartupVerified)' "$java"
           grep -Fq 'backupStartupVerified=true;' "$java"
+          grep -Fq 'boolean snapshotBeforeMerge(String originalJson)' "$java"
+          grep -Fq 'snapshotBeforeMerge(beforeMerge)' "$assets/backup-conflict.js"
           grep -Fq 'backupStartupChecked' "$assets/backup-conflict.js"
           grep -Fq 'backup-startup-gate' "$assets/backup-conflict.js"
           grep -Fq "commit('local',true)" "$assets/backup-conflict.js"
