@@ -53,7 +53,15 @@
   const editableHint=owner.querySelector('p.notice');
   if(editableHint)editableHint.textContent='Tu n’as pas besoin de chercher le fichier manuellement : utilise les boutons ci-dessous pour ouvrir son emplacement et donner au deuxième parent le rôle Éditeur.';
 
-  let lastProfile='',lastLink='',displayKey='';
+  let lastProfile='',lastLink='';
+  // Mirror the actual permission status in the verification checklist.
+  // An unchecked checkbox by assignment alone does not refresh that checklist.
+  function clearConfirmation(){
+    if(checkbox?.checked){
+      checkbox.checked=false;
+      checkbox.dispatchEvent(new Event('change',{bubbles:true}));
+    }
+  }
   let cachedInfo=null,cachedKey='',cachedAt=0;
   function getInfo(id){
     const key=id+'|'+(api.sharedStatus?.(id)||'0');
@@ -72,7 +80,7 @@
     if(p.id!==lastProfile){
       lastProfile=p.id;
       lastLink='';
-      if(checkbox)checkbox.checked=false;
+      clearConfirmation();
     }
     const file=getInfo(p.id);
     const linked=file.linked===true && api.sharedStatus?.(p.id)==='1';
@@ -82,7 +90,7 @@
     const revision=(linked?'linked':'missing')+'|'+(password?'password':'none')+'|'+fileName;
     if(lastLink!==revision){
       lastLink=revision;
-      if(checkbox)checkbox.checked=false;
+      clearConfirmation();
     }
     info.textContent=linked
       ?'✓ Fichier de ce profil : « '+fileName+' »'+(file.provider?' · '+file.provider:'')
@@ -97,7 +105,7 @@
       :'Étape 1 : crée le fichier dans Google Drive (ou relie le fichier existant). Reviens sur cet écran après l’enregistrement ; le bouton d’ouverture deviendra disponible.';
     if(checkbox){
       checkbox.disabled=!(linked&&password);
-      if(checkbox.disabled)checkbox.checked=false;
+      if(checkbox.disabled)clearConfirmation();
       const label=checkbox.closest('label');
       if(label)label.style.opacity=checkbox.disabled?'.50':'1';
     }
