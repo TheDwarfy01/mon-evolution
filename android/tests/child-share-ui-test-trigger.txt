@@ -1,1 +1,3 @@
 Test de comportement du partage parental (22/11/2026) : exécutons réellement les trois scripts de l'APK dans une interface simulée. Scénarios : option désactivée, absence de fichier, création, absence de mot de passe, fichier valide, ouverture exacte, retrait des droits, changement de profil. AUCUNE modification des données utilisateur et aucun nouvel APK tant que les tests échouent.
+
+Relance du contrôle du parcours : le premier essai avait 5 tests réussis sur 7 et deux faux échecs liés au sélecteur du bouton dans les tests. On vise 7/7 tests avec les vrais scripts.
