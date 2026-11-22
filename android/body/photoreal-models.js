@@ -151,7 +151,7 @@
   const key=[file,colors.skin,colors.hair,colors.eyes].join('|');
   const canvas=ensureCanvas();
   // Vector and photographic representations never appear together.
-  if(currentKey===key&&stage.querySelector('canvas.bm-photo-canvas')?.width>0)return;
+  if(currentKey===key&&canvas.dataset.renderedKey===key)return;
   const request=key;
   load(file,pixels=>{
     if([current().model==='female'?female:male,current().skin,current().hair,current().eyes].join('|')!==request)return;
@@ -162,6 +162,7 @@
       if(!ctx)throw Error('Canvas indisponible');
       ctx.putImageData(recolor(pixels,current()),0,0);
       stage.querySelector('img.bm-photo-fallback')?.remove();
+      c.dataset.renderedKey=request;
       currentKey=request;
     }catch(e){fallbackPhoto(file)}
   });
