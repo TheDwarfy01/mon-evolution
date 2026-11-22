@@ -1,3 +1,5 @@
 Mon Évolution IMC v1.6.101
 Correction des conflits de sauvegarde entre appareils : conservation des données locales et Drive, fusion explicite en cas de divergence, préférence pour la dernière date de modification fiable et copies de sécurité privées des deux versions avant écriture.
 Conserve IA Gemma, rotation des portraits et données existantes. Construire et publier APK Android signée.
+
+Relance du build : étapes de vérification lecture seule et fonctions de fusion séparées.
