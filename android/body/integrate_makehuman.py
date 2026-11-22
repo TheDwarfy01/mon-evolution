@@ -14,15 +14,31 @@ activity=root/"app/src/main/java/fr/monevolution/app/MainActivity.java"
 if not assets.is_dir() or not activity.is_file():
     raise RuntimeError("Android source directory is incomplete")
 
-for name in ("makehuman-morph-adapter.js", "makehuman-viewer.js"):
+for name in ("makehuman-morph-adapter.js", "makehuman-viewer.js",
+             "makehuman-table-mode.js"):
     shutil.copyfile("android/body/"+name, assets/name)
 html=assets/"index.html"
 src=html.read_text(encoding="utf-8")
 needle="</body></html>"
 assert src.count(needle)==1, "Main HTML footer missing"
 assert "makehuman-viewer.js" not in src, "MakeHuman already installed"
+# Remove the old photographic male/female model and its base64 masks
+# from the published APK. Other photographs, including meal photos,
+# progress photos and avatars, are untouched.
+for deprecated in ("models-hq-inline.js", "studio-mask-data.js",
+                   "photoreal-models.js"):
+    src=src.replace('<script src="'+deprecated+'"></script>', '')
+    asset=assets/deprecated
+    if asset.exists():
+        asset.unlink()
+for obsolete in ("models-hq-v2.webp", "studio-skin-mask.png",
+                 "studio-hair-mask.png", "studio-eyes-mask.png"):
+    asset=assets/obsolete
+    if asset.exists():
+        asset.unlink()
 src=src.replace(needle, """<script src="makehuman-morph-adapter.js"></script>
 <script src="makehuman-viewer.js"></script>
+<script src="makehuman-table-mode.js"></script>
 </body></html>""")
 html.write_text(src,encoding="utf-8")
 
