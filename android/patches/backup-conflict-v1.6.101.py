@@ -43,8 +43,9 @@ bridge = r'''
         }
 
         // Commit a user-confirmed merge only if the remote copy is still unchanged.
-        @JavascriptInterface public void resolveBackupMerge(String mergedJson,String remoteHash) {
+        @JavascriptInterface public void resolveBackupMerge(String mergedJson,String remoteHash,String originalLocalJson) {
             if(mergedJson==null||mergedJson.length()>50_000_000||
+               originalLocalJson==null||originalLocalJson.length()>50_000_000||
                remoteHash==null||remoteHash.length()>180){
                 js("backupMergeSaveFailed('Paramètres invalides.')");return;
             }
@@ -69,9 +70,28 @@ bridge = r'''
                         throw new Exception("Sauvegarde reliée modifiée pendant la fusion");
                     Uri uri=Uri.parse(reference);
                     // Re-read immediately before write to avoid overwriting a newer update.
-                    String currentHash=fileHash(uri);
+                    String remoteBefore=readSafJson(uri,40_000_000);
+                    String currentHash=stringHash(remoteBefore);
                     if(!remoteHash.equals(currentHash))
                         throw new Exception("Le fichier Drive a encore changé. Relance la comparaison.");
+                    // Archive both originals in app-private storage BEFORE touching Drive.
+                    // This protects edited values that cannot be safely reconciled.
+                    File snapshots=new File(getFilesDir(),"sync-archives");
+                    if(!snapshots.isDirectory() && !snapshots.mkdirs())
+                        throw new Exception("Impossible de créer les copies de sécurité");
+                    long stamp=System.currentTimeMillis();
+                    File localCopy=new File(snapshots,"local-before-"+stamp+".json");
+                    File remoteCopy=new File(snapshots,"drive-before-"+stamp+".json");
+                    try(FileOutputStream out=new FileOutputStream(localCopy)){
+                        out.write(originalLocalJson.getBytes(StandardCharsets.UTF_8));
+                        out.getFD().sync();
+                    }
+                    try(FileOutputStream out=new FileOutputStream(remoteCopy)){
+                        out.write(remoteBefore.getBytes(StandardCharsets.UTF_8));
+                        out.getFD().sync();
+                    }
+                    if(!remoteHash.equals(fileHash(uri)))
+                        throw new Exception("Drive modifié pendant les copies de sécurité. Relance la fusion.");
                     try(OutputStream out=getContentResolver().openOutputStream(uri,"wt")) {
                         if(out==null)throw new Exception("Fichier en lecture seule");
                         out.write(mergedJson.getBytes(StandardCharsets.UTF_8));
@@ -103,6 +123,6 @@ shutil.copyfile('android/sync/backup-conflict.js',root/'src/main/assets/backup-c
 page=page.replace('</body></html>','<script src="backup-conflict.js"></script>\n</body></html>')
 html.write_text(page,encoding='utf-8')
 assert 'readBackupForMerge()' in source
-assert 'resolveBackupMerge(String mergedJson,String remoteHash)' in source
+assert 'resolveBackupMerge(String mergedJson,String remoteHash,String originalLocalJson)' in source
 assert 'remoteHash.equals(currentHash)' in source
 print('Safe conflict resolution added to 1.6.101')
