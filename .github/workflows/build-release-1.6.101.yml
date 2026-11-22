@@ -613,8 +613,10 @@ jobs:
           set -euo pipefail
           python3 android/patches/backup-conflict-v1.6.101.py
           grep -Fq "void readBackupForMerge()" android/source-1.6.101/app/src/main/java/fr/monevolution/app/MainActivity.java
-          grep -Fq 'void resolveBackupMerge(String mergedJson,String remoteHash)' android/source-1.6.101/app/src/main/java/fr/monevolution/app/MainActivity.java
+          grep -Fq 'void resolveBackupMerge(String mergedJson,String remoteHash,String originalLocalJson)' android/source-1.6.101/app/src/main/java/fr/monevolution/app/MainActivity.java
           grep -Fq "remoteHash.equals(currentHash)" android/source-1.6.101/app/src/main/java/fr/monevolution/app/MainActivity.java
+          grep -Fq '"sync-archives"' android/source-1.6.101/app/src/main/java/fr/monevolution/app/MainActivity.java
+          grep -Fq 'AndroidBackup.resolveBackupMerge(backupPayload(),plan.hash,beforeMerge)' android/source-1.6.101/app/src/main/assets/backup-conflict.js
           grep -Fq 'window.backupMergeLoaded=' android/source-1.6.101/app/src/main/assets/backup-conflict.js
           grep -Fq 'function reconcile(local, remote, preference, stats)' android/source-1.6.101/app/src/main/assets/backup-conflict.js
           grep -Fq "save(false)" android/source-1.6.101/app/src/main/assets/backup-conflict.js
