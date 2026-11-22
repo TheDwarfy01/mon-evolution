@@ -772,7 +772,7 @@ jobs:
           hair=np.asarray(Image.open(assets/'studio-hair-mask.png').convert('RGBA'))[:,:,3]
           skin=np.asarray(Image.open(assets/'studio-skin-mask.png').convert('RGBA'))[:,:,3]
           H,W=1440,810
-          for off,centers,iris_y in ((0,(.470,.534),.088),(810,(.466,.529),.094)):
+          for off,centers,iris_y in ((0,(.467,.532),.084),(810,(.463,.529),.091)):
               for cx in centers:
                   col=off+round(cx*W)
                   center=eye[round(iris_y*H)-3:round(iris_y*H)+4,col-5:col+6]
