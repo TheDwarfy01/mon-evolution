@@ -1,0 +1,6 @@
+Mon Évolution IMC v1.6.114 — silhouettes détourées et mensurations anatomiques
+1) Retirer le fond gris des deux photos homme et femme ; conserver le sujet haute définition, ses détails et la transparence dans WebP hors ligne.
+2) Corriger les points et pointillés de Poitrine, Bras, Taille, Ventre, Hanches, Cuisse et Mollet, avec positions distinctes selon Homme ou Femme.
+3) Le point Ventre doit viser l'abdomen et non le short ; Hanches doit pointer vers le bassin et non l'entrejambe.
+4) Préserver le code de personnalisation des yeux, cheveux et peau, les profils et mensurations existants et la synchro Drive.
+5) Compiler, signer et publier l'APK 1.6.114.
