@@ -5,6 +5,7 @@
  */
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
 
 (()=>{
 'use strict';
@@ -62,7 +63,7 @@ stage.append(canvas);
 const parser=new GLTFLoader();
 let renderer=null,scene=null,camera=null,mixer=null,figure=null,body=null,lighting=null;
 let active=false,busy=false,disposed=false,autoShowAfterInstall=false,currentKey='',oldStatus='',firstRun=true;
-let lastY=0,yaw=0,pointer=null,raf=0,profileId='';
+let lastY=0,yaw=0,pointer=null,raf=0,profileId='',lastProfileCheck=0;
 const loaded=new Map(),pending=new Map(),clothing=new Map(),hairObjects=new Map();
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 function ensureMounted(){
@@ -155,25 +156,25 @@ function registerMaterials(group,type,p){
  group.traverse(o=>{
   if(!o.isMesh)return;
   o.frustumCulled=false;
-  const originals=Array.isArray(o.material)?o.material:[o.material];
-  for(const original of originals){
-   if(!original)continue;
-   // GLB assets have their own skin/albedo/normal maps. Never paint by
-   // triangle height: that caused hard seams and color patches in v1.
-   const clone=original.clone();
+  if(!o.userData.studioPrepared){
+   o.userData.studioPrepared=true;
+   const mats=Array.isArray(o.material)?o.material:[o.material];
+   o.userData.studioMats=mats.map(m=>m?m.clone():null);
+   o.material=Array.isArray(o.material)?o.userData.studioMats:o.userData.studioMats[0];
+  }
+  const items=o.userData.studioMats||[];
+  for(const mat of items){
+   if(!mat)continue;
+   const label=(o.name+' '+mat.name).toLowerCase();
    if(type==='hair'){
-    if(clone.color)clone.color.set(p.hair);
-    clone.side=THREE.DoubleSide;
+    if(mat.color)mat.color.set(p.hair);
+    mat.side=THREE.DoubleSide;
    }else if(type==='body'){
-    const label=(o.name+' '+clone.name).toLowerCase();
-    if(/iris/.test(label)){if(clone.color)clone.color.set(p.eyes);}
-    else if(/skin|body|character/.test(label)){
-      if(clone.color)clone.color.set(p.skin);
+    if(/iris/.test(label)){if(mat.color)mat.color.set(p.eyes);}
+    else if(/skin|body|character|surface/.test(label)){
+      if(mat.color)mat.color.set(p.skin);
     }
    }
-   if(originals.length>1){
-    o.material=originals.map(m=>m===original?clone:m);
-   }else o.material=clone;
   }
  });
 }
@@ -248,7 +249,7 @@ function frame(t){
  if(!active)return;
  if(mixer&&lastY){mixer.update(Math.min(.05,(t-lastY)/1000));synchronizeBones();}
  lastY=t;
- refreshScene(false);
+ if(t-lastProfileCheck>800){lastProfileCheck=t;refreshScene(false);}
  renderOnce();
  raf=requestAnimationFrame(frame);
 }
@@ -276,7 +277,7 @@ function configure(){
 }
 async function addAsset(name,mode,p){
  const g=await asset(name);
- const cloned=g.scene.clone(true);
+ const cloned=cloneSkinned(g.scene);
  // Keep a separate copy of the independently authored rig for each clothing.
  figure.add(cloned);
  registerMaterials(cloned,mode,p);
