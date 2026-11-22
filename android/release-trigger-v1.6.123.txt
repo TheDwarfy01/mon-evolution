@@ -1,0 +1,5 @@
+Mon Evolution IMC version 1.6.123 (versionCode 139)
+Nouvelle release avec correctif persistance du mannequin MakeHuman 3D lors des re-rendus du profil et des mensurations.
+Installer optionnel du module independant dans une barre visible au-dessus du mannequin.
+Protection des donnees existantes; aucune migration destructive.
+Controle du code de compilation et des tests automatiques GitHub Actions.
