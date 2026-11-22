@@ -1,0 +1,29 @@
+name: Vérifier réellement le parcours de partage parental
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'android/tests/child-share-ui-test-trigger.txt'
+permissions:
+  contents: read
+jobs:
+  browser-ui:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Installer un DOM de test isole
+        run: |
+          set -euo pipefail
+          npm install --prefix /tmp/imc-ui --no-save --no-audit --no-fund --ignore-scripts --silent jsdom@26.1.0
+      - name: Exécuter les vrais scripts et tester les commandes
+        env:
+          NODE_PATH: /tmp/imc-ui/node_modules
+        run: |
+          set -euo pipefail
+          node --check android/body/child-collaboration.js
+          node --check android/body/child-share-verification.js
+          node --check android/body/child-share-file-guide.js
+          node --test android/tests/child-share-flow.test.cjs
