@@ -903,6 +903,15 @@ jobs:
           set -euo pipefail
           python3 -m py_compile android/patches/child-share-verification-v1.6.119.py
           python3 android/patches/child-share-verification-v1.6.119.py
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('android/source-1.6.119/app/src/main/java/fr/monevolution/app/MainActivity.java')
+          java=p.read_text(encoding='utf-8')
+          assert 'if(prefs.getBoolean("child_setup_verified_"+id,false)){' not in java, 'prefs inaccessible dans catch'
+          assert 'getPreferences(MODE_PRIVATE).edit().putBoolean("child_setup_verified_"+id,false).apply();' in java
+          assert 'childOwnerSetupPublishFailed(' in java
+          print('OK : la gestion des erreurs Drive ne référence plus prefs hors de portée.')
+          PY
           assets=android/source-1.6.119/app/src/main/assets
           java=android/source-1.6.119/app/src/main/java/fr/monevolution/app/MainActivity.java
           node --check "$assets/child-share-verification.js"
