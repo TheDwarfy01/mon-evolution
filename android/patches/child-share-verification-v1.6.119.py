@@ -162,9 +162,10 @@ swap('''                        if(prefs.contains("child_revision_"+id))
                             js("childOwnerSetupPublished("+JSONObject.quote(id)+")");
                         runOnUiThread(() -> web.evaluateJavascript("sharedUpdated()",null));
                     } catch(Exception e) {
-                        // A broken Drive permission must not interrupt meal editing.
-                        if(prefs.getBoolean("child_setup_verified_"+id,false)){
-                            prefs.edit().putBoolean("child_setup_verified_"+id,false).apply();
+                        // This catch is outside the try's prefs declaration scope.
+                        // Use the enclosing Activity preferences explicitly.
+                        if(getPreferences(MODE_PRIVATE).getBoolean("child_setup_verified_"+id,false)){
+                            getPreferences(MODE_PRIVATE).edit().putBoolean("child_setup_verified_"+id,false).apply();
                             js("childOwnerSetupPublishFailed("+JSONObject.quote(id)+")");
                         }
                         js("sharedSyncFailed()");''')
