@@ -52,11 +52,11 @@
   ownerStatus.setAttribute('role','status');
   ownerPane.append(ownerTitle,ownerText,ownerChecks,parentAttest,verifyOwner,ownerStatus);
   owner.append(ownerPane);
-  let ownerRequest='',ownerBusy=false;
+  let ownerRequest='',ownerBusy=false,publishingOwner='';
   function showOwner(){
     const p=current();
     const active=!!p&&minor(p)&&!!api.childEditEnabled?.(p.id);
-    const verified=active&&!!api.childSetupVerified?.(p.id);
+    const verified=active&&!!api.childSetupVerified?.(p.id)&&publishingOwner!==p.id;
     ownerPane.hidden=!active||verified;
     if(!ownerPane.hidden){
       const title=owner.querySelector('h4');
@@ -120,6 +120,7 @@
       return;
     }
     // The share is still encrypted and uses the same Drive document and password.
+    publishingOwner=id;
     api.autoSave?.(backupPayload());
     ownerStatus.textContent='Contrôles validés. Publication de l’autorisation sur Drive en cours…';
     ownerPane.hidden=false;
@@ -127,6 +128,7 @@
   };
   window.childOwnerSetupPublished=function(id){
     if(current()?.id!==id)return;
+    publishingOwner='';
     ownerPane.hidden=true;
     verifyOwner.disabled=false;
     const title=owner.querySelector('h4');
@@ -136,6 +138,7 @@
   };
   window.childOwnerSetupPublishFailed=function(id){
     if(current()?.id!==id)return;
+    publishingOwner='';
     ownerPane.hidden=false;
     verifyOwner.disabled=false;
     ownerStatus.textContent='Échec de publication sur Drive : corrige les droits puis relance le contrôle.';
