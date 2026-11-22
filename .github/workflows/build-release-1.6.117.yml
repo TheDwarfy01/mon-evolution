@@ -925,4 +925,4 @@ jobs:
             gh release create v1.6.117 downloads/Mon_Evolution_IMC_v1.6.117.apk \
               --title "Mon Évolution IMC v1.6.117 — Iris et repères anatomiques corrigés" \
               --notes "Correction de la hauteur des iris homme/femme (7,5 % plutôt que 11 %, qui teintait les joues), des repères anatomiques hanches/cuisses/ventre, et de la coloration peau/cheveux sans rectangles via des masques transparents. Données personnelles, mensurations, Drive et signature officielle conservés."
-          fi\n
+          fi
