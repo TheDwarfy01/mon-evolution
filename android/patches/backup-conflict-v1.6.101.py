@@ -8,7 +8,7 @@ root = Path('android/source-1.6.101/app')
 java = root/'src/main/java/fr/monevolution/app/MainActivity.java'
 html = root/'src/main/assets/index.html'
 source = java.read_text(encoding='utf-8')
-anchor = '        @JavascriptInterface public void autoSave(String json) {'
+anchor = '        @JavascriptInterface public void disconnect() {'
 assert source.count(anchor) == 1
 bridge = r'''
         // Read the currently linked backup without writing to or restoring it.
