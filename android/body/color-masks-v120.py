@@ -84,6 +84,10 @@ for index,sex in enumerate(('male','female')):
           (.366,.098)])
         left=region(.350,.416,.055,.145,.007)
         right=region(.588,.657,.055,.145,.007)
+    # Extend female lower side locks without tinting the face.
+    if sex=='female':
+        left=np.maximum(left,region(.342,.423,.090,.204,.009))
+        right=np.maximum(right,region(.580,.666,.090,.204,.009))
     hair_area=np.clip(crown+left+right,0,1)
     # Most importantly: *exclude* facial features; the eyebrows should
     # never become gold/white when a hair colour is chosen.
@@ -91,20 +95,36 @@ for index,sex in enumerate(('male','female')):
     dark=np.clip((170-brightness)/100,0,1)
     skin_protection=1-.995*warm
     hair=np.clip(hair_area*(1-forehead)*dark*skin_protection*person,0,1)
+    # Exclude disconnected flecks, including the top-left male speck.
+    binary=np.uint8(hair>.12)
+    n, labels, stats, _=cv2.connectedComponentsWithStats(binary,8)
+    if n>1:
+        largest=1+np.argmax(stats[1:,cv2.CC_STAT_AREA])
+        keep=np.uint8(labels==largest)
+        keep=cv2.dilate(keep,np.ones((5,5),np.uint8),iterations=1)
+        hair*=cv2.GaussianBlur(keep.astype(np.float32),(0,0),1.1)
     hair=cv2.GaussianBlur(hair,(0,0),1.6)*person
-    # Both portraits have iris centres lower than the eyebrow-centred
-    # y=.075 of v1.6.119. The female irises sit lower than the male ones.
-    # Tiny elliptical discs avoid painting eyelids or brow arches.
-    if sex=='male':
-        eyeY=.088
-        eyeXs=(.470,.534)
-    else:
-        eyeY=.094
-        eyeXs=(.466,.529)
-    eyes=(ellipse(eyeXs[0],eyeY,.0053,.0025)+
-          ellipse(eyeXs[1],eyeY,.0053,.0025))
-    eye_band=region(.443,.551,eyeY-.0043,eyeY+.0043,.0007)
-    eyes=np.clip(eyes*eye_band,0,1)*person
+    # Locate each iris using photograph pixels; previous coordinates are
+    # search-window anchors, never the final recoloring centres.
+    eyeY=.088 if sex=='male' else .094
+    eyeXs=(.470,.534) if sex=='male' else (.466,.529)
+    gray=cv2.cvtColor(img[:,:,:3],cv2.COLOR_RGB2GRAY).astype(np.float32)
+    eyes=np.zeros((H,W),np.float32)
+    for expected_x in eyeXs:
+        cx,cy=int(expected_x*W),int(eyeY*H)
+        x0,x1=max(0,cx-10),min(W,cx+11)
+        y0,y1=max(0,cy-5),min(H,cy+7)
+        patch=gray[y0:y1,x0:x1]
+        smoothed=cv2.GaussianBlur(patch,(3,3),.75)
+        yy,xx=np.mgrid[y0:y1,x0:x1]
+        distance=((xx-cx)/9.)**2+((yy-cy)/5.)**2
+        score=smoothed+28*distance
+        py,px=np.unravel_index(np.argmin(score),score.shape)
+        ix,iy=x0+int(px),y0+int(py)
+        local=ellipse(ix/W,iy/H,.0053,.0025)
+        darkness=np.clip((150-gray)/75,0,1)
+        eyes=np.maximum(eyes,local*darkness)
+        print(f'{sex} iris: expected ({cx},{cy}), detected ({ix},{iy})')
     eyes=cv2.GaussianBlur(eyes,(0,0),.55)*person
     for key,a in [('skin',skin),('hair',hair),('eyes',eyes)]:
         rgba=np.full((H,W,4),255,dtype=np.uint8)
