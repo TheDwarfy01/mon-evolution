@@ -1,0 +1,3 @@
+Mon Évolution IMC v1.6.108
+Placer Amis et Version à droite de « TON PARCOURS, À TON RYTHME » sur la première ligne de l'en-tête, badges courts et détail accessible, boutons d'origine conservés et fonctionnalité de mise à jour conservée. Réutiliser l'icône À propos. Préserver tout le reste de la version précédente.
+Compiler signer publier Android APK.
