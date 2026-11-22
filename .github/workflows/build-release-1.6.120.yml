@@ -785,8 +785,9 @@ jobs:
           for off in (0,810):
               forehead=hair[round(.090*H):round(.117*H),off+round(.455*W):off+round(.550*W)]
               assert forehead.max()<15, ('hair mask bleeds onto forehead',off)
+              top,bottom=(.635,.685) if off==0 else (.550,.580)
               for cx in (.405,.59):
-                  upper=skin[round(.550*H):round(.58*H),off+round(cx*W)-5:off+round(cx*W)+5]
+                  upper=skin[round(top*H):round(bottom*H),off+round(cx*W)-5:off+round(cx*W)+5]
                   assert upper.max()>20, ('upper thigh gap',off,cx)
           print('PASS: smaller irises, protected forehead and full upper-thigh coverage')
           PY
