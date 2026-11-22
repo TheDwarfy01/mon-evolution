@@ -61,10 +61,20 @@ for index,sex in enumerate(('male','female')):
     skin_protection=1-.96*warm
     hair=np.clip(hair_area*dark*skin_protection*person,0,1)
     hair=cv2.GaussianBlur(hair,(0,0),2.0)
-    # Actual pupils are near 11% of portrait height; the old .072
-    # pointed at the forehead. Keep masks tiny for realism.
-    eyeY=.110 if sex=='male' else .111
-    eyes=(ellipse(.469,eyeY,.008,.0038)+ellipse(.535,eyeY,.008,.0038))
+    # Calibrated against the ORIGINAL 1620x1440 studio photograph:
+    # pupils lie at y ~= 0.075, NOT 0.11 (which tinted the cheeks).
+    # Both sexes have separate centers to prevent misaligned eye colors.
+    if sex=='male':
+        eyeY=.075
+        eyeXs=(.470,.534)
+    else:
+        eyeY=.075
+        eyeXs=(.466,.529)
+    eyes=(ellipse(eyeXs[0],eyeY,.0075,.0035)+
+          ellipse(eyeXs[1],eyeY,.0075,.0035))
+    # Keep the iris mask confined to the eyes, never the forehead or cheek.
+    eye_band=region(.445,.55,.067,.086,.0015)
+    eyes=np.clip(eyes*eye_band,0,1)
     eyes=np.clip(eyes,0,1)*person
     eyes=cv2.GaussianBlur(eyes,(0,0),.8)
     for key,a in [('skin',skin),('hair',hair),('eyes',eyes)]:
