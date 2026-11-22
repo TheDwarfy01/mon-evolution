@@ -79,7 +79,7 @@ test('Option ON, missing file: create/relink offered and Editor blocked',async()
   assert.equal(a.get('child-share-file-open').disabled,true);
   assert.equal(a.get('child-verify-invitation').disabled,true);
   assert.equal(a.get('child-verify-invitation').checked,false);
-  assert.equal(a.get('child-owner-required-steps').querySelector('button.primary').disabled,true);
+  assert.equal(([...a.get('child-owner-required-steps').querySelectorAll('button.primary')].find(b=>b.textContent.includes('Vérifier et activer'))).disabled,true);
   assert.match(a.get('child-share-selected-file').textContent,/Aucun fichier relié/);
   a.dom.window.close();
 });
@@ -100,7 +100,7 @@ test('Existing file without password keeps editing disabled',async()=>{
   assert.equal(a.get('child-share-file-create').disabled,true);
   assert.equal(a.get('child-share-file-open').disabled,false);
   assert.equal(a.get('child-verify-invitation').disabled,true);
-  assert.equal(a.get('child-owner-required-steps').querySelector('button.primary').disabled,true);
+  assert.equal(([...a.get('child-owner-required-steps').querySelectorAll('button.primary')].find(b=>b.textContent.includes('Vérifier et activer'))).disabled,true);
   a.dom.window.close();
 });
 test('Linked encrypted file opens exact document, needs Editor confirmation',async()=>{
@@ -111,7 +111,7 @@ test('Linked encrypted file opens exact document, needs Editor confirmation',asy
   assert.equal(a.get('child-share-file-create').disabled,true);
   assert.equal(a.get('child-share-file-open').disabled,false);
   assert.equal(a.get('child-verify-invitation').disabled,false);
-  assert.equal(a.get('child-owner-required-steps').querySelector('button.primary').disabled,true);
+  assert.equal(([...a.get('child-owner-required-steps').querySelectorAll('button.primary')].find(b=>b.textContent.includes('Vérifier et activer'))).disabled,true);
   assert.match(a.get('child-share-selected-file').textContent,/mon-evolution-partage-enfant\.json/);
   a.get('child-share-file-open').click();
   assert.deepEqual(a.state.nativeOpen,['child1']);
@@ -119,7 +119,7 @@ test('Linked encrypted file opens exact document, needs Editor confirmation',asy
   a.get('child-verify-invitation').checked=true;
   a.get('child-verify-invitation').dispatchEvent(new a.window.Event('change',{bubbles:true}));
   await a.ready();
-  assert.equal(a.get('child-owner-required-steps').querySelector('button.primary').disabled,false);
+  assert.equal(([...a.get('child-owner-required-steps').querySelectorAll('button.primary')].find(b=>b.textContent.includes('Vérifier et activer'))).disabled,false);
   a.dom.window.close();
 });
 test('Disconnect resets checked Editor and green checklist',async()=>{
