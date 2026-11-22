@@ -10,3 +10,5 @@ Relance suite correction des noms des scripts générés 1.6.122 (292964c).
 MakeHuman CC0 3D integration: generate asset pack + Android WebGL viewer + child growth, build validation.
 
 Nouvelle compilation après correction du contrôle IA versionCode 138.
+
+Rebuild MakeHuman with the official CC0 gender/age shape morphs (32 targets).
