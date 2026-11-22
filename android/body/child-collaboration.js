@@ -33,6 +33,15 @@
     wrapper.hidden=!minor(p);
     if(wrapper.hidden)return;
     enabled.checked=!!native.childEditEnabled?.(p.id);
+    const shareTitle=share.parentNode.querySelector('h3');
+    if(shareTitle)shareTitle.textContent=enabled.checked?'🔗 Partage parental modifiable':'🔗 Partage en lecture seule';
+    const firstNotice=[...share.parentNode.querySelectorAll('p.notice')].find(v=>v.textContent.includes('Le destinataire ne peut rien modifier.')||v.id==='child-share-permission-note');
+    if(firstNotice){
+      firstNotice.id='child-share-permission-note';
+      firstNotice.textContent=enabled.checked
+        ?'Profil enfant : le destinataire disposant du rôle Éditeur sur Drive peut modifier les pesées, la taille et les repas.'
+        :'Partage en lecture seule : le destinataire ne peut pas modifier les données du profil.';
+    }
     sync.disabled=native.sharedStatus?.(p.id)!=='1';
     const instruction=[...share.parentNode.querySelectorAll('p.notice')].filter(v=>
       v.textContent.includes('invite les proches comme')||
