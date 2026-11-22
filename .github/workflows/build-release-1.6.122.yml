@@ -127,7 +127,7 @@ jobs:
           source=source.replace('1.6.31','1.6.122')
           html.write_text(source)
           PY
-          grep -q 'versionCode 137' android/source-1.6.122/app/build.gradle
+          grep -q 'versionCode 138' android/source-1.6.122/app/build.gradle
           grep -q 'friendsOverviewSyncFinished' android/source-1.6.122/app/src/main/java/fr/monevolution/app/MainActivity.java
           grep -q 'shareAvatarEnabled' android/source-1.6.122/app/src/main/java/fr/monevolution/app/MainActivity.java
           grep -q 'backupProviderLabel' android/source-1.6.122/app/src/main/java/fr/monevolution/app/MainActivity.java
