@@ -54,8 +54,15 @@
   if(editableHint)editableHint.textContent='Tu n’as pas besoin de chercher le fichier manuellement : utilise les boutons ci-dessous pour ouvrir son emplacement et donner au deuxième parent le rôle Éditeur.';
 
   let lastProfile='',lastLink='',displayKey='';
+  let cachedInfo=null,cachedKey='',cachedAt=0;
   function getInfo(id){
-    try{return JSON.parse(api.childShareDocumentInfo?.(id)||'{}')}catch(_){return {}}
+    const key=id+'|'+(api.sharedStatus?.(id)||'0');
+    if(cachedKey===key&&Date.now()-cachedAt<15000&&cachedInfo)return cachedInfo;
+    try{
+      const result=JSON.parse(api.childShareDocumentInfo?.(id)||'{}');
+      cachedInfo=result;cachedKey=key;cachedAt=Date.now();
+      return result;
+    }catch(_){return {}}
   }
   const active=()=>enabled.checked && !wizard.hidden;
   function redraw(){
@@ -95,6 +102,9 @@
       if(label)label.style.opacity=checkbox.disabled?'.50':'1';
     }
     if(verify)verify.disabled=!(linked&&password&&checkbox?.checked);
+    const ownerStatus=document.getElementById('child-collab-status');
+    if(ownerStatus)ownerStatus.textContent=
+      'Autorisation de modification en attente : crée ou relie le fichier, configure Éditeur dans Drive puis valide les contrôles ci-dessous.';
     if(!linked)feedback.textContent='Configuration non terminée : aucun accès Éditeur ne peut être accordé avant la création du fichier.';
     else if(!password)feedback.textContent='Le fichier est relié, mais son mot de passe de partage doit être rétabli avant les contrôles.';
     else if(!checkbox?.checked)feedback.textContent='Ensuite, confirme que le deuxième parent est bien Éditeur dans Google Drive.';
@@ -129,7 +139,7 @@
   window.childShareFileOpenResult=(id,code)=>{
     if(!current()||current().id!==id)return;
     if(code==='opened'){
-      feedback.textContent='Dans Google Drive, ouvre le menu ⋮ du fichier, puis Partager → compte du deuxième parent → Éditeur. L’application ne peut pas accorder ce droit automatiquement.';
+      feedback.textContent='Le fichier lié a été ouvert. Dans Google Drive, utilise ⋮ → Partager/Gérer l’accès → compte du deuxième parent → Éditeur. Si un lecteur JSON s’ouvre, recherche le nom affiché dans Drive.';
     }else if(code==='need_link'){
       feedback.textContent='Le lien direct Drive manque. Ouvre le fichier lié et enregistre son lien dans les paramètres avancés, puis réessaie.';
     }else{
@@ -145,8 +155,8 @@
     const observer=new MutationObserver(()=>queueMicrotask(redraw));
     observer.observe(shareState,{childList:true,characterData:true,subtree:true});
   }
-  window.addEventListener('pageshow',redraw);
-  document.addEventListener('visibilitychange',()=>{if(!document.hidden)redraw()});
+  window.addEventListener('pageshow',()=>{cachedAt=0;redraw()});
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden){cachedAt=0;redraw()}});
   const oldRender=window.render;
   if(typeof oldRender==='function')window.render=function(...args){
     const r=oldRender.apply(this,args);redraw();return r;
