@@ -65,7 +65,9 @@
       image.onload=()=>image.naturalWidth===WIDTH*2&&image.naturalHeight===HEIGHT?
         resolve(image):reject(Error('Format du modèle invalide'));
       image.onerror=()=>reject(Error('Images haute définition introuvables'));
-      image.src=FILE;
+      // A data URL is origin-clean in Android WebView, unlike a file:// image
+      // when file-to-file access is restricted (the secure Android default).
+      image.src=window.MonEvolutionStudioSpriteData||FILE;
     }).catch(e=>{spritePromise=null;throw e;});
     return spritePromise;
   }
@@ -130,6 +132,35 @@
       }
     }
   }
+  // No-readback fallback for Android WebViews with a tainted canvas.
+  // Draw-only rectangles clip to the existing alpha and blend subtly.
+  function paintFallback(ctx,state){
+    const shape=figures[state.model];
+    const areas=[
+      ['skin',[
+        shape.face,shape.neck,...shape.arms,...shape.legs
+      ],.55],
+      ['hair',[shape.hair],.75],
+      ['eyes',shape.eyeXs.map(x=>[
+        x-.009,x+.009,shape.eyeY-.0045,shape.eyeY+.0045
+      ]),.68]
+    ];
+    ctx.save();
+    try{
+      ctx.globalCompositeOperation='source-atop';
+      for(const [key,rects,strength] of areas){
+        if(state[key].toUpperCase()===BASE[key].toUpperCase())continue;
+        ctx.fillStyle=state[key];
+        ctx.globalAlpha=strength;
+        for(const r of rects){
+          ctx.fillRect(r[0]*WIDTH,r[2]*HEIGHT,
+                       (r[1]-r[0])*WIDTH,(r[3]-r[2])*HEIGHT);
+        }
+      }
+    }finally{
+      ctx.restore();
+    }
+  }
   async function paint(){
     scheduled=false;
     if(root.hidden)return;
@@ -160,7 +191,11 @@
         recolor(pixels,state);
         ctx.putImageData(pixels,0,0);
       }catch(pixelError){
-        console.warn('Personnalisation photo indisponible ; photo HD conservée',pixelError);
+        // Some WebViews restrict image pixel reads. Use a draw-only fallback,
+        // which needs no getImageData: never make color choices appear inert.
+        // It is deliberately conservative and retains the original photo.
+        console.warn('Lecture des pixels indisponible, colorisation de secours',pixelError);
+        paintFallback(ctx,state);
       }
       if(stamp!==serial||!stage.contains(canvas)){schedule();return;}
       canvas.dataset.renderedKey=key;
@@ -200,6 +235,11 @@
   models.addEventListener('click',()=>requestAnimationFrame(schedule));
   document.addEventListener('click',e=>{
     if(e.target?.closest?.('#visual-profile-picker,.profile-portrait-choice'))requestAnimationFrame(schedule);
+  });
+  window.addEventListener('mon-evolution-appearance-changed',()=>{
+    // Force repaint even when the same profile is selected again.
+    lastKey='';
+    schedule();
   });
   window.addEventListener('pageshow',schedule);
   schedule();
