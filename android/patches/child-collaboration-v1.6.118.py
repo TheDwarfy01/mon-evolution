@@ -319,6 +319,15 @@ swap('''            } else if (request == SHARE_OPEN) {
                 // Optional: a Reader may still open. Only Drive Editors get write permission.
                 persistUri(uri,true);''')
 
+# Invitation wording must reflect the permission granted to the selected child.
+swap(r'''                    send.putExtra(Intent.EXTRA_TEXT,"Je t’invite à consulter mon profil Mon Évolution IMC en lecture seule. Ouvre ce lien sur ton téléphone, puis choisis « Ouvrir dans Mon Évolution » :\n"+url);''',
+r'''                    String introduction=getPreferences(MODE_PRIVATE)
+                        .getBoolean("child_edit_"+id,false)
+                        ? "Je t’invite à modifier le suivi de notre enfant dans Mon Évolution IMC. Il faut un accès Éditeur privé au fichier Google Drive."
+                        : "Je t’invite à consulter mon profil Mon Évolution IMC en lecture seule.";
+                    send.putExtra(Intent.EXTRA_TEXT,introduction+
+                        " Ouvre ce lien sur ton téléphone, puis choisis « Ouvrir dans Mon Évolution » :\n"+url);''')
+
 java.write_text(source,encoding="utf-8")
 html=assets/"index.html"
 s=html.read_text(encoding="utf-8")
