@@ -29,6 +29,25 @@ source=source.replace(anchor,anchor+'''
 anchor='        @JavascriptInterface public void disconnect() {'
 assert source.count(anchor)==1
 native=r'''
+        @JavascriptInterface public boolean snapshotBeforeMerge(String originalJson) {
+            if(originalJson==null||originalJson.length()>50_000_000)return false;
+            try {
+                JSONObject doc=new JSONObject(originalJson);
+                if(!"mon-evolution".equals(doc.optString("format"))
+                   ||doc.optInt("version")!=1||doc.getJSONObject("data").getJSONArray("profiles").length()<1)
+                    return false;
+                File archives=new File(getFilesDir(),"sync-archives");
+                if(!archives.isDirectory() && !archives.mkdirs())return false;
+                File archived=new File(archives,"local-before-startup-"+
+                    System.currentTimeMillis()+"-"+java.util.UUID.randomUUID().toString()+".json");
+                try(FileOutputStream output=new FileOutputStream(archived)){
+                    output.write(originalJson.getBytes(StandardCharsets.UTF_8));
+                    output.getFD().sync();
+                }
+                return archived.isFile() && archived.length()>0;
+            }catch(Exception ignored){return false;}
+        }
+
         @JavascriptInterface public void verifyBackupOnStartup() {
             final String reference=getPreferences(MODE_PRIVATE).getString(BACKUP_URI,null);
             if(reference==null){
@@ -107,5 +126,6 @@ html=(a/'index.html').read_text(encoding='utf-8')
 assert html.count('<script src="backup-conflict.js"></script>')==1
 assert 'verifyBackupOnStartup()' in source
 assert 'backupStartupChecked' in src.read_text(encoding='utf-8')
+assert 'snapshotBeforeMerge(beforeMerge)' in src.read_text(encoding='utf-8')
 assert 'commit(\'local\',true)' in src.read_text(encoding='utf-8')
 print('Startup backup verification gate and non-destructive automatic merge installed:',root)
