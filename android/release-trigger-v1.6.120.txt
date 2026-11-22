@@ -1,0 +1,10 @@
+Mon Évolution IMC — v1.6.120, correction des artefacts des portraits HD.
+Date : 22 novembre 2026
+
+1. Recalcul des masques peau, cheveux et yeux depuis les deux portraits studio existants 1620×1440 ; ne pas remplacer les mannequins validés.
+2. Iris homme y=0.088 et femme y=0.094 avec des ellipses plus petites, sans pastilles jaunes sur les sourcils et le front.
+3. Exclusion du front et des sourcils dans le masque capillaire, détourage anatomique adouci.
+4. Couleurs de peau et cheveux en fusion soft-light, sans aplats opaques ni perte de texture photographique.
+5. Zone des deux jambes étendue au-dessus de l'ourlet pour supprimer la bande claire horizontale sur les cuisses féminines.
+6. Conservation intégrale du partage parental à vérification obligatoire facultative, des profils, des données et de la signature Android des versions précédentes.
+7. Tests spécifiques anti-artefacts avant compilation, compilation Gradle puis signature et publication de l'APK.
