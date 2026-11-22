@@ -143,11 +143,15 @@
     const currentRow=rowForDate(receivedDocument,d);
     if(weight.value.trim()){
       const v=Number(weight.value);if(!Number.isFinite(v)||v<1||v>400)return alert('Poids invalide');
-      edit.weight=v;edit.expectedRow=currentRow?JSON.stringify(currentRow):'';
+      if(!currentRow||v!==Number(currentRow.weight)){
+        edit.weight=v;edit.expectedRow=currentRow?JSON.stringify(currentRow):'';
+      }
     }
     if(height.value.trim()){
       const v=Number(height.value);if(!Number.isFinite(v)||v<45||v>250)return alert('Taille invalide');
-      edit.heightCm=v;edit.expectedRow=currentRow?JSON.stringify(currentRow):'';
+      if(!currentRow||v!==Number(currentRow.heightCm)){
+        edit.heightCm=v;edit.expectedRow=currentRow?JSON.stringify(currentRow):'';
+      }
     }
     if(meal.value){
       edit.mealKey=meal.value;
