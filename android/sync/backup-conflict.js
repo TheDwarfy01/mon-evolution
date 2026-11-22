@@ -69,7 +69,7 @@
       if(a===undefined)return copy(b);
       if(b===undefined)return copy(a);
       if(same(a,b))return copy(a);
-      if(Array.isArray(a)&&Array.isArray(b) && path.endsWith('.entries')) {
+      if(Array.isArray(a)&&Array.isArray(b) && (path.endsWith('.entries') || path.endsWith('.bodyMeasurements'))) {
         const out=copy(a);
         const seen=new Map(out.map((item,i)=>[String(item.id),i]));
         for(const item of b){
