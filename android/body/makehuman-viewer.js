@@ -161,6 +161,17 @@ function updateGeometry(p){
    const q=coords[i];points[i*3]=q[0];points[i*3+1]=q[1];points[i*3+2]=q[2];
  }
  for(const [age,aw] of axisWeight(p.ageYears)){
+  // Apply the matching MakeHuman phenotype before the mass modifiers.
+  const identity=pack.targets[p.model+'-'+age+'-identity'];
+  if(identity&&aw>0){
+   for(let k=0;k<identity.length;k+=4){
+    const i=identity[k]*3;
+    if(i<0||i+2>=points.length)continue;
+    points[i]+=identity[k+1]*aw;
+    points[i+1]+=identity[k+2]*aw;
+    points[i+2]+=identity[k+3]*aw;
+   }
+  }
   for(const [mass,mw] of axisMass(p.weight)){
    const list=pack.targets[p.model+'-'+age+'-'+mass],influence=aw*mw;
    if(!list||influence<=0)continue;
