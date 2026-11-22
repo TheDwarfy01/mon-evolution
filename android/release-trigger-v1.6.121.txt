@@ -15,3 +15,5 @@ Correctifs:
 Compiler, signer et publier l'APK 1.6.121.
 
 Relance compilation après commit 2654a4e : ajustements masques cheveux homme/femme et détection iris depuis pixels source.
+
+Nouvelle compilation après correctif opacité iris f5107b9 (échec assertion iris mask missing).
