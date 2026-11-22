@@ -34,6 +34,12 @@
     if(wrapper.hidden)return;
     enabled.checked=!!native.childEditEnabled?.(p.id);
     sync.disabled=native.sharedStatus?.(p.id)!=='1';
+    const instruction=[...share.parentNode.querySelectorAll('p.notice')].filter(v=>
+      v.textContent.includes('invite les proches comme')||
+      v.textContent.includes('accorde uniquement le rôle'));
+    for(const line of instruction)line.textContent=enabled.checked
+      ?'Pour ce profil enfant, accorde le rôle Éditeur uniquement au second parent choisi dans Google Drive. Conserve l’accès général sur Limité.'
+      :'Dans Google Drive, accorde uniquement le rôle Lecteur aux destinataires et conserve l’accès général sur Limité.';
     status.textContent=enabled.checked
       ?'Modification autorisée pour ce profil enfant. Les droits Éditeur du fichier restent gérés dans Drive.'
       :'Consultation uniquement. Aucune autorisation de modification activée.';
@@ -104,6 +110,10 @@
       receivedKey=allowed?key:'';
       receivedDocument=allowed?doc:null;
       reader.hidden=!allowed;
+      const intro=document.querySelector('#shared > p.muted');
+      if(intro)intro.textContent=allowed
+        ?'Profil enfant : consultation et modification autorisées par le propriétaire'
+        :'Consultation uniquement · aucune modification possible';
       if(allowed){
         date.value=(new Date()).toISOString().slice(0,10);
         date.max=date.value;
