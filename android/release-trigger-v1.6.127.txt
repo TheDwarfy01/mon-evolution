@@ -1,0 +1,7 @@
+Mon Evolution IMC 1.6.127 (versionCode 143)
+Remplacement du viewer MakeHuman rudimentaire par MakeHuman Studio 3D complet.
+Module séparé CC0 avec base riggée, cible de poids et âge, textures, 7 coiffures, 7 vêtements, animation idle et 53 os.
+Moteur Three.js hors ligne, stocké dans l'APK; modèles GLB téléchargés séparément puis conservés dans le stockage privé entre mises à jour.
+Sans activation : tableau de mensurations uniquement, jamais de mannequin désagréable par défaut.
+Version du module avatar-studio-v2, SHA256 vérifié, aucun code GPL embarqué.
+Sauvegarde Drive et contrôles démarrage existants conservés.
