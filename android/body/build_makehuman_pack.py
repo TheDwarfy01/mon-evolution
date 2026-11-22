@@ -58,8 +58,11 @@ def build():
     targets = {}
     for sex in SEXES:
         for age in AGES:
-            for weight in WEIGHTS:
-                name = "universal-%s-%s-averagemuscle-%s" % (sex, age, weight)
+            # Gender/age shape comes from phenotype targets. Universal targets
+            # alone are small mass modifiers, not complete age-specific bodies.
+            for variant in ("identity",) + WEIGHTS:
+                name = ("caucasian-%s-%s" % (sex, age) if variant=="identity"
+                        else "universal-%s-%s-averagemuscle-%s" % (sex, age, variant))
                 lines = download("targets/macrodetails/%s.target" % name)
                 sparse = []
                 for line in lines.splitlines():
@@ -74,9 +77,9 @@ def build():
                     dx, dy, dz = (round(float(v), 4) for v in parts[1:4])
                     if dx or dy or dz:
                         sparse.extend((vertex, dx, dy, dz))
-                if len(sparse) < 1200:
-                    raise RuntimeError("Incomplete MakeHuman target: " + name)
-                targets[sex + "-" + age + "-" + weight] = sparse
+                if len(sparse)%4:
+                    raise RuntimeError("Corrupt sparse target: " + name)
+                targets[sex + "-" + age + "-" + variant] = sparse
     data = {"version": 1, "upstream": "makehumancommunity/makehuman@" + REV,
             "license": "CC0-1.0", "bodyVertices": N_BODY,
             "positions": vertices, "triangles": faces, "targets": targets}
