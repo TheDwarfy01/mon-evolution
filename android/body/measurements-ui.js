@@ -516,7 +516,7 @@
   }else draftDirty=false;
  },true);
  document.addEventListener('click',e=>{
-  const button=e.target?.closest?.('.nav [data-tab]');
+  const button=e.target?.closest?.('[data-tab]');
   if(button&&button!==nav){section.hidden=true;}
  },true);
  refreshAccess();
