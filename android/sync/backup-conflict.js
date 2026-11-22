@@ -234,6 +234,11 @@
       // Keep a copy of the ORIGINAL local version for a possible recovery.
       const beforeMerge=JSON.stringify({format:'mon-evolution',version:1,
         exportedAt:new Date().toISOString(),data});
+      // Ensure the original local data is DURABLY archived before replacing it.
+      // A failed Drive write must never be able to erase the last local copy.
+      if(!AndroidBackup.snapshotBeforeMerge(beforeMerge)){
+        throw Error('Impossible de créer une copie de sécurité des données locales. Fusion annulée.');
+      }
       // Protect the merged result locally first, even if the remote write fails.
       data=merged;
       save(false);
