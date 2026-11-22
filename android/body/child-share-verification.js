@@ -59,6 +59,8 @@
     const verified=active&&!!api.childSetupVerified?.(p.id);
     ownerPane.hidden=!active||verified;
     if(!ownerPane.hidden){
+      const title=owner.querySelector('h4');
+      if(title)title.textContent='👨‍👩‍👧 Partage parental — configuration à terminer';
       ownerStatus.textContent='Le mode de modification n’est pas encore actif. Termine les contrôles ci-dessous.';
       drawChecks(ownerChecks,[
         [true,'Profil enfant valide'],
@@ -119,8 +121,24 @@
     }
     // The share is still encrypted and uses the same Drive document and password.
     api.autoSave?.(backupPayload());
-    ownerStatus.textContent='✓ Contrôles validés. Publication de l’autorisation de modification sur Drive…';
+    ownerStatus.textContent='Contrôles validés. Publication de l’autorisation sur Drive en cours…';
+    ownerPane.hidden=false;
+    verifyOwner.disabled=true;
+  };
+  window.childOwnerSetupPublished=function(id){
+    if(current()?.id!==id)return;
     ownerPane.hidden=true;
+    verifyOwner.disabled=false;
+    const title=owner.querySelector('h4');
+    if(title)title.textContent='👨‍👩‍👧 Partage parental activé';
+    const summary=document.getElementById('child-collab-status');
+    if(summary)summary.textContent='✓ Autorisation de modification publiée sur Drive. Le deuxième parent doit encore valider ses droits sur son téléphone.';
+  };
+  window.childOwnerSetupPublishFailed=function(id){
+    if(current()?.id!==id)return;
+    ownerPane.hidden=false;
+    verifyOwner.disabled=false;
+    ownerStatus.textContent='Échec de publication sur Drive : corrige les droits puis relance le contrôle.';
   };
   // Keep the setup visible when the child profile changes or app becomes visible,
   // but never demand these checks for normal read-only use.
