@@ -9,7 +9,7 @@ def pad(data, byte=b"\x00"):
     return data + byte * (-len(data) % 4)
 
 def read_glb(blob):
-    assert blob[:4] == b"glTF" and struct.unpack_from("<II", blob, 4)[0] == (2, len(blob))
+    assert blob[:4] == b"glTF" and struct.unpack_from("<II", blob, 4) == (2, len(blob))
     jlen, jtag = struct.unpack_from("<II", blob, 12)
     assert jtag == 0x4e4f534a
     document = json.loads(blob[20:20+jlen])
