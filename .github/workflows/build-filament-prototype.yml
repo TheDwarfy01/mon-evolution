@@ -1187,7 +1187,7 @@ jobs:
           grep -Fq 'filament-test-cube.glb' android/source-1.6.143/app/src/main/java/fr/monevolution/app/FilamentPreviewActivity.java
           grep -Fq 'viewer.setAutoPlayAnimations(true);' android/source-1.6.143/app/src/main/java/fr/monevolution/app/FilamentPreviewActivity.java
           grep -Fq 'viewer.setAutoPlayAnimations(false);' android/source-1.6.143/app/src/main/java/fr/monevolution/app/FilamentPreviewActivity.java
-          grep -Fq "versionName '1.6.147-filament-skeleton-fix'" android/source-1.6.143/app/build.gradle
+          grep -Fq "versionName '1.6.147-filament-diagnostic'" android/source-1.6.143/app/build.gradle
       - name: Installer SDK Android
         run: |
           set -euo pipefail
