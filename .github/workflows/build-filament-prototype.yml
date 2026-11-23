@@ -1,6 +1,8 @@
 name: Filament v1.6.144 - essai Android isole
 on:
   workflow_dispatch:
+  pull_request:
+    branches: [main]
   push:
     branches:
       - experiment/filament-3d-v144
@@ -1047,30 +1049,8 @@ jobs:
           test -s android/body/makehuman-studio-bundle.js
           node --check android/body/makehuman-studio-bundle.js
           grep -Fq "MakeHuman Studio v2" android/body/studio/renderer.mjs
-      - name: Creer un pack MakeHuman Studio complet avec textures, tenue, cheveux et animations
-        run: |
-          set -euo pipefail
-          python3 -m py_compile android/body/build_studio_pack_v2.py
-          python3 android/body/build_studio_pack_v2.py
-          python3 - <<'PY'
-          from pathlib import Path
-          from zipfile import ZipFile
-          import json,hashlib
-          f=Path('android/generated/makehuman-studio-v2.zip')
-          with ZipFile(f) as z:
-              files=set(z.namelist())
-              manifest=json.loads(z.read('manifest.json'))
-              assert manifest['assetLicense']=='CC0-1.0'
-              assert len(manifest['files'])>=15
-              assert manifest['files']['base_body_anim.glb']['clips']>=1
-              assert manifest['files']['base_body_anim.glb']['skins']>=1
-              assert manifest['files']['base_body_anim.glb']['morphs']>=20
-              for name,info in manifest['files'].items():
-                  assert name in files
-                  assert hashlib.sha256(z.read(name)).hexdigest()==info['sha256']
-              assert z.testzip() is None
-          print('Studio 3D : texture, rig, animation, coiffures, tenues et 15 GLB confirmés')
-          PY
+      # The Studio pack is already published as avatar-studio-v2.
+      # The test APK fetches it independently; do not download/rebuild/publish it in CI.
       - name: Integrer le visualiseur Studio 3D et son installateur Android
         run: |
           set -euo pipefail
