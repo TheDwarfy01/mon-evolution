@@ -8,6 +8,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { profileCategory, allowedOutfitsFor } from './profile-rules.mjs';
 import { latestMeasurements, visualRatios, deformPosition } from './measurement-morph.mjs';
 import { createStudioMarkers } from './measurement-markers.mjs';
+import { estimatedThighIntensity,softenInnerThigh } from './thigh-fill.mjs';
 import { isStudioEnabled, setStudioEnabled } from './visibility-preference.mjs';
 import { hideMaskFor, coveredTriangle, behindOpaqueGarment } from './clothing-coverage.mjs';
 import { maskIndexedTriangles, touchesExposedArm } from './skin-triangle-mask.mjs';
@@ -87,7 +88,7 @@ const parser=new GLTFLoader();
 let renderer=null,scene=null,camera=null,mixer=null,figure=null,body=null,lighting=null;
 let active=false,busy=false,disposed=false,autoShowAfterInstall=false,currentKey='',oldStatus='',firstRun=true;
 let lastY=0,yaw=0,pointer=null,raf=0,profileId='',lastProfileCheck=0;
-let studioBounds=null,studioMarkers=null,markerProfile=null;
+let studioBounds=null,studioMarkers=null,markerProfile=null,studioBones=[];
 const basePositions=new WeakMap();
 const loaded=new Map(),pending=new Map(),clothing=new Map(),hairObjects=new Map();
 const autoTriedProfiles=new Set();
@@ -225,7 +226,7 @@ function init(){
  window.addEventListener('resize',renderOnce);
  studioMarkers=createStudioMarkers({
   stage,figure,camera,getBounds:getBodyBounds,
-  getProfile:()=>markerProfile,isActive:()=>active
+  getProfile:()=>markerProfile,getBones:()=>studioBones,isActive:()=>active
  });
 }
 function registerMaterials(group,type,p){
@@ -370,7 +371,7 @@ function getBodyBounds(){
  studioBounds={minY:min,height:max-min};
  return studioBounds;
 }
-function deformMesh(mesh,ratios){
+function deformMesh(mesh,ratios,thighIntensity=0){
  if(!mesh.isSkinnedMesh||!mesh.geometry?.getAttribute('position'))return;
  if(!basePositions.has(mesh)){
   mesh.geometry=mesh.geometry.clone();
@@ -386,7 +387,8 @@ function deformMesh(mesh,ratios){
  for(let i=0;i<base.length;i+=3){
   const value=has?deformPosition(base[i],base[i+1],base[i+2],minY,height,ratios):
    [base[i],base[i+1],base[i+2]];
-  data[i]=value[0];data[i+1]=value[1];data[i+2]=value[2];
+  const shaped=thighIntensity>0?softenInnerThigh(...value,minY,height,thighIntensity):value;
+  data[i]=shaped[0];data[i+1]=shaped[1];data[i+2]=shaped[2];
  }
  position.needsUpdate=true;
  mesh.geometry.computeBoundingSphere();
@@ -398,9 +400,11 @@ function refreshBodyMeasurements(p){
  if(!body)return;
  const measures=displayedMeasurements(p);
  const ratios=visualRatios(measures,p.height,p.weight,p.child);
+ const intensity=visualMode(p)==='estimated'?estimatedThighIntensity(p.height,p.weight,p.child):0;
+ const skin=masterSkin();studioBones=skin?.skeleton?.bones||[];
  markerProfile={...p,visualMeasurements:measures,measurementMode:visualMode(p)};
- body.traverse(m=>{if(m.isSkinnedMesh && m===masterSkin())deformMesh(m,ratios);});
- for(const [,group] of clothing)group.traverse(m=>{if(m.isSkinnedMesh)deformMesh(m,ratios);});
+ body.traverse(m=>{if(m.isSkinnedMesh && m===skin)deformMesh(m,ratios,intensity);});
+ for(const [,group] of clothing)group.traverse(m=>{if(m.isSkinnedMesh)deformMesh(m,ratios,intensity);});
 }
 
 function renderOnce(){

@@ -6,8 +6,9 @@ import * as THREE from 'three';
 import { REGIONS,validMeasure } from './measurement-morph.mjs';
 import { layoutLandmarkCallouts } from './landmark-layout.mjs';
 import {visibleLandmark} from './landmark-visibility.mjs';
+import {anatomicalAnchor,requiredAnatomicalBones} from './landmark-bones.mjs';
 
-export function createStudioMarkers({stage,figure,camera,getBounds,getProfile,isActive}){
+export function createStudioMarkers({stage,figure,camera,getBounds,getProfile,getBones,isActive}){
  const style=document.createElement('style');
  style.id='bm-studio-landmark-style';
  style.textContent=[
@@ -150,6 +151,12 @@ export function createStudioMarkers({stage,figure,camera,getBounds,getProfile,is
   leaders.setAttribute('viewBox','0 0 '+width+' '+height);
   camera.updateMatrixWorld(true);figure.updateMatrixWorld(true);
   const showingBack=Math.cos(figure.rotation.y)<0;
+  const joints={};
+  const bones=new Map((getBones?.()||[]).map(b=>[b.name,b]));
+  for(const name of requiredAnatomicalBones()){
+   const bone=bones.get(name);if(!bone)continue;
+   const v=new THREE.Vector3();bone.getWorldPosition(v);joints[name]=[v.x,v.y,v.z];
+  }
   const items=[];
   for(const r of REGIONS){
    if(!visibleLandmark(r.key,figure.rotation.y,expanded)){
@@ -158,10 +165,12 @@ export function createStudioMarkers({stage,figure,camera,getBounds,getProfile,is
     paths.get(r.key).setAttribute('points','');
     continue;
    }
+   const anchor=anatomicalAnchor(r.key,joints);
    const factor=bounds.height/1.75;
-   const pos=new THREE.Vector3(r.x*factor,bounds.minY+bounds.height*r.y,
-    (showingBack?-r.z:r.z)*factor);
-   pos.applyMatrix4(figure.matrixWorld).project(camera);
+   const pos=anchor?new THREE.Vector3(...anchor):
+    new THREE.Vector3(r.x*factor,bounds.minY+bounds.height*r.y,
+     (showingBack?-r.z:r.z)*factor).applyMatrix4(figure.matrixWorld);
+   pos.project(camera);
    const x=(pos.x*.5+.5)*width,y=(-pos.y*.5+.5)*height;
    const dot=buttons.get(r.key),tag=tags.get(r.key);
    if(!Number.isFinite(x)||!Number.isFinite(y)||pos.z<=-1||pos.z>=1){
