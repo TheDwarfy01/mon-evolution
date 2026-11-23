@@ -92,6 +92,12 @@ camera.write_text(cam.replace('fr.monevolution.app.camera',
     'fr.monevolution.filamenttest.camera'),encoding="utf-8")
 xml=manifest.read_text(encoding="utf-8")
 assert 'fr.monevolution.app.camera' in xml and '</application>' in xml
+# AGP 9 rejects minSdk/targetSdk declarations in AndroidManifest.xml.
+# Their source of truth is the Gradle defaultConfig (24 and 35 respectively).
+import re
+xml,count=re.subn(r'<uses-sdk\b[^>]*?/>', '', xml)
+assert count==1, "Expected exactly one legacy uses-sdk declaration"
+xml=xml.replace(' package="fr.monevolution.app"', '')
 xml=xml.replace('fr.monevolution.app.camera','fr.monevolution.filamenttest.camera')
 # Do not intercept the production app's share links from a test install.
 xml=xml.replace('android:scheme="monevolution"','android:scheme="monevolutionfilament"')
