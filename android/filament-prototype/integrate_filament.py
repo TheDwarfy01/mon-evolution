@@ -27,12 +27,26 @@ build=gradle.read_text(encoding="utf-8")
 assert "versionCode 159" in build and "versionName '1.6.143'" in build
 assert "applicationId 'fr.monevolution.app'" in build
 build=build.replace("applicationId 'fr.monevolution.app'","applicationId 'fr.monevolution.filamenttest'",1)
+# SDK 37 updates only compilation APIs; keep targetSdk 35 / minSdk 24.
+assert "compileSdk 35" in build and "targetSdk 35" in build and "minSdk 24" in build
+build=build.replace("compileSdk 35","compileSdk 37",1)
 build=build.replace("versionCode 159","versionCode 160",1)
 build=build.replace("versionName '1.6.143'","versionName '1.6.144-filament-test'",1)
 assert "filament-utils-android" not in build
 build+="\n// Isolated Filament POC; only this experimental build resolves the library.\n"
-build+="dependencies { implementation 'com.google.android.filament:filament-utils-android:1.67.0' }\n"
+build+="dependencies { implementation 'com.google.android.filament:filament-utils-android:1.81.0' }\n"
 gradle.write_text(build,encoding="utf-8")
+
+# AGP 9.1.1 is the minimum stable Android Gradle plugin for API 37.
+# The existing Gemma AI patch configures Kotlin Gradle plugin 2.4.0.
+# Preserve it for now using Google's temporary AGP 9 legacy options.
+project_gradle=root.parent/"build.gradle"
+project_build=project_gradle.read_text(encoding="utf-8")
+assert "id 'com.android.application' version '8.7.3' apply false" in project_build
+assert "id 'org.jetbrains.kotlin.android' version '2.4.0' apply false" in project_build
+project_gradle.write_text(project_build.replace(
+    "id 'com.android.application' version '8.7.3' apply false",
+    "id 'com.android.application' version '9.1.1' apply false",1),encoding="utf-8")
 # Filament-utils pulls AndroidX annotation; legacy IMC Gradle did not need
 # AndroidX until this experiment, so enable it in the generated test project.
 props=root.parent/"gradle.properties"
@@ -42,6 +56,9 @@ if "android.useAndroidX=" in current:
         for line in current.splitlines())+"\n"
 else:
     current+="\nandroid.useAndroidX=true\n"
+# Android Gradle Plugin 9's built-in Kotlin collides with the legacy kotlin
+# Android plugin. Keep Gradle 9 compatibility without changing Gemma Kotlin.
+current+="\nandroid.builtInKotlin=false\nandroid.newDsl=false\n"
 props.write_text(current,encoding="utf-8")
 # Maven Central can return HTTP 429 on shared GitHub runners. Prefer Google's
 # documented public mirror for app dependencies, retaining normal repositories
@@ -89,4 +106,4 @@ assert 'filament-test.js' not in page and '</body></html>' in page
 page=page.replace('</body></html>',
     '<script src="filament-test.js"></script>\n</body></html>',1)
 html.write_text(page,encoding="utf-8")
-print("Experimental Filament 1.67 integration ready: isolated appId, unique provider, native viewer.")
+print("Experimental Filament 1.81 SDK 37 integration ready: isolated appId, unique provider, native viewer.")
