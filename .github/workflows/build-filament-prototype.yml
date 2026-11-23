@@ -22,7 +22,7 @@ jobs:
           java-version: '17'
       - uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '8.9'
+          gradle-version: '9.3.1'
       - name: Preparer la version 1.6.143 depuis les sources communes 1.6.31
         run: |
           set -euo pipefail
@@ -1140,7 +1140,11 @@ jobs:
           python3 android/filament-prototype/integrate_filament.py android/source-1.6.143
           node --check android/source-1.6.143/app/src/main/assets/filament-test.js
           grep -Fq "fr.monevolution.filamenttest" android/source-1.6.143/app/build.gradle
-          grep -Fq "filament-utils-android:1.67.0" android/source-1.6.143/app/build.gradle
+          grep -Fq "compileSdk 37" android/source-1.6.143/app/build.gradle
+          grep -Fq "targetSdk 35" android/source-1.6.143/app/build.gradle
+          grep -Fq "version '9.1.1'" android/source-1.6.143/build.gradle
+          grep -Fq "android.builtInKotlin=false" android/source-1.6.143/gradle.properties
+          grep -Fq "filament-utils-android:1.81.0" android/source-1.6.143/app/build.gradle
           grep -Fq "FilamentPreviewActivity" android/source-1.6.143/app/src/main/AndroidManifest.xml
           grep -Fq "openFilamentPreview()" android/source-1.6.143/app/src/main/java/fr/monevolution/app/MainActivity.java
           test -s android/source-1.6.143/app/src/main/java/fr/monevolution/app/FilamentPreviewActivity.java
@@ -1149,7 +1153,7 @@ jobs:
           set -euo pipefail
           sdkmanager_bin="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager -print -quit)"
           echo "$(dirname "$sdkmanager_bin")" >> "$GITHUB_PATH"
-          "$sdkmanager_bin" --install "platforms;android-35" "build-tools;35.0.0"
+          "$sdkmanager_bin" --install "platforms;android-37" "build-tools;36.0.0"
       - name: Compiler l'application
         working-directory: android/source-1.6.143
         run: gradle --no-daemon :app:assembleRelease
@@ -1164,14 +1168,14 @@ jobs:
           test -n "$KEYSTORE_B64" && test -n "$KEYSTORE_PASS" && test -n "$KEY_PASS" && test -n "$KEY_ALIAS"
           printf '%s' "$KEYSTORE_B64" | base64 -d > /tmp/mon-evolution.jks
           mkdir -p downloads
-          "$ANDROID_HOME/build-tools/35.0.0/zipalign" -p -f 4 \
+          "$ANDROID_HOME/build-tools/36.0.0/zipalign" -p -f 4 \
             android/source-1.6.143/app/build/outputs/apk/release/app-release-unsigned.apk \
             /tmp/mon-evolution-aligned.apk
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign \
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" sign \
             --ks /tmp/mon-evolution.jks --ks-key-alias "$KEY_ALIAS" \
             --ks-pass env:KEYSTORE_PASS --key-pass env:KEY_PASS \
             --out downloads/Mon_Evolution_IMC_Filament_TEST_v1.6.144.apk /tmp/mon-evolution-aligned.apk
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose downloads/Mon_Evolution_IMC_Filament_TEST_v1.6.144.apk
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose downloads/Mon_Evolution_IMC_Filament_TEST_v1.6.144.apk
           rm -f /tmp/mon-evolution.jks
       - name: Conserver l APK de test comme artefact prive de compilation
         uses: actions/upload-artifact@v4
