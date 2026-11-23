@@ -58,11 +58,12 @@ export function deformPosition(x,y,z,minY,height,ratios,estimated=false){
  for(const r of REGIONS){
   const ratio=ratios[r.key];
   if(!Number.isFinite(ratio))continue;
-  // In estimated adult mode the arms hang from shoulder to elbow and wrist:
-  // the old arm/forearm peaks (.665/.535) sat too low, beside the torso.
-  // Preserve measured and child deformations exactly as before.
-  const centerY=estimated?(r.key==='arm'?.735:r.key==='forearm'?.635:r.y):r.y;
-  const radius=estimated&&(r.key==='arm'||r.key==='forearm')?.075:r.r;
+  // Confirmed GLB bind-pose joint heights: shoulder .795, elbow .687,
+  // wrist .612 of body height. The old measured-arm peaks (.665/.535)
+  // pulled elbow and wrist geometry toward the abdomen and left the
+  // shoulder disconnected. Match both editing modes to the real arm bones.
+  const centerY=r.key==='arm'?.745:r.key==='forearm'?.648:r.y;
+  const radius=(r.key==='arm'||r.key==='forearm')?.085:r.r;
   let alpha=gauss(yn,centerY,radius)*(ratio-1);
   if(r.kind==='center'){center+=alpha;centerWeight+=gauss(yn,r.y,r.r);}
   else if(r.kind==='arm')arm+=alpha;
@@ -76,11 +77,14 @@ export function deformPosition(x,y,z,minY,height,ratios,estimated=false){
  // Locate the limb smoothly from the side of the chest towards elbow/wrist.
  // Measured silhouettes preserve the existing split.
  const smoothstep=t=>{const v=clamp(t,0,1);return v*v*(3-2*v);};
- const armProximity=estimated?
-  smoothstep((ax/height-.118)/.078)*
-  smoothstep((yn-.57)/.085)*
-  (1-smoothstep((yn-.83)/.065)):0;
- const armFactor=estimated?Math.max(mid,armProximity):mid;
+ // Classify the outer upper arm continuously in BOTH measured and estimated
+ // modes. This keeps the upper arm responsive without pulling the armpit or
+ // shirt shoulder into a separate deformed silhouette.
+ const armProximity=
+  smoothstep((ax/height-.105)/.09)*
+  smoothstep((yn-.56)/.09)*
+  (1-smoothstep((yn-.82)/.075));
+ const armFactor=Math.max(mid,armProximity);
  const shoulderDamping=estimated?
   1-.58*smoothstep((yn-.70)/.10)*
       smoothstep((ax/height-.082)/.095):1;
@@ -104,7 +108,10 @@ export function deformPosition(x,y,z,minY,height,ratios,estimated=false){
  const legBlend=smoothstep((legFactor-.25)/.65)*lower;
  // A bent arm's approximate medial axis varies from shoulder to wrist.
  // A fixed x=.22H axis was inappropriate near the female shoulder/upper arm.
- const armAxis=estimated?height*clamp(.100+(.795-yn)*.91,.100,.274):height*.22;
+ // Actual CC0 rig (normalized): shoulder x=.1025 at y=.795,
+ // elbow x=.200 at y=.687, wrist x=.273 at y=.612. A smoothly
+ // varying axis prevents measured arms from jumping sideways at the elbow.
+ const armAxis=height*clamp(.1025+(.795-yn)*.94,.1025,.274);
  const axis=Math.sign(x)*(
   armAxis*armBlend + midX*legBlend*(1-armBlend)
  );
