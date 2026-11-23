@@ -8,6 +8,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { profileCategory, allowedOutfitsFor } from './profile-rules.mjs';
 import { latestMeasurements, visualRatios, deformPosition } from './measurement-morph.mjs';
 import { createStudioMarkers } from './measurement-markers.mjs';
+import { isStudioEnabled, setStudioEnabled } from './visibility-preference.mjs';
 
 (()=>{
 'use strict';
@@ -80,6 +81,10 @@ let lastY=0,yaw=0,pointer=null,raf=0,profileId='',lastProfileCheck=0;
 let studioBounds=null,studioMarkers=null,markerProfile=null;
 const basePositions=new WeakMap();
 const loaded=new Map(),pending=new Map(),clothing=new Map(),hairObjects=new Map();
+const autoTriedProfiles=new Set();
+function visibilityStore(){try{return window.localStorage;}catch{return null;}}
+function visibilityEnabled(id){return isStudioEnabled(String(id||''),visibilityStore());}
+function rememberVisibility(id,enabled){return setStudioEnabled(String(id||''),enabled,visibilityStore());}
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 function ensureMounted(){
  if(!stage.contains(canvas))stage.append(canvas);
@@ -475,10 +480,12 @@ async function startPreview(){
   syncOutfitControl(p);
   const opts=choices(p);hairSel.value=opts.hair;clothSel.value=opts.clothes;
   profileId=p.id;
+  autoTriedProfiles.add(String(p.id));
   await ensureAccessories(p);
   configure();
   stage.classList.add('bm-makehuman-active');
   active=true;currentKey='';btn.textContent='Masquer le mannequin 3D';
+  rememberVisibility(p.id,true);
   note.textContent='3D Studio • rendu indicatif, sans valeur médicale • pivoter avec le doigt';
   refreshScene(true);
   raf=requestAnimationFrame(frame);
@@ -489,7 +496,11 @@ async function startPreview(){
   note.textContent='Visualisation indisponible : '+String(e.message||e);
  }finally{busy=false;btn.disabled=false;}
 }
-function stopPreview(){
+function stopPreview(manual=false){
+ if(manual){
+  const current=profileInfo();
+  if(current)rememberVisibility(current.id,false);
+ }
  active=false;if(raf)cancelAnimationFrame(raf);raf=0;lastY=0;
  studioMarkers?.update();
  stage.classList.remove('bm-makehuman-active');
@@ -500,6 +511,11 @@ function refreshScene(force){
  if(!active)return;
  const p=profileInfo();
  if(!p){stopPreview();note.textContent='Profil incomplet ou sexe non précisé : tableau uniquement.';return;}
+ if(profileId!==p.id && !visibilityEnabled(p.id)){
+  stopPreview();
+  note.textContent='Mannequin désactivé pour ce profil. Active-le pour le conserver aux prochains démarrages.';
+  return;
+ }
  const k=[p.id,p.sex,p.age.toFixed(2),p.height,p.weight,p.initial,
   JSON.stringify(p.measurements),p.measurementDate,p.skin,p.hair,p.eyes,p.lastDate,
   hairSel.value,clothSel.value].join('|');
@@ -516,24 +532,35 @@ function refreshScene(force){
 }
 function updateStatus(){
  if(busy)return;
- const s=bridge.makeHumanStudioState();
- if(s===oldStatus&&!autoShowAfterInstall)return;
- oldStatus=s;
- if(s==='ready'){
-  btn.disabled=false;btn.textContent=active?'Masquer le mannequin 3D':'Afficher le mannequin 3D';
-  if(!active)note.textContent='Module Studio installé • coiffures, vêtements, texture et animation';
-  if(autoShowAfterInstall){autoShowAfterInstall=false;startPreview();}
- }else if(s==='downloading'){
+ const status=bridge.makeHumanStudioState();
+ const changed=status!==oldStatus;
+ oldStatus=status;
+ if(status==='ready'){
+  btn.disabled=false;
+  btn.textContent=active?'Masquer le mannequin 3D':'Afficher le mannequin 3D';
+  if(changed&&!active)note.textContent='Module Studio installé • activation mémorisée par profil';
+  if(autoShowAfterInstall){
+   autoShowAfterInstall=false;
+   startPreview();
+   return;
+  }
+  const current=profileInfo();
+  if(!active&&!section.hidden&&current&&visibilityEnabled(current.id)&&
+     !autoTriedProfiles.has(String(current.id))){
+   autoTriedProfiles.add(String(current.id));
+   startPreview();
+  }
+ }else if(status==='downloading'){
   btn.disabled=true;note.textContent='Installation du Studio 3D complet en cours…';
- }else{
+ }else if(changed){
   btn.disabled=false;btn.textContent='Installer le modèle 3D Studio';
-  note.textContent=s.startsWith('error')?'Erreur de téléchargement. Réessaie.':
+  note.textContent=status.startsWith('error')?'Erreur de téléchargement. Réessaie.':
    'Module optionnel distinct de l’APK • installation unique';
  }
 }
 btn.addEventListener('click',()=>{
  const status=bridge.makeHumanStudioState();
- if(active){stopPreview();return;}
+ if(active){stopPreview(true);return;}
  if(status==='ready'){startPreview();return;}
  if(status==='downloading')return;
  autoShowAfterInstall=true;btn.disabled=true;
@@ -561,5 +588,5 @@ window.addEventListener('mon-evolution-measurements-changed',()=>refreshScene(tr
 window.addEventListener('mon-evolution-studio-ready',updateStatus);
 setInterval(()=>{if(section.hidden)return;updateStatus();},1400);
 updateStatus();
-// Do NOT automatically reveal the model merely because a download exists.
+// Reopen only when the selected profile explicitly enabled this model before.
 })();
