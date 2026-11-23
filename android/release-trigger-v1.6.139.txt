@@ -1,1 +1,3 @@
 Version 1.6.139 : Corriger la minceur artificielle à poids élevé, en mode Selon mon poids ; nouveau calcul de proportions tenant compte du poids et de la taille (IMC), plus de volume au ventre, à la taille, aux hanches et au torse, impact réel sur le maillage 3D et les vêtements. Supprimer le calibrage purement textuel de la 1.6.138. Les mensurations enregistrées, autres modes et positions anatomiques confirmées côté homme ne changent pas.
+
+Corrected the estimated-mode regional interpolation to keep manually saved waist, belly and hip changes responsive and added BMI-dependent regression tests.
