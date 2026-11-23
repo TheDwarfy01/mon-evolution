@@ -62,3 +62,26 @@ test('extreme but valid profiles still never exceed geometric measurement bounds
   for(const data of [a,b])for(const r of REGIONS)assert.ok(validMeasure(r.key,data[r.key]),r.key);
  }
 });
+
+test('high-BMI adult estimated silhouette grows substantially versus the old near-neutral figure',()=>{
+ const p={sex:'male',height:170,weight:116,age:40,child:false};
+ const visual=estimateVisualMeasurements(p);
+ // The previous cube-root estimate was ~95 cm at 116 kg, irrespective of height.
+ assert.ok(visual.belly>=125&&visual.belly<=158,'belly visual equivalent should react to BMI');
+ assert.ok(visual.waist>=108&&visual.hips>=122,'entire trunk should react');
+ const low=estimateVisualMeasurements({...p,weight:80});
+ assert.ok(visual.belly>low.belly+25);
+ assert.ok(visual.thigh>low.thigh+10);
+ assert.ok(visual.calf<visual.belly*.55,'do not enlarge extremities like the belly');
+});
+test('identical weight at different heights yields different adult appearance proportions',()=>{
+ const a=estimateVisualMeasurements({height:155,weight:116,age:40,sex:'male',child:false});
+ const b=estimateVisualMeasurements({height:195,weight:116,age:40,sex:'male',child:false});
+ assert.ok(a.belly>b.belly+12,'BMI / height must matter: same weight is not same volume distribution');
+});
+test('estimated adult female shape remains a distinct sex-specific silhouette',()=>{
+ const male=estimateVisualMeasurements({height:170,weight:116,age:40,sex:'male',child:false});
+ const female=estimateVisualMeasurements({height:170,weight:116,age:40,sex:'female',child:false});
+ assert.ok(male.waist>female.waist);
+ assert.ok(female.hips>male.hips);
+});

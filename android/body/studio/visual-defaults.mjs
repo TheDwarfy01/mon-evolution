@@ -29,12 +29,20 @@ export function estimateVisualMeasurements({height,weight,age,sex,child}={}){
     !Number.isFinite(age)||age<0||age>105||
     (sex!=='male'&&sex!=='female'))return null;
  const metres=height/100;
- // Purely aesthetic volume scaling, deliberately not an anthropometric fit.
- // Cubic-root scaling makes the shape change smoothly with a new weight.
- const adultDensity=sex==='male'?14.2:13.7;
+ const bmi=weight/(metres*metres);
+ // Artistic weight response ONLY. This is not an estimate of a person's
+ // real circumference, and cannot substitute for a tape measurement.
+ // The former cube-root formula cancelled height out and left a 116 kg
+ // adult visually almost unchanged. Use weight *relative to height*
+ // instead, with more expansion at belly/waist than at the extremities.
+ const adultExcess=clamp(bmi-23,-11,30);
  const childDensity=clamp(17.5-age*.38,11.2,17.5);
- const baselineWeight=Math.pow(metres,3)*(child?childDensity:adultDensity);
- const bulk=Math.pow(clamp(weight/baselineWeight,.58,2.35),1/3);
+ const baselineWeight=Math.pow(metres,3)*childDensity;
+ const childBulk=Math.pow(clamp(weight/baselineWeight,.58,2.35),1/3);
+ const artisticFactors={
+  neck:.012,chest:.026,arm:.018,forearm:.015,
+  waist:.032,belly:.036,hips:.029,thigh:.023,calf:.018
+ };
  const young=child?clamp((12-age)/12,0,1):0;
  const adultFemale=sex==='female'?1:0;
  // Coefficients reflect artwork proportions, NOT population averages.
@@ -51,7 +59,12 @@ export function estimateVisualMeasurements({height,weight,age,sex,child}={}){
  };
  const result={};
  for(const r of REGIONS){
-  const expected=height*r.base*bulk*coefficients[r.key];
+  const childOrAdultBulk=child?childBulk:clamp(
+   1+adultExcess*artisticFactors[r.key]+
+   (r.key==='belly'?.0006*Math.max(0,bmi-30)**2:0),
+   .72,r.key==='belly'?1.98:1.84
+  );
+  const expected=height*r.base*childOrAdultBulk*coefficients[r.key];
   // Avoid illogical inputs and excessive mesh deformation at both extremes.
   const cm=round1(clamp(expected,r.min,r.max));
   if(!validMeasure(r.key,cm))return null;

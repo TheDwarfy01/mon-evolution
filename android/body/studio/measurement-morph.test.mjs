@@ -71,3 +71,31 @@ test('changing belly circumference expands real abdomen without editing the groi
  assert.ok(Math.abs(at(.45)-z)<Math.abs(at(.6)-z)*.20,'pelvic crease not belly center');
  assert.deepEqual(deformPosition(x,H*.6,z,0,H,{}),[x,H*.6,z],'neutral reset is unchanged');
 });
+
+test('estimated-mode deformation has a meaningful weight response without changing measured mode',()=>{
+ const h=170,H=1.659,kg=116;
+ const input=estimate=>({belly:estimate,waist:estimate*.88,hips:estimate});
+ const measures=input(132),estimated=visualRatios(measures,h,kg,false,true);
+ const previous=visualRatios(measures,h,kg,false);
+ assert.ok(estimated.belly>previous.belly+.08,'high-BMI estimate must not be normalized away');
+ const x=.075,y=H*.60,z=.135;
+ const est=deformPosition(x,y,z,0,H,estimated,true);
+ const old=deformPosition(x,y,z,0,H,previous);
+ assert.ok(est[2]>old[2]+.006,'weight estimated torso must actually appear fuller');
+ const neutral=deformPosition(x,y,z,0,H,{},true);
+ assert.deepEqual(neutral,[x,y,z]);
+ const normal=deformPosition(x,y,z,0,H,previous,false);
+ assert.deepEqual(normal,old,'measured mode must stay unchanged');
+});
+test('weight-estimated shape responds smoothly across adult weight changes',()=>{
+ const H=1.659,h=170,x=.08,y=H*.60,z=.13;
+ const weights=[65,75,85,95,105,116,130],depths=[];
+ for(const weight of weights){
+  const values=estimateVisualMeasurements({height:h,weight,age:40,sex:'male',child:false});
+  const ratios=visualRatios(values,h,weight,false,true);
+  const point=deformPosition(x,y,z,0,H,ratios,true);
+  depths.push(point[2]);assert.ok(point.every(Number.isFinite));
+ }
+ for(let i=1;i<depths.length;i++)assert.ok(depths[i]>=depths[i-1]-1e-8,'weight increase should not shrink belly');
+ assert.ok(depths.at(-1)>depths[0]+.025);
+});

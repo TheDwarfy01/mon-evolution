@@ -30,25 +30,27 @@ export function latestMeasurements(profile){
  }
  return result;
 }
-export function visualRatios(measures,heightCm,weightKg,child=false){
+export function visualRatios(measures,heightCm,weightKg,child=false,estimated=false){
  const result={};
  if(!(heightCm>=40&&heightCm<=240&&weightKg>1))return result;
  // Expected circumferences are visual heuristics only, not clinical norms.
  const bmi=weightKg/((heightCm/100)**2);
- const bulk=child ? 1 : clamp(1+(bmi-23)*.009,.85,1.18);
+ // Keep the historic measurement-based deformation unchanged.
+ // Estimated mode must not normalize away high-BMI shape changes.
+ const bulk=child||estimated?1:clamp(1+(bmi-23)*.009,.85,1.18);
  for(const r of REGIONS){
   const v=measures[r.key];
   if(!validMeasure(r.key,v))continue;
   const baseline=heightCm*r.base*bulk;
   // Explicitly cap deformation to reduce garment collisions or distortions.
-  const raw=clamp(v/baseline,.70,1.30);
+  const raw=clamp(v/baseline,.70,estimated&&!child?1.65:1.30);
   result[r.key]=1+(raw-1)*.78;
  }
  return result;
 }
 // Return body-centric coordinates from a base vertex without changing bone
 // indices, weights, normals, target names or immutable source geometry.
-export function deformPosition(x,y,z,minY,height,ratios){
+export function deformPosition(x,y,z,minY,height,ratios,estimated=false){
  if(!(height>.1))return [x,y,z];
  const yn=clamp((y-minY)/height,-.2,1.2);
  const midX=height*.125;
@@ -67,7 +69,8 @@ export function deformPosition(x,y,z,minY,height,ratios){
  const torsoFactor=(1-mid);
  const armFactor=mid;
  const legFactor=legs;
- const amount=clamp(center*torsoFactor+arm*armFactor+leg*legFactor,-.23,.23);
+ const cap=estimated?.31:.23;
+ const amount=clamp(center*torsoFactor+arm*armFactor+leg*legFactor,-cap,cap);
  // Extremities: dilate about each limb axis, never push the limb sideways
  // as a whole. Torso and hips expand symmetrically about the mid-line.
  // Never snap the deformation axis at an arbitrary limb threshold:
