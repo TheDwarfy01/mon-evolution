@@ -106,12 +106,10 @@ public final class FilamentPreviewActivity extends Activity {
             viewer.loadModelGlb(buffer);
             if(viewer.getAsset()==null)throw new IllegalStateException("Chargement GLB impossible");
             viewer.setAutoPlayAnimations(false);
-            // Wait for the Android surface viewport before setting the lens projection.
+            // Model is normalized into a cube at origin. Camera stays outside.
+            viewer.transformToUnitCube();
             surface.post(()->{
-                if(viewer!=null){
-                    viewer.resetToDefaultState();
-                    viewer.getCamera().lookAt(0,0,0,0,0,-4,0,1,0);
-                }
+                if(viewer!=null) viewer.getCamera().lookAt(0,0,4,0,0,0,0,1,0);
             });
             status.setText("GLB chargé · Filament natif · rotation tactile · corps original sans morphing.");
             surface.setOnTouchListener((view,event)->{
@@ -124,8 +122,8 @@ public final class FilamentPreviewActivity extends Activity {
                     yaw+=(now-lastX)*0.008;
                     lastX=now;
                     double radius=4.0;
-                    viewer.getCamera().lookAt(radius*Math.sin(yaw),0.25,-4+radius*Math.cos(yaw),
-                        0,0,-4,0,1,0);
+                    viewer.getCamera().lookAt(radius*Math.sin(yaw),0.25,radius*Math.cos(yaw),
+                        0,0,0,0,1,0);
                     return true;
                 }
                 return true;
