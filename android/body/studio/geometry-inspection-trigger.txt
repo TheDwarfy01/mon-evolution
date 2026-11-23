@@ -2,3 +2,5 @@ Inspect 3D bone names and geometry for accurate mensuration landmarks.
 Inspect pose world transforms for waist / belly / hips anchor calibration.
 
 Audit skin materials and vertex skinning to fix exposed legs and sleeve cutouts.
+
+Inspection 2026-11-23: relever morphs faciaux disponibles et animation pour variante visage.
