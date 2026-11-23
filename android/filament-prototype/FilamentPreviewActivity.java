@@ -34,7 +34,10 @@ public final class FilamentPreviewActivity extends Activity {
     private float lastX;
     private double yaw;
     private TextView status;
-    private static final String BODY="base_body_anim.glb";
+    private String currentModel="filament-simple-body.glb";
+    private String currentLabel="Corps statique";
+    private int frameCount=0;
+    private SurfaceView stage;
 
     private static void initializeFilament() throws Exception {
         // Utils is a Kotlin object; its init method can have a Java static wrapper
@@ -64,13 +67,28 @@ public final class FilamentPreviewActivity extends Activity {
         status.setTextColor(Color.rgb(189,232,224));
         status.setTextSize(13);
         status.setPadding(dp(this,15),0,dp(this,15),dp(this,12));
-        status.setText("Diagnostic du maillage GLB original : sans corrections Three.js.");
+        status.setText("Diagnostic indépendant du profil : corps simple, cube et GLB d'origine.");
         root.addView(status);
+        LinearLayout modes=new LinearLayout(this);
+        modes.setPadding(dp(this,6),0,dp(this,6),dp(this,4));
+        String[] names={"Corps simple","Cube test","Corps complet"};
+        String[] files={"filament-simple-body.glb","filament-test-cube.glb","filament-base-body.glb"};
+        for(int i=0;i<names.length;i++){
+            final String filename=files[i],label=names[i];
+            Button button=new Button(this);
+            button.setText(label);
+            button.setTextSize(11);
+            button.setAllCaps(false);
+            modes.addView(button,new LinearLayout.LayoutParams(0,dp(this,44),1f));
+            button.setOnClickListener(v->switchModel(filename,label));
+        }
+        root.addView(modes);
         SurfaceView surface=new SurfaceView(this);
+        stage=surface;
         root.addView(surface,new LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,0,1f));
         TextView help=new TextView(this);
-        help.setText("Faire glisser horizontalement pour examiner les épaules et les aisselles. Aucun profil à créer : affichage du corps de base, sans vêtements ni mensurations.");
+        help.setText("Corps simple = maillage fixe CC0. Cube = vérification moteur. Corps complet = squelette et morphing. Faites glisser pour tourner. Aucun profil requis.");
         help.setTextSize(12);
         help.setTextColor(Color.WHITE);
         help.setPadding(dp(this,14),dp(this,10),dp(this,14),dp(this,12));
@@ -101,40 +119,16 @@ public final class FilamentPreviewActivity extends Activity {
             background=new Skybox.Builder().color(0.13f,0.17f,0.22f,1f)
                 .build(viewer.getEngine());
             viewer.getScene().setSkybox(background);
-            byte[] bytes;
-            try(java.io.InputStream input=getAssets().open("filament-base-body.glb")) {
-                java.io.ByteArrayOutputStream output=new java.io.ByteArrayOutputStream(12_000_000);
-                byte[] chunk=new byte[65536];
-                int n;
-                while((n=input.read(chunk))!=-1){
-                    if(output.size()+n>14_000_000)
-                        throw new java.io.IOException("Modèle 3D trop volumineux");
-                    output.write(chunk,0,n);
-                }
-                bytes=output.toByteArray();
-            }
-            if(bytes.length<1_000_000)
-                throw new java.io.IOException("Modèle 3D incomplet");
-            ByteBuffer buffer=ByteBuffer.allocateDirect(bytes.length).order(ByteOrder.nativeOrder());
-            buffer.put(bytes);
-            buffer.flip();
-            viewer.loadModelGlb(buffer);
-            if(viewer.getAsset()==null)throw new IllegalStateException("Chargement GLB impossible");
-
-            // This GLB has a skinned MakeHuman rig. NEVER disable ModelViewer's
-            // animation update without replacing it by animator.updateBoneMatrices():
-            // doing so previously collapsed most of the body into white strips.
-            if(viewer.getAnimator()==null || viewer.getAnimator().getAnimationCount()==0)
-                throw new IllegalStateException("Rig / animation de base absent");
-            viewer.getAnimator().applyAnimation(0,0f);
-            viewer.getAnimator().updateBoneMatrices();
-            viewer.setAutoPlayAnimations(true);
-            // Model is normalized into a cube at origin. Camera stays outside.
-            viewer.transformToUnitCube(new com.google.android.filament.utils.Float3(0f,0f,0f));
+            // Use the documented default Filament camera convention: the
+            // normalized model is centered at z=-4, viewed from origin.
             surface.post(()->{
-                if(viewer!=null) viewer.getCamera().lookAt(0,0,4,0,0,0,0,1,0);
+                if(viewer!=null && surface.getWidth()>0 && surface.getHeight()>0){
+                    double aspect=(double)surface.getWidth()/surface.getHeight();
+                    viewer.getCamera().setLensProjection(28.0,aspect,0.05,100.0);
+                    cameraAtYaw();
+                }
             });
-            status.setText("GLB chargé · Filament natif · rotation tactile · corps original sans morphing.");
+            switchModel("filament-simple-body.glb","Corps simple");
             surface.setOnTouchListener((view,event)->{
                 if(event.getActionMasked()==MotionEvent.ACTION_DOWN){
                     lastX=event.getX();
@@ -144,9 +138,7 @@ public final class FilamentPreviewActivity extends Activity {
                     float now=event.getX();
                     yaw+=(now-lastX)*0.008;
                     lastX=now;
-                    double radius=4.0;
-                    viewer.getCamera().lookAt(radius*Math.sin(yaw),0.25,radius*Math.cos(yaw),
-                        0,0,0,0,1,0);
+                    cameraAtYaw();
                     return true;
                 }
                 return true;
@@ -155,6 +147,10 @@ public final class FilamentPreviewActivity extends Activity {
                 @Override public void doFrame(long time){
                     if(!running||viewer==null)return;
                     viewer.render(time);
+                    if(++frameCount%80==0){
+                        int pct=Math.round(100f*viewer.getProgress());
+                        status.setText(currentLabel+" · ressources "+pct+" % · rotation active");
+                    }
                     Choreographer.getInstance().postFrameCallback(this);
                 }
             };
@@ -163,6 +159,54 @@ public final class FilamentPreviewActivity extends Activity {
                 (ex.getMessage()==null?"":(" · "+ex.getMessage())));
         }
     }
+    private void cameraAtYaw(){
+        if(viewer==null)return;
+        double distance=4.0;
+        viewer.getCamera().lookAt(
+            Math.sin(yaw)*distance,0.15,-4+Math.cos(yaw)*distance,
+            0,0,-4,0,1,0);
+    }
+
+    private void switchModel(String file,String label){
+        if(viewer==null)return;
+        try{
+            byte[] bytes;
+            try(java.io.InputStream input=getAssets().open(file)){
+                java.io.ByteArrayOutputStream output=new java.io.ByteArrayOutputStream(400_000);
+                byte[] chunk=new byte[65536];
+                int count;
+                while((count=input.read(chunk))!=-1){
+                    if(output.size()+count>14_000_000)
+                        throw new java.io.IOException("GLB trop volumineux");
+                    output.write(chunk,0,count);
+                }
+                bytes=output.toByteArray();
+            }
+            if(bytes.length<500)throw new java.io.IOException("GLB incomplet");
+            ByteBuffer buffer=ByteBuffer.allocateDirect(bytes.length).order(ByteOrder.nativeOrder());
+            buffer.put(bytes).flip();
+            viewer.loadModelGlb(buffer);
+            if(viewer.getAsset()==null)throw new IllegalStateException("AssetLoader refuse le GLB");
+            if(viewer.getAnimator()!=null && viewer.getAnimator().getAnimationCount()>0){
+                viewer.getAnimator().applyAnimation(0,0f);
+                viewer.getAnimator().updateBoneMatrices();
+                viewer.setAutoPlayAnimations(true);
+            }else{
+                viewer.setAutoPlayAnimations(false);
+            }
+            viewer.transformToUnitCube(new com.google.android.filament.utils.Float3(0f,0f,-4f));
+            yaw=0;
+            cameraAtYaw();
+            currentModel=file;
+            currentLabel=label;
+            frameCount=0;
+            status.setText(label+" · GLB "+bytes.length+" octets · chargement en cours");
+        }catch(Exception ex){
+            status.setText(label+" : ECHEC "+ex.getClass().getSimpleName()+
+                (ex.getMessage()==null?"":" · "+ex.getMessage()));
+        }
+    }
+
     @Override protected void onResume(){
         super.onResume();
         running=true;
