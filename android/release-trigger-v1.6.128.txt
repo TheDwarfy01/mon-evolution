@@ -1,0 +1,7 @@
+Mon Evolution IMC v1.6.128 (versionCode 144)
+Correctif 3D : choisir automatiquement le mannequin exclusivement selon sexe homme/femme et age du profil.
+Aucune visualisation quand sexe, naissance, taille ou poids manquent : tableau de mensurations uniquement.
+Avec enfants garçon/fille, morphologie adaptée à la classe d'âge, aucun objectif de perte de poids.
+Limiter les tenues compatibles par type de profil (2 a 3 tenues), masquer la peau couverte par les vetements, partage reel de l'ossature animee, remap des os si leur ordre differe, matieres double-face pour reduire les artefacts.
+Tests unitaires du profil, de la restriction des tenues et verifications des corrections 3D.
+APK installable par dessus la version precedente avec module Studio v2 conserve, aucune perte de donnees.
