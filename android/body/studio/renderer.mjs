@@ -10,6 +10,7 @@ import { latestMeasurements, visualRatios, deformPosition } from './measurement-
 import { createStudioMarkers } from './measurement-markers.mjs';
 import { isStudioEnabled, setStudioEnabled } from './visibility-preference.mjs';
 import { hideMaskFor, coveredTriangle, behindOpaqueGarment } from './clothing-coverage.mjs';
+import { maskIndexedTriangles, touchesExposedArm } from './skin-triangle-mask.mjs';
 
 (()=>{
 'use strict';
@@ -292,18 +293,22 @@ function concealCoveredSkin(files){
   const attr=geo.getAttribute('_cczone')||geo.getAttribute('_CCZONE');
   const pos=geo.getAttribute('position');
   if(!pos)return;
-  const kept=[];
-  for(let i=0;i<initial.length;i+=3){
-   const a=initial[i],b=initial[i+1],c=initial[i+2];
-   const hiddenByZone=attr&&coveredTriangle([attr.getX(a),attr.getX(b),attr.getX(c)],mask);
-   // If a GLB body vertex lacks _CCZONE at a garment seam, use a conservative
-   // position-based fallback. Limit to the covered torso/hips/legs only.
+  const jointIds=geo.getAttribute('skinIndex');
+  const jointWeights=geo.getAttribute('skinWeight');
+  const jointNames=mesh.skeleton?.bones?.map(b=>b.name)||[];
+  // Preserve GLB material draw-group offsets by retaining index length.
+  const masked=maskIndexedTriangles(initial,(a,b,c)=>{
+   if(touchesExposedArm([a,b,c],jointIds,jointWeights,jointNames))return false;
    const yn=((pos.getY(a)+pos.getY(b)+pos.getY(c))/3-minY)/height;
    const xn=(Math.abs(pos.getX(a))+Math.abs(pos.getX(b))+Math.abs(pos.getX(c)))/(3*height);
+   // If rig labels are missing, keep upper outer limbs rather than cut elbows.
+   if(yn>.47&&yn<.79&&xn>.17)return false;
+   const hiddenByZone=attr&&coveredTriangle([attr.getX(a),attr.getX(b),attr.getX(c)],mask);
    const hiddenByFabric=behindOpaqueGarment(yn,xn,files);
-   if(!hiddenByZone&&!hiddenByFabric)kept.push(a,b,c);
-  }
-  geo.setIndex(new THREE.BufferAttribute(new initial.constructor(kept),1));
+   return !!(hiddenByZone||hiddenByFabric);
+  });
+  // Degenerate triangles hide covered skin without shifting material groups.
+  geo.setIndex(new THREE.BufferAttribute(masked,1));
  });
 }
 
