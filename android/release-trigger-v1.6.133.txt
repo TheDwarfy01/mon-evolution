@@ -1,0 +1,1 @@
+Version 1.6.133 : repères anatomiques 3D fluides sur 360°, adaptation aux mensurations, évitement des chevauchements, surbrillance de sélection, lignes conservées et tests de régression. Conservation des données et de tous les correctifs précédents.
