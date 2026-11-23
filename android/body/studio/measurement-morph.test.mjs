@@ -150,3 +150,39 @@ test('estimated arm response is continuous at side and shoulder transitions',()=
    'no sharp seam x='+x0+' y='+yn);
  }
 });
+
+test('measured and estimated upper arms deform along the actual shoulder-elbow-wrist axis',()=>{
+ const H=1.659,cm=170,kg=105;
+ for(const estimated of [false,true]){
+  const ratios=visualRatios({arm:49,forearm:35},cm,kg,false,estimated);
+  const positions=[
+   {name:'shoulder',yn:.795,x:.170,z:.045},
+   {name:'upper arm',yn:.745,x:.245,z:.06},
+   {name:'elbow',yn:.687,x:.331,z:.055},
+   {name:'forearm',yn:.648,x:.395,z:.052},
+   {name:'wrist',yn:.612,x:.453,z:.038}
+  ];
+  for(const p of positions){
+   const a=deformPosition(p.x,p.yn*H,p.z,0,H,ratios,estimated);
+   assert.ok(a.every(Number.isFinite),p.name);
+   assert.ok(Math.abs(a[0]-p.x)<.065,p.name+' centre remains near rig joint');
+   assert.ok(Math.abs(a[2]-p.z)<.035,p.name+' radial changes stay bounded');
+  }
+ }
+});
+test('left and right elbows and shoulder joints remain symmetric and continuous with new arm axis',()=>{
+ const H=1.659,ratios={arm:1.3,forearm:1.25,chest:1.1};
+ for(const estimated of [false,true]){
+  for(const yn of [.60,.65,.687,.74,.795,.835]){
+   for(const x of [.18,.25,.32,.39]){
+    const a=deformPosition(x,H*yn,.056,0,H,ratios,estimated);
+    const b=deformPosition(x+.0001,H*(yn+.0001),.056,0,H,ratios,estimated);
+    const c=deformPosition(-x,H*yn,.056,0,H,ratios,estimated);
+    assert.ok(Math.hypot(a[0]-b[0],a[1]-b[1],a[2]-b[2])<.003,
+      'no jump around elbow or shoulder '+yn);
+    assert.ok(Math.abs(a[0]+c[0])<1e-8 && Math.abs(a[2]-c[2])<1e-8,
+      'left and right arms remain symmetric');
+   }
+  }
+ }
+});
