@@ -152,8 +152,8 @@
  sexObserver.observe(toggles,{childList:true,subtree:true,attributes:true,attributeFilter:['aria-pressed']});
  connectors();
 
- // The reference has a short row of History / Evolution / Photo actions
- // below the mannequin, not a second mannequin.
+ // Three shortcuts below the mannequin. Photo stays available inside
+ // the measurements form, where its original click listener remains intact.
  const nav=document.createElement('div');nav.className='bm-silhouette-shortcuts';
  function jump(label,symbol,target){
   const b=document.createElement('button');b.type='button';
@@ -164,26 +164,21 @@
  }
  jump('Historique','▤','bm-history');
  jump('Évolution','▥','bm-graph');
- const photo=document.getElementById('bm-pick-photo');
- if(photo){
-  photo.classList.remove('bm-button');photo.textContent='';
-  const ico=document.createElement('span');ico.className='bm-shortcut-icon';ico.textContent='▣';
-  photo.append(ico,document.createTextNode('Photo'));
-  nav.append(photo);
- }
- stage.insertAdjacentElement('afterend',nav);
-
- // Color selection is a compact, optional panel; skin/hair/eyes are
- // the ONLY available mannequin appearance controls.
- const toggle=document.createElement('button');
- toggle.type='button';toggle.className='bm-palette-header';
- toggle.textContent='🎨 Personnaliser la peau, les cheveux et les yeux';
- toggle.setAttribute('aria-expanded','false');
- toggle.onclick=()=>{
+ const customize=document.createElement('button');
+ customize.type='button';
+ customize.setAttribute('aria-controls','bm-colors');
+ customize.setAttribute('aria-expanded','false');
+ const paletteIcon=document.createElement('span');
+ paletteIcon.className='bm-shortcut-icon';
+ paletteIcon.textContent='🎨';
+ customize.append(paletteIcon,document.createTextNode('Personnalisation'));
+ customize.onclick=()=>{
   palette.hidden=!palette.hidden;
-  toggle.setAttribute('aria-expanded',String(!palette.hidden));
+  customize.setAttribute('aria-expanded',String(!palette.hidden));
+  if(!palette.hidden)requestAnimationFrame(()=>palette.scrollIntoView({behavior:'smooth',block:'nearest'}));
  };
- nav.insertAdjacentElement('afterend',toggle);
+ nav.append(customize);
+ stage.insertAdjacentElement('afterend',nav);
  palette.hidden=true;
  const latest=document.getElementById('bm-latest');
  if(latest)palette.insertAdjacentElement('afterend',latest);
