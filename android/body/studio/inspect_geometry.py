@@ -17,3 +17,10 @@ for i,mesh in enumerate(data.get("meshes",[])):
  for j,prim in enumerate(mesh.get("primitives",[])):
   pos=data["accessors"][prim["attributes"]["POSITION"]]
   print("MESH_BOUNDS",i,j,"name",mesh.get("name"),"count",pos.get("count"),"min",pos.get("min"),"max",pos.get("max"))
+
+# Facial options must be verified against actual exported GLB targets; never invent one.
+for i,mesh in enumerate(data.get("meshes",[])):
+ target_names=mesh.get("extras",{}).get("targetNames",[])
+ print("MESH_MORPH_NAMES",i,repr(mesh.get("name")),len(target_names),repr(target_names[:120]))
+for i,clip in enumerate(data.get("animations",[])):
+ print("ANIM_NAME",i,repr(clip.get("name")))
