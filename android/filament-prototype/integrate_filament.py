@@ -43,6 +43,17 @@ if "android.useAndroidX=" in current:
 else:
     current+="\nandroid.useAndroidX=true\n"
 props.write_text(current,encoding="utf-8")
+# Maven Central can return HTTP 429 on shared GitHub runners. Prefer Google's
+# documented public mirror for app dependencies, retaining normal repositories
+# as fallbacks. This affects only the generated experimental project.
+settings=root.parent/"settings.gradle"
+configuration=settings.read_text(encoding="utf-8")
+needle="repositories { google(); mavenCentral() }"
+assert needle in configuration, "Unexpected settings.gradle repository structure"
+configuration=configuration.replace(needle,
+    "repositories { google(); maven { url 'https://maven-central.storage-download.googleapis.com/maven2/' }; mavenCentral() }")
+settings.write_text(configuration,encoding="utf-8")
+
 
 
 source=java.read_text(encoding="utf-8")
