@@ -12,7 +12,8 @@ import { estimatedThighIntensity,softenInnerThigh } from './thigh-fill.mjs';
 import { readVisualOverrides,recordVisualOverrides,resolveVisualMeasurements } from './visual-overrides.mjs';
 import { isStudioEnabled, setStudioEnabled } from './visibility-preference.mjs';
 import { hideMaskFor, coveredTriangle, behindOpaqueGarment } from './clothing-coverage.mjs';
-import { maskIndexedTriangles, touchesExposedArm } from './skin-triangle-mask.mjs';
+import { maskIndexedTriangles, touchesExposedArm, touchesSleeveOpening } from './skin-triangle-mask.mjs';
+import {applyUniformBodySkin} from './skin-material.mjs';
 import { estimateVisualMeasurements, readVisualMode, writeVisualMode } from './visual-defaults.mjs';
 
 (()=>{
@@ -253,8 +254,10 @@ function registerMaterials(group,type,p){
     mat.needsUpdate=true;
    }else if(type==='body'){
     if(/iris/.test(label)){if(mat.color)mat.color.set(p.eyes);}
-    else if(/skin|body|character|surface/.test(label)){
-      if(mat.color)mat.color.set(p.skin);
+    else if(applyUniformBodySkin(mat,o.name,p.skin)){
+      // The original baked skin albedo map is tinted unevenly across
+      // the face, arms and legs. Remove only that diffuse map.
+      // Lighting, roughness, normals and all other materials remain.
     }
    }
   }
@@ -341,6 +344,7 @@ function concealCoveredSkin(files){
   // Preserve GLB material draw-group offsets by retaining index length.
   const masked=maskIndexedTriangles(initial,(a,b,c)=>{
    if(touchesExposedArm([a,b,c],jointIds,jointWeights,jointNames))return false;
+   if(touchesSleeveOpening([a,b,c],pos,minY,height,files))return false;
    const yn=((pos.getY(a)+pos.getY(b)+pos.getY(c))/3-minY)/height;
    const xn=(Math.abs(pos.getX(a))+Math.abs(pos.getX(b))+Math.abs(pos.getX(c)))/(3*height);
    // If rig labels are missing, keep upper outer limbs rather than cut elbows.
