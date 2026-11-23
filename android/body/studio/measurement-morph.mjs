@@ -43,7 +43,7 @@ export function visualRatios(measures,heightCm,weightKg,child=false,estimated=fa
   if(!validMeasure(r.key,v))continue;
   const baseline=heightCm*r.base*bulk;
   // Explicitly cap deformation to reduce garment collisions or distortions.
-  const raw=clamp(v/baseline,.70,estimated&&!child?1.65:1.30);
+  const raw=clamp(v/baseline,.70,estimated&&!child?2.35:1.30);
   result[r.key]=1+(raw-1)*.78;
  }
  return result;
@@ -54,12 +54,12 @@ export function deformPosition(x,y,z,minY,height,ratios,estimated=false){
  if(!(height>.1))return [x,y,z];
  const yn=clamp((y-minY)/height,-.2,1.2);
  const midX=height*.125;
- let center=0,arm=0,leg=0;
+ let center=0,centerWeight=0,arm=0,leg=0;
  for(const r of REGIONS){
   const ratio=ratios[r.key];
   if(!Number.isFinite(ratio))continue;
   let alpha=gauss(yn,r.y,r.r)*(ratio-1);
-  if(r.kind==='center')center+=alpha;
+  if(r.kind==='center'){center+=alpha;centerWeight+=gauss(yn,r.y,r.r);}
   else if(r.kind==='arm')arm+=alpha;
   else leg+=alpha;
  }
@@ -69,8 +69,13 @@ export function deformPosition(x,y,z,minY,height,ratios,estimated=false){
  const torsoFactor=(1-mid);
  const armFactor=mid;
  const legFactor=legs;
- const cap=estimated?.31:.23;
- const amount=clamp(center*torsoFactor+arm*armFactor+leg*legFactor,-cap,cap);
+ // Average overlapping torso zones so that individual edited circumferences
+ // remain responsive at higher weights rather than clipping immediately.
+ // Measured mode retains the exact earlier deformation.
+ const effectiveCenter=estimated&&centerWeight>0?
+  (center/Math.max(1,centerWeight))*.70:center;
+ const cap=estimated?.35:.23;
+ const amount=clamp(effectiveCenter*torsoFactor+arm*armFactor+leg*legFactor,-cap,cap);
  // Extremities: dilate about each limb axis, never push the limb sideways
  // as a whole. Torso and hips expand symmetrically about the mid-line.
  // Never snap the deformation axis at an arbitrary limb threshold:

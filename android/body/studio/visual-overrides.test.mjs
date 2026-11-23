@@ -43,8 +43,8 @@ test('saved manual belly changes estimated mode mesh volume near the abdomen',()
  const before=resolveVisualMeasurements(profile,'estimated',{});
  const after=resolveVisualMeasurements(profile,'estimated',{belly:'2026-11-23'});
  const H=1.659,x=.07,y=.60*H,z=.13;
- const b=deformPosition(x,y,z,0,H,visualRatios(before.values,170,85,false));
- const a=deformPosition(x,y,z,0,H,visualRatios(after.values,170,85,false));
+ const b=deformPosition(x,y,z,0,H,visualRatios(before.values,170,85,false,true),true);
+ const a=deformPosition(x,y,z,0,H,visualRatios(after.values,170,85,false,true),true);
  assert.ok(a[2]>b[2]+.003,'manually saved belly should visibly enlarge the abdomen');
  assert.ok(after.estimatedKeys.includes('waist')&&!after.estimatedKeys.includes('belly'));
 });

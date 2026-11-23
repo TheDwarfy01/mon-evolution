@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {REGIONS,latestMeasurements,visualRatios,deformPosition,validMeasure} from './measurement-morph.mjs';
+import {estimateVisualMeasurements} from './visual-defaults.mjs';
 test('all nine measurements survive their own latest dated record',()=>{
  const p={bodyMeasurements:[
   {date:'2026-01-12',waist:86,hips:102,chest:109,arm:36},
