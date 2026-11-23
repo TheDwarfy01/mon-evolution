@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {recordVisualOverrides,readVisualOverrides,resolveVisualMeasurements} from './visual-overrides.mjs';
+import {visualRatios,deformPosition} from './measurement-morph.mjs';
 const storage=()=>{const data=new Map();return {getItem:k=>data.get(k),setItem:(k,v)=>data.set(k,v)};};
 const profile={id:'p1',height:170,weight:85,age:39,sex:'male',child:false,
  measurements:{belly:250,waist:190},records:[
@@ -36,4 +37,14 @@ test('manual date reference persists without saving measurements twice',()=>{
  assert.deepEqual(readVisualOverrides('p1',s),{waist:'2026-11-23',belly:'2026-11-23'});
  assert.equal(recordVisualOverrides('p1','oops',['belly'],s),false);
  assert.equal(recordVisualOverrides('p1','2026-11-23',['badKey'],s),false);
+});
+
+test('saved manual belly changes estimated mode mesh volume near the abdomen',()=>{
+ const before=resolveVisualMeasurements(profile,'estimated',{});
+ const after=resolveVisualMeasurements(profile,'estimated',{belly:'2026-11-23'});
+ const H=1.659,x=.07,y=.60*H,z=.13;
+ const b=deformPosition(x,y,z,0,H,visualRatios(before.values,170,85,false));
+ const a=deformPosition(x,y,z,0,H,visualRatios(after.values,170,85,false));
+ assert.ok(a[2]>b[2]+.003,'manually saved belly should visibly enlarge the abdomen');
+ assert.ok(after.estimatedKeys.includes('waist')&&!after.estimatedKeys.includes('belly'));
 });

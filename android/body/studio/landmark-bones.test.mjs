@@ -21,7 +21,7 @@ test('neck, upper arm and forearm stay between corresponding bones',()=>{
 });
 test('belly is above pelvis; thigh between pelvis and knee, calf between knee and ankle',()=>{
  const bel=anatomicalAnchor('belly',J),thigh=anatomicalAnchor('thigh',J),calf=anatomicalAnchor('calf',J);
- assert.ok(bel[1]>.86&&bel[1]<.97);
+ assert.ok(bel[1]>.97&&bel[1]<1.05);
  assert.ok(thigh[1]>.43&&thigh[1]<.82);
  assert.ok(calf[1]>.09&&calf[1]<.43);
  assert.ok(thigh[0]<0&&calf[0]<0);

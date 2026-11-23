@@ -48,3 +48,26 @@ test('child measurements do not use adult BMI thresholds',()=>{
  const b=visualRatios({waist:65},130,45,true);
  assert.equal(a.waist,b.waist);
 });
+
+test('waist, belly and hips morph at anatomically distinct torso heights',()=>{
+ const regs=Object.fromEntries(REGIONS.map(r=>[r.key,r]));
+ assert.ok(regs.waist.y>regs.belly.y&&regs.belly.y>regs.hips.y);
+ assert.ok(regs.waist.y>.63&&regs.belly.y>.59&&regs.hips.y>.55);
+ const H=1.659,x=.075,z=.14;
+ for(const [key,center,far] of [['waist',.643,.43],['belly',.600,.43],['hips',.557,.35]]){
+  const ratios=visualRatios({[key]:180},170,85,false);
+  const deform=yn=>{
+   const [nx,,nz]=deformPosition(x,yn*H,z,0,H,ratios);
+   return Math.hypot(nx-x,nz-z);
+  };
+  assert.ok(deform(center)>deform(far)*4,key+' should expand its intended torso zone');
+ }
+});
+test('changing belly circumference expands real abdomen without editing the groin',()=>{
+ const H=1.659,x=.07,z=.13;
+ const measured=visualRatios({belly:113},170,85,false);
+ const at=yn=>deformPosition(x,H*yn,z,0,H,measured)[2];
+ assert.ok(at(.6)>z+.005,'abdomen gets bigger with belly measurement');
+ assert.ok(Math.abs(at(.45)-z)<Math.abs(at(.6)-z)*.20,'pelvic crease not belly center');
+ assert.deepEqual(deformPosition(x,H*.6,z,0,H,{}),[x,H*.6,z],'neutral reset is unchanged');
+});

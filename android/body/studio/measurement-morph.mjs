@@ -8,9 +8,9 @@ export const REGIONS=Object.freeze([
  {key:'chest',label:'Poitrine',min:20,max:260,y:.705,x:-.13,z:.105,r:.082,kind:'center',base:.525},
  {key:'arm',label:'Bras',min:10,max:110,y:.665,x:.295,z:.065,r:.080,kind:'arm',base:.185},
  {key:'forearm',label:'Avant-bras',min:10,max:110,y:.535,x:.415,z:.09,r:.075,kind:'arm',base:.155},
- {key:'waist',label:'Taille',min:20,max:260,y:.570,x:-.115,z:.14,r:.057,kind:'center',base:.445},
- {key:'belly',label:'Ventre',min:20,max:300,y:.515,x:.12,z:.155,r:.059,kind:'center',base:.465},
- {key:'hips',label:'Hanches',min:20,max:300,y:.455,x:-.17,z:.125,r:.071,kind:'center',base:.525},
+ {key:'waist',label:'Taille',min:20,max:260,y:.643,x:-.115,z:.14,r:.057,kind:'center',base:.445},
+ {key:'belly',label:'Ventre',min:20,max:300,y:.600,x:.12,z:.155,r:.059,kind:'center',base:.465},
+ {key:'hips',label:'Hanches',min:20,max:300,y:.557,x:-.17,z:.125,r:.071,kind:'center',base:.525},
  {key:'thigh',label:'Cuisse',min:15,max:200,y:.340,x:-.175,z:.075,r:.102,kind:'leg',base:.315},
  {key:'calf',label:'Mollet',min:10,max:130,y:.165,x:.175,z:.08,r:.082,kind:'leg',base:.215}
 ]);
