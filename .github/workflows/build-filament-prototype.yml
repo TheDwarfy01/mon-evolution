@@ -1140,7 +1140,7 @@ jobs:
           python3 android/filament-prototype/integrate_filament.py android/source-1.6.143
           node --check android/source-1.6.143/app/src/main/assets/filament-test.js
           grep -Fq "fr.monevolution.filamenttest" android/source-1.6.143/app/build.gradle
-          grep -Fq "filament-utils-android:1.81.0" android/source-1.6.143/app/build.gradle
+          grep -Fq "filament-utils-android:1.67.0" android/source-1.6.143/app/build.gradle
           grep -Fq "FilamentPreviewActivity" android/source-1.6.143/app/src/main/AndroidManifest.xml
           grep -Fq "openFilamentPreview()" android/source-1.6.143/app/src/main/java/fr/monevolution/app/MainActivity.java
           test -s android/source-1.6.143/app/src/main/java/fr/monevolution/app/FilamentPreviewActivity.java
