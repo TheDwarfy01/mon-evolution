@@ -398,8 +398,19 @@ function deformMesh(mesh,ratios,thighIntensity=0,estimated=false){
  position.needsUpdate=true;
  mesh.geometry.computeBoundingSphere();
  mesh.geometry.computeBoundingBox();
- // Relight surfaces after a local circumference change.
- mesh.geometry.computeVertexNormals();
+ // Recompute normals from the ORIGINAL triangle topology. The visible
+ // indices contain deliberately collapsed garment-covered triangles; using
+ // those for normals creates black wedges and faceted shading around upper
+ // arms, sleeve openings and armpits after a measurement update.
+ const fullIndices=baseSkinIndices.get(mesh);
+ const maskedIndex=mesh.geometry.getIndex();
+ if(fullIndices&&maskedIndex&&fullIndices.length===maskedIndex.count){
+  mesh.geometry.setIndex(new THREE.BufferAttribute(fullIndices,1));
+  try{mesh.geometry.computeVertexNormals();}
+  finally{mesh.geometry.setIndex(maskedIndex);}
+ }else{
+  mesh.geometry.computeVertexNormals();
+ }
 }
 function refreshBodyMeasurements(p){
  if(!body)return;
