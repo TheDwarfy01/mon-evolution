@@ -1,4 +1,4 @@
-name: Filament v1.6.146 - sans profil
+name: Filament v1.6.147 - sans profil
 on:
   workflow_dispatch:
   pull_request:
@@ -1174,12 +1174,20 @@ jobs:
           dst.write_bytes(data)
           print('GLB valide intégré dans APK Filament',len(data),'octets')
           PY
+          python3 -m py_compile android/filament-prototype/build_diagnostic_glbs.py
+          python3 android/filament-prototype/build_diagnostic_glbs.py \
+            android/source-1.6.143/app/src/main/assets/filament-base-body.glb \
+            android/source-1.6.143/app/src/main/assets/
+          test -s android/source-1.6.143/app/src/main/assets/filament-simple-body.glb
+          test -s android/source-1.6.143/app/src/main/assets/filament-test-cube.glb
           grep -Fq 'android.intent.category.LAUNCHER' android/source-1.6.143/app/src/main/AndroidManifest.xml
           grep -Fq 'filament-base-body.glb' android/source-1.6.143/app/src/main/java/fr/monevolution/app/FilamentPreviewActivity.java
           grep -Fq 'viewer.getAnimator().updateBoneMatrices();' android/source-1.6.143/app/src/main/java/fr/monevolution/app/FilamentPreviewActivity.java
+          grep -Fq 'filament-simple-body.glb' android/source-1.6.143/app/src/main/java/fr/monevolution/app/FilamentPreviewActivity.java
+          grep -Fq 'filament-test-cube.glb' android/source-1.6.143/app/src/main/java/fr/monevolution/app/FilamentPreviewActivity.java
           grep -Fq 'viewer.setAutoPlayAnimations(true);' android/source-1.6.143/app/src/main/java/fr/monevolution/app/FilamentPreviewActivity.java
-          ! grep -Fq 'viewer.setAutoPlayAnimations(false);' android/source-1.6.143/app/src/main/java/fr/monevolution/app/FilamentPreviewActivity.java
-          grep -Fq "versionName '1.6.146-filament-skeleton-fix'" android/source-1.6.143/app/build.gradle
+          grep -Fq 'viewer.setAutoPlayAnimations(false);' android/source-1.6.143/app/src/main/java/fr/monevolution/app/FilamentPreviewActivity.java
+          grep -Fq "versionName '1.6.147-filament-skeleton-fix'" android/source-1.6.143/app/build.gradle
       - name: Installer SDK Android
         run: |
           set -euo pipefail
@@ -1212,13 +1220,13 @@ jobs:
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" sign \
             --ks /tmp/mon-evolution.jks --ks-key-alias "$KEY_ALIAS" \
             --ks-pass env:KEYSTORE_PASS --key-pass env:KEY_PASS \
-            --out downloads/Mon_Evolution_IMC_Filament_TEST_SANS_PROFIL_v1.6.146.apk /tmp/mon-evolution-aligned.apk
-          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose downloads/Mon_Evolution_IMC_Filament_TEST_SANS_PROFIL_v1.6.146.apk
+            --out downloads/Mon_Evolution_IMC_Filament_TEST_SANS_PROFIL_v1.6.147.apk /tmp/mon-evolution-aligned.apk
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose downloads/Mon_Evolution_IMC_Filament_TEST_SANS_PROFIL_v1.6.147.apk
           rm -f /tmp/mon-evolution.jks
       - name: Conserver l APK de test comme artefact prive de compilation
         uses: actions/upload-artifact@v4
         with:
-          name: Mon_Evolution_IMC_Filament_TEST_SANS_PROFIL_v1.6.146
-          path: downloads/Mon_Evolution_IMC_Filament_TEST_SANS_PROFIL_v1.6.146.apk
+          name: Mon_Evolution_IMC_Filament_TEST_SANS_PROFIL_v1.6.147
+          path: downloads/Mon_Evolution_IMC_Filament_TEST_SANS_PROFIL_v1.6.147.apk
           retention-days: 7
           if-no-files-found: error
