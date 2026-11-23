@@ -195,6 +195,13 @@ function registerMaterials(group,type,p){
    if(type==='hair'){
     if(mat.color)mat.color.set(p.hair);
     mat.side=THREE.DoubleSide;
+    mat.needsUpdate=true;
+   }else if(type==='clothing'){
+    // Opaque garments must not vanish when a fold faces away from the camera.
+    mat.side=THREE.DoubleSide;
+    mat.transparent=false;
+    mat.depthWrite=true;
+    mat.needsUpdate=true;
    }else if(type==='body'){
     if(/iris/.test(label)){if(mat.color)mat.color.set(p.eyes);}
     else if(/skin|body|character|surface/.test(label)){
