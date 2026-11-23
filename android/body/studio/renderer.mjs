@@ -398,7 +398,7 @@ function refreshBodyMeasurements(p){
  if(!body)return;
  const measures=displayedMeasurements(p);
  const ratios=visualRatios(measures,p.height,p.weight,p.child);
- markerProfile={...p,visualMeasurements:measures,measurementMode:visualMode(p)};
+ markerProfile={...p,visualMeasurements:measures,visualRatios:ratios,measurementMode:visualMode(p)};
  body.traverse(m=>{if(m.isSkinnedMesh && m===masterSkin())deformMesh(m,ratios);});
  for(const [,group] of clothing)group.traverse(m=>{if(m.isSkinnedMesh)deformMesh(m,ratios);});
 }
