@@ -6,6 +6,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { profileCategory, allowedOutfitsFor } from './profile-rules.mjs';
+import { REGIONS, latestMeasurements, visualRatios, deformPosition, validMeasure } from './measurement-morph.mjs';
 
 (()=>{
 'use strict';
@@ -75,6 +76,8 @@ const parser=new GLTFLoader();
 let renderer=null,scene=null,camera=null,mixer=null,figure=null,body=null,lighting=null;
 let active=false,busy=false,disposed=false,autoShowAfterInstall=false,currentKey='',oldStatus='',firstRun=true;
 let lastY=0,yaw=0,pointer=null,raf=0,profileId='',lastProfileCheck=0;
+let studioBounds=null,markerSelection='',lastMarkerKey='',bodyGeometryVersion=0;
+const basePositions=new WeakMap();
 const loaded=new Map(),pending=new Map(),clothing=new Map(),hairObjects=new Map();
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 function ensureMounted(){
@@ -98,10 +101,12 @@ function profileInfo(){
  const records=(p.bodyMeasurements||[]).filter(r=>r&&r.date).slice()
   .sort((a,b)=>a.date.localeCompare(b.date));
  const last=records.at(-1)||{};
+ const measurements=latestMeasurements(p);
  return {id:p.id||'',sex:kind.sex,kind:kind.kind,
    age,child,height:+p.height,weight,initial,
    skin:app.skin||'#D99E78',hair:app.hair||'#4A2D22',eyes:app.eyes||'#593826',
-   waist:+last.waist||null,hips:+last.hips||null,
+   waist:measurements.waist??null,hips:measurements.hips??null,
+   measurements,measurementDate:records.at(-1)?.date||'',
    lastDate:weights.at(-1).date};
 }
 function allowedOutfits(p){
@@ -297,6 +302,52 @@ function concealCoveredSkin(files){
  });
 }
 
+
+function getBodyBounds(){
+ if(studioBounds)return studioBounds;
+ const skin=masterSkin();
+ const pos=skin?.geometry?.getAttribute('position');
+ if(!pos)throw Error('Maillage 3D principal non trouvé');
+ let min=Infinity,max=-Infinity;
+ for(let i=0;i<pos.count;i++){
+  const y=pos.getY(i);
+  if(Number.isFinite(y)){min=Math.min(min,y);max=Math.max(max,y);}
+ }
+ if(!Number.isFinite(min)||max-min<.1)throw Error('Dimensions 3D incompatibles');
+ studioBounds={minY:min,height:max-min};
+ return studioBounds;
+}
+function deformMesh(mesh,ratios){
+ if(!mesh.isSkinnedMesh||!mesh.geometry?.getAttribute('position'))return;
+ if(!basePositions.has(mesh)){
+  mesh.geometry=mesh.geometry.clone();
+  const position=mesh.geometry.getAttribute('position');
+  basePositions.set(mesh,new Float32Array(position.array));
+ }
+ const position=mesh.geometry.getAttribute('position');
+ const base=basePositions.get(mesh);
+ const {minY,height}=getBodyBounds();
+ if(!position||position.array.length!==base.length)return;
+ const data=position.array;
+ const has=Object.keys(ratios).length>0;
+ for(let i=0;i<base.length;i+=3){
+  const value=has?deformPosition(base[i],base[i+1],base[i+2],minY,height,ratios):
+   [base[i],base[i+1],base[i+2]];
+  data[i]=value[0];data[i+1]=value[1];data[i+2]=value[2];
+ }
+ position.needsUpdate=true;
+ mesh.geometry.computeBoundingSphere();
+ mesh.geometry.computeBoundingBox();
+ // Relight surfaces after a local circumference change.
+ mesh.geometry.computeVertexNormals();
+}
+function refreshBodyMeasurements(p){
+ if(!body)return;
+ const ratios=visualRatios(p.measurements,p.height,p.weight,p.child);
+ body.traverse(m=>{if(m.isSkinnedMesh && m===masterSkin())deformMesh(m,ratios);});
+ for(const [,group] of clothing)group.traverse(m=>{if(m.isSkinnedMesh)deformMesh(m,ratios);});
+}
+
 function renderOnce(){
  if(!active||!renderer||!section.isConnected||section.hidden)return;
  const w=Math.max(5,canvas.clientWidth),h=Math.max(5,canvas.clientHeight);
@@ -336,6 +387,7 @@ function configure(){
  // Skin and clothing remain separate materials. The same pose controls both.
  const relevant=CLOTHES[clothSel.value]?.files||CLOTHES.classic.files;
  concealCoveredSkin(relevant);
+ refreshBodyMeasurements(p);
  for(const [name,group] of clothing)group.visible=relevant.includes(name);
  for(const [name,group] of hairObjects)group.visible=name==='hair_'+hairSel.value+'.glb';
  const bb=new THREE.Box3().setFromObject(body);
@@ -441,7 +493,7 @@ function refreshScene(force){
  const p=profileInfo();
  if(!p){stopPreview();note.textContent='Profil incomplet ou sexe non précisé : tableau uniquement.';return;}
  const k=[p.id,p.sex,p.age.toFixed(2),p.height,p.weight,p.initial,
-  p.waist,p.hips,p.skin,p.hair,p.eyes,p.lastDate,
+  JSON.stringify(p.measurements),p.measurementDate,p.skin,p.hair,p.eyes,p.lastDate,
   hairSel.value,clothSel.value].join('|');
  if(force||k!==currentKey){
   currentKey=k;
@@ -497,6 +549,7 @@ canvas.addEventListener('pointermove',e=>{
 canvas.addEventListener('pointerup',()=>{pointer=null;});
 canvas.addEventListener('pointercancel',()=>{pointer=null;});
 window.addEventListener('mon-evolution-appearance-changed',()=>refreshScene(true));
+window.addEventListener('mon-evolution-measurements-changed',()=>refreshScene(true));
 window.addEventListener('mon-evolution-studio-ready',updateStatus);
 setInterval(()=>{if(section.hidden)return;updateStatus();},1400);
 updateStatus();
