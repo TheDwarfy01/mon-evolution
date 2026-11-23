@@ -11,4 +11,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Inspect GLB bone names, proportions and node positions
-        run: python3 android/body/studio/inspect_geometry.py && python3 android/body/studio/inspect_pose.py
+        run: python3 android/body/studio/inspect_geometry.py && python3 android/body/studio/inspect_pose.py && python3 android/body/studio/inspect_colors.py
