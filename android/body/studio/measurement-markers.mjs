@@ -5,7 +5,6 @@
 import * as THREE from 'three';
 import { REGIONS,validMeasure } from './measurement-morph.mjs';
 import { layoutLandmarkCallouts } from './landmark-layout.mjs';
-import {markerLocalPosition,declutterMarkerPositions} from './landmark-projection.mjs';
 
 export function createStudioMarkers({stage,figure,camera,getBounds,getProfile,isActive}){
  const style=document.createElement('style');
@@ -18,8 +17,7 @@ export function createStudioMarkers({stage,figure,camera,getBounds,getProfile,is
   '#body-measurements #bm-model .bm-studio-callout{position:absolute;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;text-align:left;padding:3px 6px;min-height:34px;border-radius:8px;background:#092f43f5;color:#f0ffff;border:1px solid #639ba3;box-shadow:0 3px 8px #06141daa;pointer-events:auto!important;cursor:pointer;font-size:11px;line-height:1.2;overflow:hidden;white-space:nowrap;touch-action:manipulation}',
   '#body-measurements #bm-model .bm-studio-callout strong{font-size:11px;font-weight:700;overflow:hidden;text-overflow:ellipsis}',
   '#body-measurements #bm-model .bm-studio-callout small{font-size:10px;color:#9bddd0;line-height:1.1}',
-  '#body-measurements #bm-model .bm-studio-landmark[data-selected="true"]{background:#1f6467;border-color:#fff5bd;box-shadow:0 0 0 4px #83efd866,0 0 16px 5px #a3fbe077;z-index:9}',
-  '#body-measurements #bm-model .bm-studio-callout[data-selected="true"]{background:#1f6467;border-color:#fff5bd;z-index:9}',
+  '#body-measurements #bm-model .bm-studio-landmark[data-selected="true"],#body-measurements #bm-model .bm-studio-callout[data-selected="true"]{background:#1f6467;border-color:#fff5bd;z-index:9}',
   '#body-measurements #bm-model .bm-studio-landmark:focus-visible,#body-measurements #bm-model .bm-studio-callout:focus-visible{outline:3px solid #fff4bb;outline-offset:2px}',
   '#body-measurements #bm-model .bm-studio-landmark[hidden],#body-measurements #bm-model .bm-studio-callout[hidden]{display:none!important}',
   '#body-measurements .bm-studio-entry{position:absolute;z-index:12;bottom:12px;left:7px;right:7px;background:#0c3047f5;border:1px solid #83d9ce;border-radius:14px;padding:12px;box-shadow:0 12px 35px #0009;color:#e8fff9}',
@@ -136,10 +134,12 @@ export function createStudioMarkers({stage,figure,camera,getBounds,getProfile,is
   if(width<120||height<120)return;
   leaders.setAttribute('viewBox','0 0 '+width+' '+height);
   camera.updateMatrixWorld(true);figure.updateMatrixWorld(true);
+  const showingBack=Math.cos(figure.rotation.y)<0;
   const items=[];
   for(const r of REGIONS){
-   const local=markerLocalPosition(r,bounds,p.visualRatios||{},figure.rotation.y);
-   const pos=new THREE.Vector3(...local);
+   const factor=bounds.height/1.75;
+   const pos=new THREE.Vector3(r.x*factor,bounds.minY+bounds.height*r.y,
+    (showingBack?-r.z:r.z)*factor);
    pos.applyMatrix4(figure.matrixWorld).project(camera);
    const x=(pos.x*.5+.5)*width,y=(-pos.y*.5+.5)*height;
    const dot=buttons.get(r.key),tag=tags.get(r.key);
@@ -148,7 +148,7 @@ export function createStudioMarkers({stage,figure,camera,getBounds,getProfile,is
    }
    const px=Math.max(13,Math.min(width-13,x));
    const py=Math.max(13,Math.min(height-13,y));
-   dot.hidden=false;
+   dot.hidden=false;dot.style.left=px+'px';dot.style.top=py+'px';
    const value=p.visualMeasurements?.[r.key];
    const fmt=Number.isFinite(value)?(p.measurementMode==='estimated'?'≈ ':'')+
     value.toLocaleString('fr-FR',{maximumFractionDigits:1})+' cm':'— cm';
@@ -160,12 +160,7 @@ export function createStudioMarkers({stage,figure,camera,getBounds,getProfile,is
    // Alternate label lanes left/right; markers stay at their projected points.
    items.push({key:r.key,side:r.x<0?'left':'right',x:px,y:py});
   }
-  const clean=declutterMarkerPositions(items,width,height);
-  for(const item of clean){
-   const dot=buttons.get(item.key);
-   dot.style.left=item.x+'px';dot.style.top=item.y+'px';
-  }
-  const placements=layoutLandmarkCallouts(clean,width,height,{
+  const placements=layoutLandmarkCallouts(items,width,height,{
    labelWidth:width<330?91:103,labelHeight:34,gap:6
   });
   for(const place of placements){
@@ -173,11 +168,9 @@ export function createStudioMarkers({stage,figure,camera,getBounds,getProfile,is
    tag.style.left=place.left+'px';tag.style.top=place.top+'px';
    tag.style.width=place.width+'px';tag.style.height=place.height+'px';
    const bend=place.side==='left'?place.connectorX+8:place.connectorX-8;
-   const gap=Math.hypot(place.x-place.anchorX,place.y-place.anchorY);
    paths.get(place.key).setAttribute('points',
     place.connectorX+','+place.connectorY+' '+bend+','+place.connectorY+
-    ' '+place.x+','+place.y+
-    (gap>3?' '+place.anchorX+','+place.anchorY:''));
+    ' '+place.x+','+place.y);
   }
  }
  function selectMarkerState(key,dot,tag){
