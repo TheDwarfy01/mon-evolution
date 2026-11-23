@@ -12,6 +12,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.graphics.Color;
 import com.google.android.filament.Engine;
+import com.google.android.filament.Skybox;
 import com.google.android.filament.android.UiHelper;
 import com.google.android.filament.utils.ModelViewer;
 import java.lang.reflect.Method;
@@ -27,6 +28,7 @@ import java.nio.ByteOrder;
  */
 public final class FilamentPreviewActivity extends Activity {
     private ModelViewer viewer;
+    private Skybox background;
     private Choreographer.FrameCallback frameCallback;
     private boolean running;
     private float lastX;
@@ -77,6 +79,13 @@ public final class FilamentPreviewActivity extends Activity {
         back.setText("Quitter le test");
         back.setOnClickListener(v->finish());
         root.addView(back);
+        root.setOnApplyWindowInsetsListener((v,insets)->{
+            v.setPadding(insets.getSystemWindowInsetLeft(),
+                insets.getSystemWindowInsetTop(),
+                insets.getSystemWindowInsetRight(),
+                insets.getSystemWindowInsetBottom());
+            return insets;
+        });
         setContentView(root);
         // The diagnostic GLB is packaged inside the experimental APK so that
         // the viewer is available even when the app has no saved profile.
@@ -87,6 +96,11 @@ public final class FilamentPreviewActivity extends Activity {
             // to keep the test viewpoint reproducible between screenshots.
             viewer=new ModelViewer(surface, Engine.create(),
                 new UiHelper(UiHelper.ContextErrorPolicy.DONT_CHECK), null);
+            // A visible gray-blue backdrop helps distinguish missing geometry
+            // from a genuinely black surface.
+            background=new Skybox.Builder().color(0.13f,0.17f,0.22f,1f)
+                .build(viewer.getEngine());
+            viewer.getScene().setSkybox(background);
             byte[] bytes;
             try(java.io.InputStream input=getAssets().open("filament-base-body.glb")) {
                 java.io.ByteArrayOutputStream output=new java.io.ByteArrayOutputStream(12_000_000);
@@ -106,7 +120,15 @@ public final class FilamentPreviewActivity extends Activity {
             buffer.flip();
             viewer.loadModelGlb(buffer);
             if(viewer.getAsset()==null)throw new IllegalStateException("Chargement GLB impossible");
-            viewer.setAutoPlayAnimations(false);
+
+            // This GLB has a skinned MakeHuman rig. NEVER disable ModelViewer's
+            // animation update without replacing it by animator.updateBoneMatrices():
+            // doing so previously collapsed most of the body into white strips.
+            if(viewer.getAnimator()==null || viewer.getAnimator().getAnimationCount()==0)
+                throw new IllegalStateException("Rig / animation de base absent");
+            viewer.getAnimator().applyAnimation(0,0f);
+            viewer.getAnimator().updateBoneMatrices();
+            viewer.setAutoPlayAnimations(true);
             // Model is normalized into a cube at origin. Camera stays outside.
             viewer.transformToUnitCube(new com.google.android.filament.utils.Float3(0f,0f,0f));
             surface.post(()->{
@@ -154,7 +176,16 @@ public final class FilamentPreviewActivity extends Activity {
     @Override protected void onDestroy(){
         running=false;
         // ModelViewer destroys its engine on SurfaceView detach.
-        // Avoid a second destroy from Activity.onDestroy.
+        // Release our own skybox only while the engine is still valid.
+        if(viewer!=null && background!=null) {
+            try {
+                if(viewer.getSwapChain()!=null) {
+                    viewer.getScene().setSkybox(null);
+                    viewer.getEngine().destroySkybox(background);
+                }
+            } catch(IllegalStateException ignored) {}
+        }
+        background=null;
         viewer=null;
         super.onDestroy();
     }
