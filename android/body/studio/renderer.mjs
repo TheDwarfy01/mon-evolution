@@ -25,6 +25,23 @@ const CLOTHES={
  summer:{label:'T-shirt et short',files:['clothing_tshirt.glb','clothing_shorts.glb','clothing_shoes.glb']},
  skirt:{label:'T-shirt et jupe',files:['clothing_tshirt.glb','clothing_skirt.glb','clothing_shoes.glb']}
 };
+// Only outfits with a known fitted MakeHuman target are offered per profile.
+const OUTFITS_BY_PROFILE={
+ adult_male:['classic','summer'],
+ adult_female:['classic','summer','skirt'],
+ child_male:['classic','summer'],
+ child_female:['classic','summer']
+};
+const BODY_ZONE={feet:1,legs:2,hips:4,torso:8,coat:16,underwear_m:32,underwear_f:64,bra:128,shorts:256,shirt:512,hoodie:1024,dress:2048,jacket:4096,boots:8192};
+const GARMENT_ZONE={
+ 'clothing_tshirt.glb':['torso'],
+ 'clothing_shirt.glb':['shirt'],
+ 'clothing_hoodie.glb':['hoodie'],
+ 'clothing_jeans.glb':['legs'],
+ 'clothing_shorts.glb':['shorts'],
+ 'clothing_skirt.glb':['hips'],
+ 'clothing_shoes.glb':['feet']
+};
 const css=document.createElement('style');
 css.id='makehuman-studio-style';
 css.textContent=[
@@ -78,27 +95,45 @@ function profileInfo(){
  const weights=(p.entries||[]).filter(e=>Number.isFinite(+e.weight)&&+e.weight>0)
   .slice().sort((a,b)=>String(a.date).localeCompare(String(b.date)));
  if(!weights.length||!(+p.height>40))return null;
+ // The profile itself is authoritative. The old appearance selector may
+ // contain a stale sex and must NEVER override the person it represents.
+ if(p.sex!=='female'&&p.sex!=='male')return null;
+ if(typeof p.birthDate!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(p.birthDate))return null;
  const weight=+weights.at(-1).weight,initial=+weights[0].weight;
- let age=35;
- if(typeof p.birthDate==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(p.birthDate)){
-  const diff=Date.now()-new Date(p.birthDate+'T12:00:00').getTime();
-  if(Number.isFinite(diff))age=clamp(diff/31556952000,0,105);
- }
+ const birthMs=new Date(p.birthDate+'T12:00:00').getTime();
+ if(!Number.isFinite(birthMs)||birthMs>Date.now())return null;
+ const age=clamp((Date.now()-birthMs)/31556952000,0,105);
  const child=age<18,app=p.bodyAppearance||{};
  const records=(p.bodyMeasurements||[]).filter(r=>r&&r.date).slice()
   .sort((a,b)=>a.date.localeCompare(b.date));
  const last=records.at(-1)||{};
- return {id:p.id||'',sex:app.model==='female'?'female':app.model==='male'?'male':
-   p.sex==='female'?'female':'male',age,child,height:+p.height,weight,initial,
+ return {id:p.id||'',sex:p.sex,kind:(child?'child_':'adult_')+p.sex,
+   age,child,height:+p.height,weight,initial,
    skin:app.skin||'#D99E78',hair:app.hair||'#4A2D22',eyes:app.eyes||'#593826',
    waist:+last.waist||null,hips:+last.hips||null,
    lastDate:weights.at(-1).date};
 }
+function allowedOutfits(p){
+ return OUTFITS_BY_PROFILE[p.kind]||[];
+}
 function choices(p){
  let options={};
  try{options=JSON.parse(localStorage.getItem('mh-studio-v2-'+p.id)||'{}')||{}}catch{}
+ const allowed=allowedOutfits(p);
  return {hair:HAIRS[options.hair]?options.hair:(p.sex==='female'?'bob02':'short02'),
-  clothes:CLOTHES[options.clothes]?options.clothes:'classic'};
+  clothes:allowed.includes(options.clothes)?options.clothes:(allowed[0]||'classic')};
+}
+function syncOutfitControl(p){
+ const allowed=allowedOutfits(p);
+ const previous=clothSel.value;
+ const current=[...clothSel.options].map(o=>o.value);
+ if(current.join('|')===allowed.join('|'))return;
+ clothSel.replaceChildren();
+ for(const id of allowed){
+  const opt=document.createElement('option');
+  opt.value=id;opt.textContent=CLOTHES[id].label;clothSel.append(opt);
+ }
+ clothSel.value=allowed.includes(previous)?previous:allowed[0];
 }
 function saveChoice(){
  const p=profileInfo();if(!p)return;
@@ -218,21 +253,52 @@ function bonesOf(group){
  group.traverse(o=>{if(o.isBone)map.set(o.name,o);});
  return map;
 }
-function synchronizeBones(){
- if(!body)return;
- const baseline=bonesOf(body);
- for(const group of [...clothing.values(),...hairObjects.values()]){
-  if(!group.visible)continue;
-  group.traverse(o=>{
-   if(!o.isBone)return;
-   const master=baseline.get(o.name);
-   if(master){
-    o.quaternion.copy(master.quaternion);
-    o.scale.copy(master.scale);
-   }
-  });
- }
+// All equipped SkinnedMeshes are bound to the body's SAME skeleton.
+// No independent garment skeleton is animated or manually guessed.
+function masterSkin(){
+ let best=null;
+ body?.traverse(o=>{
+  if(o.isSkinnedMesh&&(!best||(o.geometry?.getAttribute('position')?.count||0)>
+    (best.geometry?.getAttribute('position')?.count||0)))best=o;
+ });
+ return best;
 }
+// Body zones exported with the CC0 meshes; exclude triangles hidden beneath
+// the worn opaque garment instead of relying on fragile skin-colored patches.
+const baseSkinIndices=new WeakMap();
+function concealCoveredSkin(files){
+ if(!body)return;
+ const mask=files.reduce((sum,name)=>{
+  for(const zone of GARMENT_ZONE[name]||[])sum|=BODY_ZONE[zone]||0;
+  return sum;
+ },0);
+ body.traverse(mesh=>{
+  if(!mesh.isSkinnedMesh||!mesh.geometry)return;
+  if(!baseSkinIndices.has(mesh)){
+   mesh.geometry=mesh.geometry.clone();
+   const index=mesh.geometry.getIndex();
+   if(!index)return;
+   baseSkinIndices.set(mesh,new index.array.constructor(index.array));
+  }
+  const initial=baseSkinIndices.get(mesh);
+  if(!initial)return;
+  const attr=mesh.geometry.getAttribute('_cczone')||mesh.geometry.getAttribute('_CCZONE');
+  if(!attr||!mask){
+   mesh.geometry.setIndex(new THREE.BufferAttribute(new initial.constructor(initial),1));
+   return;
+  }
+  const kept=[];
+  for(let i=0;i<initial.length;i+=3){
+   const a=initial[i],b=initial[i+1],c=initial[i+2];
+   const hidden=(Math.round(attr.getX(a))&mask)!==0 &&
+     (Math.round(attr.getX(b))&mask)!==0 &&
+     (Math.round(attr.getX(c))&mask)!==0;
+   if(!hidden)kept.push(a,b,c);
+  }
+  mesh.geometry.setIndex(new THREE.BufferAttribute(new initial.constructor(kept),1));
+ });
+}
+
 function renderOnce(){
  if(!active||!renderer||!section.isConnected||section.hidden)return;
  const w=Math.max(5,canvas.clientWidth),h=Math.max(5,canvas.clientHeight);
@@ -247,7 +313,7 @@ function renderOnce(){
 }
 function frame(t){
  if(!active)return;
- if(mixer&&lastY){mixer.update(Math.min(.05,(t-lastY)/1000));synchronizeBones();}
+ if(mixer&&lastY){mixer.update(Math.min(.05,(t-lastY)/1000));}
  lastY=t;
  if(t-lastProfileCheck>800){lastProfileCheck=t;refreshScene(false);}
  renderOnce();
@@ -255,8 +321,10 @@ function frame(t){
 }
 function configure(){
  const p=profileInfo();if(!p||!body)return;
+ syncOutfitControl(p);
  const opts=choices(p);
  if(profileId!==p.id){profileId=p.id;hairSel.value=opts.hair;clothSel.value=opts.clothes;}
+ if(!allowedOutfits(p).includes(clothSel.value))clothSel.value=opts.clothes;
  const inf=findMorphInfluences(p);
  applyMorph(body,inf);
  registerMaterials(body,'body',p);
@@ -264,6 +332,7 @@ function configure(){
  for(const group of hairObjects.values()){applyMorph(group,inf);registerMaterials(group,'hair',p);}
  // Skin and clothing remain separate materials. The same pose controls both.
  const relevant=CLOTHES[clothSel.value]?.files||CLOTHES.classic.files;
+ concealCoveredSkin(relevant);
  for(const [name,group] of clothing)group.visible=relevant.includes(name);
  for(const [name,group] of hairObjects)group.visible=name==='hair_'+hairSel.value+'.glb';
  const bb=new THREE.Box3().setFromObject(body);
@@ -277,13 +346,33 @@ function configure(){
 }
 async function addAsset(name,mode,p){
  const g=await asset(name);
- const cloned=cloneSkinned(g.scene);
- // Keep a separate copy of the independently authored rig for each clothing.
- figure.add(cloned);
- registerMaterials(cloned,mode,p);
- if(mode==='hair')hairObjects.set(name,cloned);
- else clothing.set(name,cloned);
- return cloned;
+ const parent=figure;
+ const main=masterSkin();
+ if(!main?.skeleton||!main.bindMatrix)throw Error('Rig MakeHuman indisponible');
+ const meshes=[];
+ // Reuse the GLB body rig for clothes and hair, exactly as for their morphs.
+ // This prevents animations shifting garments away from the moving body.
+ g.scene.traverse(o=>{if(o.isSkinnedMesh)meshes.push(o);});
+ if(!meshes.length)throw Error('Vêtement incompatible : '+name);
+ const masterBones=new Set(main.skeleton.bones.map(b=>b.name));
+ if(meshes.some(m=>m.skeleton?.bones?.some(b=>!masterBones.has(b.name))))
+  throw Error('Ossature incompatible : '+name);
+ const group=new THREE.Group();
+ parent.add(group);
+ for(const mesh of meshes){
+  mesh.removeFromParent();
+  mesh.position.copy(main.position);
+  mesh.quaternion.copy(main.quaternion);
+  mesh.scale.copy(main.scale);
+  mesh.bind(main.skeleton,main.bindMatrix);
+  mesh.frustumCulled=false;
+  group.add(mesh);
+ }
+ registerMaterials(group,mode,p);
+ group.visible=false;
+ if(mode==='hair')hairObjects.set(name,group);
+ else clothing.set(name,group);
+ return group;
 }
 async function ensureAccessories(p){
  const wants=CLOTHES[clothSel.value]?.files||CLOTHES.classic.files;
@@ -299,7 +388,7 @@ async function startPreview(){
  note.textContent='Préparation du modèle, des textures et des vêtements…';
  try{
   const p=profileInfo();
-  if(!p)throw Error('Renseigne taille et poids dans le profil.');
+  if(!p)throw Error('Complète le sexe, la naissance, la taille et le poids du profil. Seul le tableau est affiché.');
   init();
   const gltf=await asset('base_body_anim.glb');
   if(!body){
@@ -308,6 +397,7 @@ async function startPreview(){
    const idle=gltf.animations.find(a=>/idle/i.test(a.name))||gltf.animations[0];
    if(idle)mixer.clipAction(idle).setLoop(THREE.LoopRepeat).play();
   }
+  syncOutfitControl(p);
   const opts=choices(p);hairSel.value=opts.hair;clothSel.value=opts.clothes;
   profileId=p.id;
   await ensureAccessories(p);
@@ -332,7 +422,8 @@ function stopPreview(){
 }
 function refreshScene(force){
  if(!active)return;
- const p=profileInfo();if(!p)return;
+ const p=profileInfo();
+ if(!p){stopPreview();note.textContent='Profil incomplet ou sexe non précisé : tableau uniquement.';return;}
  const k=[p.id,p.sex,p.age.toFixed(2),p.height,p.weight,p.initial,
   p.waist,p.hips,p.skin,p.hair,p.eyes,p.lastDate,
   hairSel.value,clothSel.value].join('|');
