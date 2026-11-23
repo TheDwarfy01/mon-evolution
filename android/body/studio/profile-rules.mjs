@@ -15,10 +15,11 @@ export function profileCategory(p,now=Date.now()){
  return {sex:p.sex,age,child,kind:(child?'child_':'adult_')+p.sex};
 }
 const LISTS=Object.freeze({
- adult_male:Object.freeze(['classic','summer']),
- adult_female:Object.freeze(['classic','summer','skirt']),
- child_male:Object.freeze(['classic','summer']),
- child_female:Object.freeze(['classic','summer'])
+ // Stable 3D outfit for every profile: no shorts or skirts, regardless of old saved choices.
+ adult_male:Object.freeze(['classic']),
+ adult_female:Object.freeze(['classic']),
+ child_male:Object.freeze(['classic']),
+ child_female:Object.freeze(['classic'])
 });
 export function allowedOutfitsFor(kind){
  return LISTS[kind] ? [...LISTS[kind]] : [];
