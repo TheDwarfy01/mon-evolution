@@ -1,0 +1,1 @@
+Version 1.6.136 : repères articulaires exacts basés sur le vrai squelette CharacterCreator et ajustement esthétique doux de l'intérieur des cuisses en mode Selon mon poids seulement. Tests de stabilité et de non-régression.
