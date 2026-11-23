@@ -891,7 +891,9 @@ jobs:
           grep -Fq "bm-silhouette-shortcuts" "$assets/reference-layout.js"
           grep -Fq "bm-ref-side" "$assets/reference-layout.js"
           grep -Fq "palette.hidden=true" "$assets/reference-layout.js"
-          grep -Fq "🎨 Personnaliser la peau, les cheveux et les yeux" "$assets/reference-layout.js"
+          grep -Fq "document.createTextNode('Personnalisation')" "$assets/reference-layout.js"
+          grep -Fq "palette.hidden=!palette.hidden" "$assets/reference-layout.js"
+          grep -Fq "id=\"bm-pick-photo\"" "$assets/measurements-ui.js"
           grep -Fq '<script src="reference-layout.js"></script>' "$assets/index.html"
           if grep -Fq 'bm-mode-selector' "$assets/photoreal-models.js"; then
             echo 'ERREUR : double affichage mannequins'; exit 1
