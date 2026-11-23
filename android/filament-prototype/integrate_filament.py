@@ -30,8 +30,8 @@ build=build.replace("applicationId 'fr.monevolution.app'","applicationId 'fr.mon
 # SDK 37 updates only compilation APIs; keep targetSdk 35 / minSdk 24.
 assert "compileSdk 35" in build and "targetSdk 35" in build and "minSdk 24" in build
 build=build.replace("compileSdk 35","compileSdk 37",1)
-build=build.replace("versionCode 159","versionCode 160",1)
-build=build.replace("versionName '1.6.143'","versionName '1.6.144-filament-test'",1)
+build=build.replace("versionCode 159","versionCode 161",1)
+build=build.replace("versionName '1.6.143'","versionName '1.6.145-filament-no-profile'",1)
 assert "filament-utils-android" not in build
 build+="\n// Isolated Filament POC; only this experimental build resolves the library.\n"
 build+="dependencies { implementation 'com.google.android.filament:filament-utils-android:1.81.0' }\n"
@@ -106,8 +106,22 @@ xml=xml.replace('fr.monevolution.app.camera','fr.monevolution.filamenttest.camer
 # Do not intercept the production app's share links from a test install.
 xml=xml.replace('android:scheme="monevolution"','android:scheme="monevolutionfilament"')
 xml=xml.replace('android:label="Mon Évolution IMC"','android:label="IMC Filament TEST"')
-xml=xml.replace('</application>',
-    '  <activity android:name=".FilamentPreviewActivity" android:exported="false"/>\n  </application>',1)
+# Move the launcher intent to the native Filament diagnostic. MainActivity still
+# exists for JS bridge compatibility but it is not the startup screen, so no
+# onboarding, profile creation, data restore or first-run migration is needed.
+launcher='''      <intent-filter>
+        <action android:name="android.intent.action.MAIN"/>
+        <category android:name="android.intent.category.LAUNCHER"/>
+      </intent-filter>'''
+assert xml.count(launcher)==1,"Launcher marker unexpectedly changed"
+xml=xml.replace(launcher,'',1)
+filament_activity='''  <activity android:name=".FilamentPreviewActivity" android:exported="true">
+      <intent-filter>
+        <action android:name="android.intent.action.MAIN"/>
+        <category android:name="android.intent.category.LAUNCHER"/>
+      </intent-filter>
+    </activity>'''
+xml=xml.replace('</application>',filament_activity+'\n  </application>',1)
 manifest.write_text(xml,encoding="utf-8")
 
 shutil.copyfile(base/"filament-test.js",assets/"filament-test.js")
