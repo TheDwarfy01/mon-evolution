@@ -1153,7 +1153,13 @@ jobs:
           set -euo pipefail
           sdkmanager_bin="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager -print -quit)"
           echo "$(dirname "$sdkmanager_bin")" >> "$GITHUB_PATH"
-          "$sdkmanager_bin" --install "platforms;android-37" "build-tools;36.0.0"
+          "$sdkmanager_bin" --install "platforms;android-37.0" "build-tools;36.0.0"
+          # Google publishes API 37 as android-37.0; AGP's integer compileSdk
+          # may still look for android-37 on some runner images.
+          test -f "$ANDROID_HOME/platforms/android-37.0/android.jar"
+          if [ ! -e "$ANDROID_HOME/platforms/android-37" ]; then
+            ln -s android-37.0 "$ANDROID_HOME/platforms/android-37"
+          fi
       - name: Compiler l'application
         working-directory: android/source-1.6.143
         run: gradle --no-daemon :app:assembleRelease
