@@ -1,1 +1,2 @@
 Inspect 3D bone names and geometry for accurate mensuration landmarks.
+Inspect pose world transforms for waist / belly / hips anchor calibration.
