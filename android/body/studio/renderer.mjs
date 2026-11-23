@@ -14,6 +14,7 @@ import { isStudioEnabled, setStudioEnabled } from './visibility-preference.mjs';
 import { hideMaskFor, coveredTriangle, behindOpaqueGarment } from './clothing-coverage.mjs';
 import { maskIndexedTriangles, touchesExposedArm } from './skin-triangle-mask.mjs';
 import { estimateVisualMeasurements, readVisualMode, writeVisualMode } from './visual-defaults.mjs';
+import {readBellyVisualCalibration,calibrateBellyVisualEquivalent,saveBellyVisualCalibration,clearBellyVisualCalibration} from './visual-calibration.mjs';
 
 (()=>{
 'use strict';
@@ -48,7 +49,14 @@ css.textContent=[
  '#body-measurements .bm-shape-controls{display:flex;gap:6px;align-items:stretch;flex-wrap:wrap;margin:5px 0 8px}',
  '#body-measurements .bm-shape-controls button{flex:1 1 90px;min-width:0;cursor:pointer;border:1px solid #47788b;border-radius:9px;background:#153b52;color:#e8fbff;padding:8px 6px;min-height:41px;font-size:11px}',
  '#body-measurements .bm-shape-controls button[aria-pressed="true"]{background:#1b706e;border-color:#8feeda;color:#fff;font-weight:800}',
+ '#body-measurements .bm-shape-controls button[hidden]{display:none!important}',
  '#body-measurements .bm-shape-warning{width:100%;font-size:11px;color:#bdd8df;line-height:1.4;margin:2px 0 0}',
+ '#body-measurements .bm-belly-calibrator{display:flex;align-items:center;gap:6px;flex-wrap:wrap;width:100%;font-size:11px;color:#c6e6ec}',
+ '#body-measurements .bm-belly-calibrator[hidden],#body-measurements .bm-belly-calibrator button[hidden]{display:none!important}',
+ '#body-measurements .bm-belly-calibrator input{width:90px;max-width:30%;background:#0e3046;color:#fff;font-size:14px;border:1px solid #65aab5;border-radius:7px;padding:7px}',
+ '#body-measurements .bm-belly-calibrator button{flex:0 0 auto!important;padding:7px 11px;min-height:36px;font-size:11px}',
+ '#body-measurements .bm-belly-calibrator label{flex:1 1 100%;font-size:11px;color:#c9e4e8}',
+ '#body-measurements .bm-belly-calibrator .bm-belly-calibration-hint{width:100%;color:#b9d1d6}',
  '#body-measurements #bm-main.bm-table-only .bm-studio-controls,#body-measurements #bm-main.bm-table-only .bm-shape-controls{display:none!important;}'
 ].join('\n');
 document.head.append(css);
@@ -81,7 +89,23 @@ for(const [mode,label] of [['measured','Mes mesures'],['neutral','↺ Réinitial
 }
 const shapeWarning=document.createElement('p');shapeWarning.className='bm-shape-warning';
 shapeWarning.textContent='Le rendu est indicatif. Rien ne sera effacé ni ajouté à ton historique.';
-shapeControls.append(shapeWarning);controls.insertAdjacentElement('afterend',shapeControls);
+shapeControls.append(shapeWarning);
+const bellyTune=document.createElement('button');bellyTune.type='button';
+bellyTune.textContent='≈ Calibrer l’estimation du ventre';
+bellyTune.style.cssText='flex:1 1 100%;font-size:11px;min-height:36px;';
+const bellyEditor=document.createElement('div');bellyEditor.className='bm-belly-calibrator';bellyEditor.hidden=true;
+const bellyLabel=document.createElement('label');
+bellyLabel.textContent='Équivalence visuelle du ventre (cm) — ce n’est PAS une mesure réelle';
+const bellyValue=document.createElement('input');
+bellyValue.type='number';bellyValue.min='20';bellyValue.max='300';bellyValue.step='0.1';
+bellyValue.inputMode='decimal';bellyValue.setAttribute('aria-label','Équivalence visuelle en centimètres');
+const bellyApply=document.createElement('button');bellyApply.type='button';bellyApply.textContent='Appliquer';
+const bellyReset=document.createElement('button');bellyReset.type='button';bellyReset.textContent='Valeur initiale';
+const bellyMessage=document.createElement('span');bellyMessage.className='bm-belly-calibration-hint';
+bellyMessage.setAttribute('role','status');
+bellyMessage.textContent='Ajuste uniquement l’équivalence ≈ affichée ; ne modifie ni le mannequin, ni les mesures enregistrées.';
+bellyEditor.append(bellyLabel,bellyValue,bellyApply,bellyReset,bellyMessage);
+shapeControls.append(bellyTune,bellyEditor);controls.insertAdjacentElement('afterend',shapeControls);
 const canvas=document.createElement('canvas');canvas.className='bm-makehuman-canvas';
 canvas.setAttribute('aria-label','Mannequin 3D MakeHuman habillé');canvas.setAttribute('role','img');
 stage.append(canvas);
@@ -102,7 +126,10 @@ function displayedMeasurements(p){
 }
 function syncVisualMode(p){
  const mode=visualMode(p);
+ bellyTune.hidden=mode!=='estimated'||p.child;
+ if(mode!=='estimated'||p.child)bellyEditor.hidden=true;
  for(const [value,button] of modeButtons)button.setAttribute('aria-pressed',String(value===mode));
+ bellyTune.textContent='≈ Calibrer le ventre (visuel)';
  shapeWarning.textContent=mode==='neutral'?
   'Silhouette neutre : historique conservé, aucune mensuration supprimée.':
   mode==='estimated'?
@@ -110,6 +137,36 @@ function syncVisualMode(p){
     'Estimation esthétique d’après le poids. Une mesure enregistrée remplace son estimation pour la silhouette.'):
   'Silhouette fondée sur les tours réellement enregistrés dans ton historique.';
 }
+bellyTune.addEventListener('click',()=>{
+ const p=profileInfo();if(!p||p.child||visualMode(p)!=='estimated')return;
+ bellyEditor.hidden=!bellyEditor.hidden;
+ if(!bellyEditor.hidden){
+  const baseline=estimateVisualMeasurements(p)?.belly;
+  const factor=readBellyVisualCalibration(p.id,visibilityStore());
+  bellyValue.value=String(calibrateBellyVisualEquivalent(baseline,factor)??'');
+  bellyMessage.textContent='Valeur illustrative : ne modifie pas la morphologie ni l’historique.';
+ }
+});
+bellyApply.addEventListener('click',()=>{
+ const p=profileInfo();if(!p||p.child||visualMode(p)!=='estimated')return;
+ const baseline=estimateVisualMeasurements(p)?.belly;
+ const value=Number(bellyValue.value);
+ if(!bellyValue.value.trim()||!saveBellyVisualCalibration(p.id,baseline,value,visibilityStore())){
+  bellyMessage.textContent='Saisis une valeur entre 20 et 300 cm, dans une plage de calibrage raisonnable.';
+  return;
+ }
+ bellyMessage.textContent='✓ Calibrage visuel enregistré. Les mesures réelles restent inchangées.';
+ refreshScene(true);
+});
+bellyReset.addEventListener('click',()=>{
+ const p=profileInfo();if(!p)return;
+ if(!clearBellyVisualCalibration(p.id,visibilityStore())){
+  bellyMessage.textContent='Impossible de réinitialiser le calibrage.';return;
+ }
+ bellyValue.value=String(estimateVisualMeasurements(p)?.belly??'');
+ bellyMessage.textContent='✓ Estimation visuelle initiale restaurée.';
+ refreshScene(true);
+});
 function setVisualMode(mode){
  const p=profileInfo();if(!p)return;
  if(!writeVisualMode(p.id,mode,visibilityStore())){
@@ -402,7 +459,18 @@ function refreshBodyMeasurements(p){
  const intensity=visualMode(p)==='estimated'&&display.estimatedKeys.includes('thigh')?
   estimatedThighIntensity(p.height,p.weight,p.child):0;
  const skin=masterSkin();studioBones=skin?.skeleton?.bones||[];
- markerProfile={...p,visualMeasurements:measures,estimatedKeys:display.estimatedKeys,measurementMode:visualMode(p)};
+ const calibratedKeys=[];
+ const labelValues={...measures};
+ if(visualMode(p)==='estimated'&&!p.child&&display.estimatedKeys.includes('belly')){
+  const factor=readBellyVisualCalibration(p.id,visibilityStore());
+  const visual=calibrateBellyVisualEquivalent(measures.belly,factor);
+  if(Number.isFinite(visual)){
+   labelValues.belly=visual;
+   if(Math.abs(factor-1)>.00001)calibratedKeys.push('belly');
+  }
+ }
+ markerProfile={...p,visualMeasurements:labelValues,estimatedKeys:display.estimatedKeys,
+  calibratedKeys,measurementMode:visualMode(p)};
  body.traverse(m=>{if(m.isSkinnedMesh && m===skin)deformMesh(m,ratios,intensity);});
  for(const [,group] of clothing)group.traverse(m=>{if(m.isSkinnedMesh)deformMesh(m,ratios,intensity);});
 }

@@ -185,7 +185,8 @@ export function createStudioMarkers({stage,figure,camera,getBounds,getProfile,ge
    const fmt=Number.isFinite(value)?(estimated?'≈ ':'')+
     value.toLocaleString('fr-FR',{maximumFractionDigits:1})+' cm':'— cm';
    tag.querySelector('small').textContent=fmt;
-   const note=estimated?' estimation visuelle, non mesurée':(Number.isFinite(value)?' mesure enregistrée':'');
+   const calibrated=estimated&&p.calibratedKeys?.includes(r.key);
+   const note=estimated?(calibrated?' équivalence visuelle personnalisée, non mesurée':' estimation visuelle, non mesurée'):(Number.isFinite(value)?' mesure enregistrée':'');
    const title=r.label+' : '+fmt+note+' ; toucher pour modifier';
    dot.setAttribute('aria-label',title);tag.setAttribute('aria-label',title);
    selectMarkerState(r.key,dot,tag);
