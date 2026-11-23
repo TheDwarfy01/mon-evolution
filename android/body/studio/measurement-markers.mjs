@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { REGIONS,validMeasure } from './measurement-morph.mjs';
 import { layoutLandmarkCallouts } from './landmark-layout.mjs';
 import {visibleLandmark} from './landmark-visibility.mjs';
-import {anatomicalAnchor,requiredAnatomicalBones} from './landmark-bones.mjs';
+import {anatomicalAnchor,requiredAnatomicalBones,anatomicalSurfaceOffset} from './landmark-bones.mjs';
 
 export function createStudioMarkers({stage,figure,camera,getBounds,getProfile,getBones,isActive}){
  const style=document.createElement('style');
@@ -167,7 +167,8 @@ export function createStudioMarkers({stage,figure,camera,getBounds,getProfile,ge
    }
    const anchor=anatomicalAnchor(r.key,joints);
    const factor=bounds.height/1.75;
-   const pos=anchor?new THREE.Vector3(...anchor):
+   const pos=anchor?new THREE.Vector3(...anchor)
+    .add(new THREE.Vector3(...anatomicalSurfaceOffset(r.key,figure.rotation.y,p.height))):
     new THREE.Vector3(r.x*factor,bounds.minY+bounds.height*r.y,
      (showingBack?-r.z:r.z)*factor).applyMatrix4(figure.matrixWorld);
    pos.project(camera);
@@ -180,10 +181,11 @@ export function createStudioMarkers({stage,figure,camera,getBounds,getProfile,ge
    const py=Math.max(13,Math.min(height-13,y));
    dot.hidden=false;dot.style.left=px+'px';dot.style.top=py+'px';
    const value=p.visualMeasurements?.[r.key];
-   const fmt=Number.isFinite(value)?(p.measurementMode==='estimated'?'≈ ':'')+
+   const estimated=p.measurementMode==='estimated'&&p.estimatedKeys?.includes(r.key);
+   const fmt=Number.isFinite(value)?(estimated?'≈ ':'')+
     value.toLocaleString('fr-FR',{maximumFractionDigits:1})+' cm':'— cm';
    tag.querySelector('small').textContent=fmt;
-   const note=p.measurementMode==='estimated'?' estimation visuelle, non mesurée':'';
+   const note=estimated?' estimation visuelle, non mesurée':(Number.isFinite(value)?' mesure enregistrée':'');
    const title=r.label+' : '+fmt+note+' ; toucher pour modifier';
    dot.setAttribute('aria-label',title);tag.setAttribute('aria-label',title);
    selectMarkerState(r.key,dot,tag);

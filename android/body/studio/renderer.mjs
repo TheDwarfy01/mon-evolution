@@ -9,6 +9,7 @@ import { profileCategory, allowedOutfitsFor } from './profile-rules.mjs';
 import { latestMeasurements, visualRatios, deformPosition } from './measurement-morph.mjs';
 import { createStudioMarkers } from './measurement-markers.mjs';
 import { estimatedThighIntensity,softenInnerThigh } from './thigh-fill.mjs';
+import { readVisualOverrides,recordVisualOverrides,resolveVisualMeasurements } from './visual-overrides.mjs';
 import { isStudioEnabled, setStudioEnabled } from './visibility-preference.mjs';
 import { hideMaskFor, coveredTriangle, behindOpaqueGarment } from './clothing-coverage.mjs';
 import { maskIndexedTriangles, touchesExposedArm } from './skin-triangle-mask.mjs';
@@ -97,10 +98,7 @@ function visibilityEnabled(id){return isStudioEnabled(String(id||''),visibilityS
 function rememberVisibility(id,enabled){return setStudioEnabled(String(id||''),enabled,visibilityStore());}
 function visualMode(p){return readVisualMode(p?.id,visibilityStore());}
 function displayedMeasurements(p){
- const mode=visualMode(p);
- if(mode==='neutral')return {};
- if(mode==='estimated')return estimateVisualMeasurements(p)||{};
- return p.measurements||{};
+ return resolveVisualMeasurements(p,visualMode(p),readVisualOverrides(p.id,visibilityStore()));
 }
 function syncVisualMode(p){
  const mode=visualMode(p);
@@ -109,7 +107,7 @@ function syncVisualMode(p){
   'Silhouette neutre : historique conservé, aucune mensuration supprimée.':
   mode==='estimated'?
   (p.child?'Enfant : forme illustrative uniquement, sans référence médicale ni norme de croissance.':
-    'Suggestion esthétique d’après la taille, le poids et le profil — ce ne sont pas des mesures réelles.'):
+    'Estimation esthétique d’après le poids. Une mesure enregistrée remplace son estimation pour la silhouette.'):
   'Silhouette fondée sur les tours réellement enregistrés dans ton historique.';
 }
 function setVisualMode(mode){
@@ -148,7 +146,7 @@ function profileInfo(){
    age,child,height:+p.height,weight,initial,
    skin:app.skin||'#D99E78',hair:app.hair||'#4A2D22',eyes:app.eyes||'#593826',
    waist:measurements.waist??null,hips:measurements.hips??null,
-   measurements,measurementDate:records.at(-1)?.date||'',
+   measurements,records,measurementDate:records.at(-1)?.date||'',
    lastDate:weights.at(-1).date};
 }
 function allowedOutfits(p){
@@ -398,11 +396,13 @@ function deformMesh(mesh,ratios,thighIntensity=0){
 }
 function refreshBodyMeasurements(p){
  if(!body)return;
- const measures=displayedMeasurements(p);
+ const display=displayedMeasurements(p);
+ const measures=display.values;
  const ratios=visualRatios(measures,p.height,p.weight,p.child);
- const intensity=visualMode(p)==='estimated'?estimatedThighIntensity(p.height,p.weight,p.child):0;
+ const intensity=visualMode(p)==='estimated'&&display.estimatedKeys.includes('thigh')?
+  estimatedThighIntensity(p.height,p.weight,p.child):0;
  const skin=masterSkin();studioBones=skin?.skeleton?.bones||[];
- markerProfile={...p,visualMeasurements:measures,measurementMode:visualMode(p)};
+ markerProfile={...p,visualMeasurements:measures,estimatedKeys:display.estimatedKeys,measurementMode:visualMode(p)};
  body.traverse(m=>{if(m.isSkinnedMesh && m===skin)deformMesh(m,ratios,intensity);});
  for(const [,group] of clothing)group.traverse(m=>{if(m.isSkinnedMesh)deformMesh(m,ratios,intensity);});
 }
@@ -634,7 +634,14 @@ canvas.addEventListener('pointermove',e=>{
 canvas.addEventListener('pointerup',()=>{pointer=null;});
 canvas.addEventListener('pointercancel',()=>{pointer=null;});
 window.addEventListener('mon-evolution-appearance-changed',()=>refreshScene(true));
-window.addEventListener('mon-evolution-measurements-changed',()=>refreshScene(true));
+window.addEventListener('mon-evolution-measurements-changed',event=>{
+ const detail=event?.detail||{};
+ const p=profileInfo();
+ if(p&&String(p.id)===String(detail.profileId)&&visualMode(p)==='estimated'&&
+    Array.isArray(detail.changedKeys)&&detail.changedKeys.length)
+  recordVisualOverrides(p.id,detail.date,detail.changedKeys,visibilityStore());
+ refreshScene(true);
+});
 window.addEventListener('mon-evolution-studio-ready',updateStatus);
 setInterval(()=>{if(section.hidden)return;updateStatus();},1400);
 updateStatus();

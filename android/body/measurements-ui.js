@@ -24,6 +24,7 @@
  const APPEARANCE='bodyAppearance', RECORDS='bodyMeasurements';
  let selectedMetric='waist',editingDate=dateNow(),chartSet=new Set(['waist','belly','hips']);
  let draftDirty=false;
+ const dirtyMetricKeys=new Set();
  const get=id=>document.getElementById(id);
  const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const format=n=>Number(n).toLocaleString('fr-FR',{minimumFractionDigits:1,maximumFractionDigits:1});
@@ -290,7 +291,7 @@
    const picture=document.createElement('img');picture.src=r.photo;picture.className='bm-photo';picture.alt='Photo de progression '+day(editingDate);
    img.append(picture);
   }
-  draftDirty=false;
+  draftDirty=false;dirtyMetricKeys.clear();
   get('bm-status').textContent=r?'Mesures du '+day(editingDate)+' chargées.':'Nouvelle saisie.';
  }
  function drawFields(){
@@ -299,7 +300,7 @@
    const lab=document.createElement('label');lab.htmlFor='bm-'+m.key;lab.textContent=m.label;
    const input=document.createElement('input');input.id='bm-'+m.key;input.type='number';
    input.inputMode='decimal';input.min=String(m.min);input.max=String(m.max);input.step='0.1';input.placeholder='— cm';
-   input.oninput=()=>{draftDirty=true;get('bm-status').textContent='● Modifications non enregistrées';};
+   input.oninput=()=>{draftDirty=true;dirtyMetricKeys.add(m.key);get('bm-status').textContent='● Modifications non enregistrées';};
    input.onfocus=()=>{
     selectedMetric=m.key;
     [...get('bm-model').querySelectorAll('.bm-point')].forEach(b=>b.dataset.active=String(b.getAttribute('aria-label')?.startsWith('Saisir '+m.label+',')));
@@ -328,13 +329,14 @@
   if(!any&&!existing?.photo){
    get('bm-status').textContent='Renseigne au moins une mensuration ou ajoute une photo.';return;
   }
+  const changedKeys=[...dirtyMetricKeys].filter(key=>Object.prototype.hasOwnProperty.call(values,key));
   const rec=ensureRecord(p,date);
   for(const m of METRICS){if(m.key in values)rec[m.key]=values[m.key];else delete rec[m.key]}
   rec.updatedAt=new Date().toISOString();
   save();
   renderData();
   window.dispatchEvent(new CustomEvent('mon-evolution-measurements-changed',{
-   detail:{profileId:p.id,date}
+   detail:{profileId:p.id,date,changedKeys}
   }));
   get('bm-status').textContent='✓ Mensurations du '+day(date)+' enregistrées.';
  }

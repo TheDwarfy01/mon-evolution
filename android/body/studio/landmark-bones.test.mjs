@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {REGIONS} from './measurement-morph.mjs';
-import {anatomicalAnchor,requiredAnatomicalBones} from './landmark-bones.mjs';
+import {anatomicalAnchor,requiredAnatomicalBones,anatomicalSurfaceOffset} from './landmark-bones.mjs';
 const J={
  neck_01:[0,1.36,0],head:[0,1.49,0],
  spine_03:[0,1.15,0],spine_02:[0,1.03,0],spine_01:[0,.97,0],pelvis:[0,.86,0],
@@ -29,4 +29,23 @@ test('belly is above pelvis; thigh between pelvis and knee, calf between knee an
 test('missing or nonfinite rig data fails safely to legacy anchors',()=>{
  assert.equal(anatomicalAnchor('arm',{}),null);
  assert.equal(anatomicalAnchor('neck',{neck_01:[0,NaN,0],head:[0,2,0]}),null);
+});
+
+test('waist, belly and hips have distinct anatomically correct heights',()=>{
+ const waist=anatomicalAnchor('waist',J),belly=anatomicalAnchor('belly',J),hips=anatomicalAnchor('hips',J);
+ assert.ok(waist[1]>belly[1]&&belly[1]>hips[1]);
+ assert.ok(waist[1]-belly[1]>.04&&belly[1]-hips[1]>.03);
+ assert.ok(waist[1]>1.03&&belly[1]>.95&&hips[1]>.86);
+});
+test('waist and hips move to left visible flank; belly is right of center',()=>{
+ for(const angle of [0,Math.PI/4,Math.PI/2,Math.PI,1.7*Math.PI]){
+  const waist=anatomicalSurfaceOffset('waist',angle,170),hips=anatomicalSurfaceOffset('hips',angle,170);
+  const belly=anatomicalSurfaceOffset('belly',angle,170);
+  assert.ok(waist[0]<-.09&&hips[0]<-.10&&belly[0]>.03);
+  assert.ok(waist[2]>.08&&hips[2]>.08&&belly[2]>.12);
+ }
+});
+test('child offsets scale down; missing parts do not invent offsets',()=>{
+ assert.ok(Math.abs(anatomicalSurfaceOffset('waist',0,95)[0])<Math.abs(anatomicalSurfaceOffset('waist',0,175)[0]));
+ assert.deepEqual(anatomicalSurfaceOffset('calf',0,170),[0,0,0]);
 });
