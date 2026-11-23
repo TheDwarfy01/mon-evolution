@@ -1,0 +1,6 @@
+Mon Evolution IMC v1.6.129 (versionCode 145)
+Les neuf mensurations enregistrees (poitrine, bras, taille, ventre, hanches, cuisse, mollet, cou et avant-bras) modifient le mannequin et les vêtements avec deformation locale limitee et uniquement indicative.
+Ajout de neuf points interactifs anatomiques projetes sur le mannequin 3D; toucher un point ouvre la saisie directe de la mesure en centimetres. Le bouton Enregistrer utilise la validation existante, l'historique et la synchronisation.
+Mise a jour du rendu immediatement apres enregistrement ou suppression de mensurations.
+Mode tableau conserve, fallback sur erreur WebGL, enfants sans criteres d'IMC adulte.
+Tests unitaires sur les neuf regions et verification des points 3D.
