@@ -21,12 +21,11 @@ test('unknown sex and invalid/missing birth date forbid 3D',()=>{
   assert.equal(profileCategory({sex:'male',birthDate},now),null);
  }
 });
-test('restrict outfits by age and sex, preventing incompatible outfits',()=>{
- assert.deepEqual(allowedOutfitsFor('adult_male'),['classic','summer']);
- assert.deepEqual(allowedOutfitsFor('adult_female'),['classic','summer','skirt']);
- assert.deepEqual(allowedOutfitsFor('child_male'),['classic','summer']);
- assert.deepEqual(allowedOutfitsFor('child_female'),['classic','summer']);
+test('one stable T-shirt and jeans outfit for all four models',()=>{
+ for(const kind of ['adult_male','adult_female','child_male','child_female']){
+  assert.deepEqual(allowedOutfitsFor(kind),['classic']);
+  assert.equal(allowedOutfitsFor(kind).includes('summer'),false);
+  assert.equal(allowedOutfitsFor(kind).includes('skirt'),false);
+ }
  assert.deepEqual(allowedOutfitsFor('unknown'),[]);
- assert.equal(allowedOutfitsFor('child_male').includes('skirt'),false);
- assert.equal(allowedOutfitsFor('adult_female').includes('shirt'),false);
 });
