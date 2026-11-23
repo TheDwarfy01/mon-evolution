@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {maskIndexedTriangles,touchesExposedArm} from './skin-triangle-mask.mjs';
+import {maskIndexedTriangles,touchesExposedArm,touchesSleeveOpening} from './skin-triangle-mask.mjs';
 import {REGIONS,latestMeasurements,visualRatios,deformPosition} from './measurement-morph.mjs';
 
 function attr(rows){return {getComponent(vertex,influence){return rows[vertex]?.[influence]??0;}};}
@@ -68,4 +68,32 @@ test('circumference morph is continuous through former hard arm/leg axis cutoffs
 test('invalid geometry and non-protected triangles fail safe',()=>{
  assert.throws(()=>maskIndexedTriangles(Uint16Array.from([0,1]),()=>true),TypeError);
  assert.equal(touchesExposedArm([0],attr([[0,0,0,0]]),attr([[1,0,0,0]]),['Spine']),false);
+});
+
+test('protect shirt armpit from geometry mask, but not the chest and legs',()=>{
+ const h=1.659;
+ const points=[
+  [.16*h,.695*h],[.18*h,.72*h],[.19*h,.69*h],
+  [.04*h,.695*h],[.06*h,.72*h],[.05*h,.69*h],
+  [.17*h,.38*h],[.18*h,.4*h],[.19*h,.41*h]
+ ];
+ const pos={getX:i=>points[i][0],getY:i=>points[i][1]};
+ const top=['clothing_tshirt.glb'];
+ assert.equal(touchesSleeveOpening([0,1,2],pos,0,h,top),true);
+ assert.equal(touchesSleeveOpening([3,4,5],pos,0,h,top),false);
+ assert.equal(touchesSleeveOpening([6,7,8],pos,0,h,top),false);
+ assert.equal(touchesSleeveOpening([0,1,2],pos,0,h,['clothing_jeans.glb']),false);
+ assert.equal(touchesSleeveOpening([0,1,2],pos,0,h,[]),false);
+});
+test('new armhole protection preserves the original triangle indices and group boundaries',()=>{
+ const h=1.659;
+ const points=[[.16*h,.70*h],[.18*h,.72*h],[.19*h,.69*h],
+  [.04*h,.70*h],[.06*h,.72*h],[.05*h,.69*h]];
+ const pos={getX:i=>points[i][0],getY:i=>points[i][1]};
+ const original=new Uint16Array([0,1,2,3,4,5]);
+ const result=maskIndexedTriangles(original,(a,b,c)=>
+  !touchesSleeveOpening([a,b,c],pos,0,h,['clothing_tshirt.glb']));
+ assert.deepEqual(Array.from(result),[0,1,2,3,3,3]);
+ assert.deepEqual(Array.from(original),[0,1,2,3,4,5]);
+ assert.equal(result.length,original.length);
 });
