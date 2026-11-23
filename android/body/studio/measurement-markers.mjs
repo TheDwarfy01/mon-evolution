@@ -5,6 +5,7 @@
 import * as THREE from 'three';
 import { REGIONS,validMeasure } from './measurement-morph.mjs';
 import { layoutLandmarkCallouts } from './landmark-layout.mjs';
+import {visibleLandmark} from './landmark-visibility.mjs';
 
 export function createStudioMarkers({stage,figure,camera,getBounds,getProfile,isActive}){
  const style=document.createElement('style');
@@ -20,6 +21,8 @@ export function createStudioMarkers({stage,figure,camera,getBounds,getProfile,is
   '#body-measurements #bm-model .bm-studio-landmark[data-selected="true"],#body-measurements #bm-model .bm-studio-callout[data-selected="true"]{background:#1f6467;border-color:#fff5bd;z-index:9}',
   '#body-measurements #bm-model .bm-studio-landmark:focus-visible,#body-measurements #bm-model .bm-studio-callout:focus-visible{outline:3px solid #fff4bb;outline-offset:2px}',
   '#body-measurements #bm-model .bm-studio-landmark[hidden],#body-measurements #bm-model .bm-studio-callout[hidden]{display:none!important}',
+  '#body-measurements #bm-model .bm-studio-density{position:absolute;right:10px;top:10px;z-index:10;background:#103e52ef;border:1px solid #7cb4bd;color:#e3fffb;border-radius:9px;min-height:35px;padding:6px 9px;font-size:11px;font-weight:650;cursor:pointer;pointer-events:auto}',
+  '#body-measurements #bm-model .bm-studio-density[hidden]{display:none!important}',
   '#body-measurements .bm-studio-entry{position:absolute;z-index:12;bottom:12px;left:7px;right:7px;background:#0c3047f5;border:1px solid #83d9ce;border-radius:14px;padding:12px;box-shadow:0 12px 35px #0009;color:#e8fff9}',
   '#body-measurements .bm-studio-entry[hidden]{display:none!important}',
   '#body-measurements .bm-studio-entry-title{font-size:14px;font-weight:750;margin-bottom:7px}',
@@ -46,7 +49,18 @@ export function createStudioMarkers({stage,figure,camera,getBounds,getProfile,is
  const help=document.createElement('div');help.className='bm-studio-entry-help';
  help.textContent='Seule une mesure saisie manuellement et enregistrée est ajoutée à l’historique.';
  row.append(input,unit,save,cancel);editor.append(heading,row,help);
- stage.append(leaders,layer,editor);
+ const density=document.createElement('button');density.type='button';density.className='bm-studio-density';
+ let expanded=false;
+ function updateDensity(){
+  density.textContent=expanded?'Repères : détaillés':'Repères : essentiels';
+  density.title=expanded?'Réduire les repères à l’essentiel':'Afficher les autres repères visibles';
+  density.setAttribute('aria-pressed',String(expanded));
+ }
+ updateDensity();
+ density.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();
+  expanded=!expanded;updateDensity();update();
+ });
+ stage.append(leaders,layer,editor,density);
  const buttons=new Map(),tags=new Map(),paths=new Map();
  let selected='',pendingFocus=false;
  function select(key){
@@ -120,6 +134,7 @@ export function createStudioMarkers({stage,figure,camera,getBounds,getProfile,is
   if(!leaders.isConnected)stage.append(leaders);
   if(!layer.isConnected)stage.append(layer);
   if(!editor.isConnected)stage.append(editor);
+  if(!density.isConnected)stage.append(density);
  };
  new MutationObserver(keepMounted).observe(stage,{childList:true});
  function update(){
@@ -127,9 +142,9 @@ export function createStudioMarkers({stage,figure,camera,getBounds,getProfile,is
   if(!isActive()||!p||!camera||!figure){
    for(const btn of buttons.values())btn.hidden=true;
    for(const tag of tags.values())tag.hidden=true;
-   leaders.style.display='none';close();return;
+   leaders.style.display='none';density.hidden=true;close();return;
   }
-  keepMounted();leaders.style.display='';
+  keepMounted();leaders.style.display='';density.hidden=false;
   const bounds=getBounds(),width=stage.clientWidth,height=stage.clientHeight;
   if(width<120||height<120)return;
   leaders.setAttribute('viewBox','0 0 '+width+' '+height);
@@ -137,6 +152,12 @@ export function createStudioMarkers({stage,figure,camera,getBounds,getProfile,is
   const showingBack=Math.cos(figure.rotation.y)<0;
   const items=[];
   for(const r of REGIONS){
+   if(!visibleLandmark(r.key,figure.rotation.y,expanded)){
+    buttons.get(r.key).hidden=true;
+    tags.get(r.key).hidden=true;
+    paths.get(r.key).setAttribute('points','');
+    continue;
+   }
    const factor=bounds.height/1.75;
    const pos=new THREE.Vector3(r.x*factor,bounds.minY+bounds.height*r.y,
     (showingBack?-r.z:r.z)*factor);
