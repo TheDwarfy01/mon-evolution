@@ -1,0 +1,1 @@
+Correctif 1.6.134 : restauration du placement des neuf points 3D fonctionnel en 1.6.132. Annulation de l'algorithme de déplacement des cercles introduit en 1.6.133. Conservation des mensurations, du mannequin, des données et des menus.
