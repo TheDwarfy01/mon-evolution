@@ -350,10 +350,22 @@ async function addAsset(name,mode,p){
  // This prevents animations shifting garments away from the moving body.
  g.scene.traverse(o=>{if(o.isSkinnedMesh)meshes.push(o);});
  if(!meshes.length)throw Error('Vêtement incompatible : '+name);
- const masterNames=main.skeleton.bones.map(b=>b.name);
- if(meshes.some(m=>!m.skeleton || m.skeleton.bones.length!==masterNames.length ||
-   m.skeleton.bones.some((bone,i)=>bone.name!==masterNames[i])))
-  throw Error('Ordre des os incompatible : '+name);
+ const masterByName=new Map(main.skeleton.bones.map((bone,i)=>[bone.name,i]));
+ for(const mesh of meshes){
+  if(!mesh.skeleton)throw Error('Ossature absente : '+name);
+  const translation=mesh.skeleton.bones.map(b=>masterByName.get(b.name));
+  if(translation.some(i=>i===undefined))throw Error('Ossature incompatible : '+name);
+  if(translation.some((n,i)=>n!==i)){
+   // Each garment uses the body rig, but the GLB exporter may reorder bones.
+   // Remap all four joint indices per vertex before sharing that skeleton.
+   mesh.geometry=mesh.geometry.clone();
+   const attribute=mesh.geometry.getAttribute('skinIndex');
+   if(!attribute)throw Error('Indices d’ossature manquants : '+name);
+   const raw=attribute.array;
+   for(let i=0;i<raw.length;i++)raw[i]=translation[raw[i]];
+   attribute.needsUpdate=true;
+  }
+ }
  const group=new THREE.Group();
  parent.add(group);
  for(const mesh of meshes){
