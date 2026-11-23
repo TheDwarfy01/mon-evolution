@@ -11,6 +11,7 @@ import { createStudioMarkers } from './measurement-markers.mjs';
 import { isStudioEnabled, setStudioEnabled } from './visibility-preference.mjs';
 import { hideMaskFor, coveredTriangle, behindOpaqueGarment } from './clothing-coverage.mjs';
 import { maskIndexedTriangles, touchesExposedArm } from './skin-triangle-mask.mjs';
+import { estimateVisualMeasurements, readVisualMode, writeVisualMode } from './visual-defaults.mjs';
 
 (()=>{
 'use strict';
@@ -42,7 +43,11 @@ css.textContent=[
  '#body-measurements .bm-studio-controls{display:flex;gap:9px;flex-wrap:wrap;justify-content:space-between;margin:10px 0 5px;}',
  '#body-measurements .bm-studio-controls label{flex:1 1 120px;font-size:12px;color:#c7e9ef;}',
  '#body-measurements .bm-studio-controls select{background:#103448;color:#e8f9ff;border:1px solid #457e8d;border-radius:8px;min-height:40px;margin-top:4px;padding:7px;width:100%;}',
- '#body-measurements #bm-main.bm-table-only .bm-studio-controls{display:none!important;}'
+ '#body-measurements .bm-shape-controls{display:flex;gap:6px;align-items:stretch;flex-wrap:wrap;margin:5px 0 8px}',
+ '#body-measurements .bm-shape-controls button{flex:1 1 90px;min-width:0;cursor:pointer;border:1px solid #47788b;border-radius:9px;background:#153b52;color:#e8fbff;padding:8px 6px;min-height:41px;font-size:11px}',
+ '#body-measurements .bm-shape-controls button[aria-pressed="true"]{background:#1b706e;border-color:#8feeda;color:#fff;font-weight:800}',
+ '#body-measurements .bm-shape-warning{width:100%;font-size:11px;color:#bdd8df;line-height:1.4;margin:2px 0 0}',
+ '#body-measurements #bm-main.bm-table-only .bm-studio-controls,#body-measurements #bm-main.bm-table-only .bm-shape-controls{display:none!important;}'
 ].join('\n');
 document.head.append(css);
 const panel=document.createElement('div');panel.className='bm-mh-panel';
@@ -63,6 +68,18 @@ function selectOption(label,options){
 const hairSel=selectOption('Coiffure',Object.entries(HAIRS));
 const clothSel=selectOption('Tenue',Object.entries(CLOTHES).map(([id,o])=>[id,o.label]));
 panel.insertAdjacentElement('afterend',controls);
+// Display modes only change the artistic 3D body; not the records or growth data.
+const shapeControls=document.createElement('div');shapeControls.className='bm-shape-controls';
+const modeButtons=new Map();
+for(const [mode,label] of [['measured','Mes mesures'],['neutral','↺ Réinitialiser'],['estimated','≈ Selon mon poids']]){
+ const button=document.createElement('button');button.type='button';button.textContent=label;
+ button.setAttribute('aria-pressed','false');button.title=label;
+ button.addEventListener('click',()=>setVisualMode(mode));
+ modeButtons.set(mode,button);shapeControls.append(button);
+}
+const shapeWarning=document.createElement('p');shapeWarning.className='bm-shape-warning';
+shapeWarning.textContent='Le rendu est indicatif. Rien ne sera effacé ni ajouté à ton historique.';
+shapeControls.append(shapeWarning);controls.insertAdjacentElement('afterend',shapeControls);
 const canvas=document.createElement('canvas');canvas.className='bm-makehuman-canvas';
 canvas.setAttribute('aria-label','Mannequin 3D MakeHuman habillé');canvas.setAttribute('role','img');
 stage.append(canvas);
@@ -77,11 +94,37 @@ const autoTriedProfiles=new Set();
 function visibilityStore(){try{return window.localStorage;}catch{return null;}}
 function visibilityEnabled(id){return isStudioEnabled(String(id||''),visibilityStore());}
 function rememberVisibility(id,enabled){return setStudioEnabled(String(id||''),enabled,visibilityStore());}
+function visualMode(p){return readVisualMode(p?.id,visibilityStore());}
+function displayedMeasurements(p){
+ const mode=visualMode(p);
+ if(mode==='neutral')return {};
+ if(mode==='estimated')return estimateVisualMeasurements(p)||{};
+ return p.measurements||{};
+}
+function syncVisualMode(p){
+ const mode=visualMode(p);
+ for(const [value,button] of modeButtons)button.setAttribute('aria-pressed',String(value===mode));
+ shapeWarning.textContent=mode==='neutral'?
+  'Silhouette neutre : historique conservé, aucune mensuration supprimée.':
+  mode==='estimated'?
+  (p.child?'Enfant : forme illustrative uniquement, sans référence médicale ni norme de croissance.':
+    'Suggestion esthétique d’après la taille, le poids et le profil — ce ne sont pas des mesures réelles.'):
+  'Silhouette fondée sur les tours réellement enregistrés dans ton historique.';
+}
+function setVisualMode(mode){
+ const p=profileInfo();if(!p)return;
+ if(!writeVisualMode(p.id,mode,visibilityStore())){
+  note.textContent='Préférence indisponible : stockage local inaccessible.';return;
+ }
+ syncVisualMode(p);
+ currentKey='';refreshScene(true);
+}
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 function ensureMounted(){
  if(!stage.contains(canvas))stage.append(canvas);
  if(!panel.isConnected)stage.before(panel);
  if(!controls.isConnected)panel.after(controls);
+ if(!shapeControls.isConnected)controls.after(shapeControls);
 }
 new MutationObserver(ensureMounted).observe(stage,{childList:true});
 function profileInfo(){
@@ -353,7 +396,9 @@ function deformMesh(mesh,ratios){
 }
 function refreshBodyMeasurements(p){
  if(!body)return;
- const ratios=visualRatios(p.measurements,p.height,p.weight,p.child);
+ const measures=displayedMeasurements(p);
+ const ratios=visualRatios(measures,p.height,p.weight,p.child);
+ markerProfile={...p,visualMeasurements:measures,measurementMode:visualMode(p)};
  body.traverse(m=>{if(m.isSkinnedMesh && m===masterSkin())deformMesh(m,ratios);});
  for(const [,group] of clothing)group.traverse(m=>{if(m.isSkinnedMesh)deformMesh(m,ratios);});
 }
@@ -386,8 +431,8 @@ function frame(t){
 }
 function configure(){
  const p=profileInfo();if(!p||!body)return;
- markerProfile=p;
  syncOutfitControl(p);
+ syncVisualMode(p);
  const opts=choices(p);
  if(profileId!==p.id){profileId=p.id;hairSel.value=opts.hair;clothSel.value=opts.clothes;}
  if(!allowedOutfits(p).includes(clothSel.value))clothSel.value=opts.clothes;
@@ -518,7 +563,7 @@ function refreshScene(force){
   return;
  }
  const k=[p.id,p.sex,p.age.toFixed(2),p.height,p.weight,p.initial,
-  JSON.stringify(p.measurements),p.measurementDate,p.skin,p.hair,p.eyes,p.lastDate,
+  JSON.stringify(p.measurements),p.measurementDate,visualMode(p),p.skin,p.hair,p.eyes,p.lastDate,
   hairSel.value,clothSel.value].join('|');
  if(force||k!==currentKey){
   currentKey=k;
