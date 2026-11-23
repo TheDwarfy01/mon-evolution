@@ -1,0 +1,1 @@
+Version 1.6.137 : hauteurs exactes des repères Taille, Ventre, Hanches et position sur la surface visible; en mode Selon mon poids, les valeurs modifiées puis enregistrées prennent priorité sur leur estimation et mettent à jour immédiatement le mannequin sans toucher aux autres mensurations. Tests automatiques et conservation des données.
