@@ -35,6 +35,10 @@ build=build.replace("versionName '1.6.143'","versionName '1.6.144-filament-test'
 assert "filament-utils-android" not in build
 build+="\n// Isolated Filament POC; only this experimental build resolves the library.\n"
 build+="dependencies { implementation 'com.google.android.filament:filament-utils-android:1.81.0' }\n"
+# Keep generated Java and Kotlin bytecode at 17, while using JDK21 javac to
+# consume Filament's Java 21 dependencies.
+build+="kotlin { compilerOptions { jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17 } }\n"
+
 gradle.write_text(build,encoding="utf-8")
 
 # AGP 9.1.1 is the minimum stable Android Gradle plugin for API 37.
