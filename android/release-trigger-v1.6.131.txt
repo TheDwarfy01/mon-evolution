@@ -1,0 +1,6 @@
+Mon Évolution IMC v1.6.131 — build automatique après correctifs des artefacts.
+Correctif: conservation de tous les offsets des groupes de matériaux glTF;
+aucune découpe d'avant-bras ou de mains sous les manches; déformations
+progressives aux articulations. Tests automatisés des neuf mensurations,
+de leur mise à jour et de la réversibilité, ainsi que de la topologie indexée.
+Ne modifie ni les données des profils, ni le pack 3D déjà installé.

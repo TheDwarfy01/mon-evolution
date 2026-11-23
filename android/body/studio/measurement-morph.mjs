@@ -70,7 +70,15 @@ export function deformPosition(x,y,z,minY,height,ratios){
  const amount=clamp(center*torsoFactor+arm*armFactor+leg*legFactor,-.23,.23);
  // Extremities: dilate about each limb axis, never push the limb sideways
  // as a whole. Torso and hips expand symmetrically about the mid-line.
- const axis=legFactor>.7&&yn<.5 ? Math.sign(x)*midX :
-  armFactor>.7&&yn>.48 ? Math.sign(x)*height*.22 : 0;
+ // Never snap the deformation axis at an arbitrary limb threshold:
+ // that creates visible cracks at elbows and thigh seams as points pass .7.
+ const smoothstep=t=>{const v=clamp(t,0,1);return v*v*(3-2*v);};
+ const upper=smoothstep((yn-.43)/.14);
+ const lower=1-smoothstep((yn-.40)/.14);
+ const armBlend=smoothstep((armFactor-.25)/.65)*upper;
+ const legBlend=smoothstep((legFactor-.25)/.65)*lower;
+ const axis=Math.sign(x)*(
+  height*.22*armBlend + midX*legBlend*(1-armBlend)
+ );
  return [axis+(x-axis)*(1+amount),y,z*(1+amount)];
 }
