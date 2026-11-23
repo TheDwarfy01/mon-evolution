@@ -105,7 +105,7 @@ public final class FilamentPreviewActivity extends Activity {
             buffer.flip();
             viewer.loadModelGlb(buffer);
             if(viewer.getAsset()==null)throw new IllegalStateException("Chargement GLB impossible");
-            viewer.transformToUnitCube();
+            viewer.resetToDefaultState();
             viewer.setAutoPlayAnimations(false);
             viewer.getCamera().lookAt(0,0,0,0,0,-4,0,1,0);
             status.setText("GLB chargé · Filament natif · rotation tactile · corps original sans morphing.");
