@@ -14,8 +14,6 @@ import android.graphics.Color;
 import com.google.android.filament.Engine;
 import com.google.android.filament.android.UiHelper;
 import com.google.android.filament.utils.ModelViewer;
-import java.io.File;
-import java.io.FileInputStream;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.nio.ByteBuffer;
@@ -70,36 +68,39 @@ public final class FilamentPreviewActivity extends Activity {
         root.addView(surface,new LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,0,1f));
         TextView help=new TextView(this);
-        help.setText("Faire glisser horizontalement pour examiner les épaules et les aisselles. Le test affiche uniquement le modèle de base, sans vêtements ni mensurations.");
+        help.setText("Faire glisser horizontalement pour examiner les épaules et les aisselles. Aucun profil à créer : affichage du corps de base, sans vêtements ni mensurations.");
         help.setTextSize(12);
         help.setTextColor(Color.WHITE);
         help.setPadding(dp(this,14),dp(this,10),dp(this,14),dp(this,12));
         root.addView(help);
         Button back=new Button(this);
-        back.setText("Fermer le diagnostic");
+        back.setText("Quitter le test");
         back.setOnClickListener(v->finish());
         root.addView(back);
         setContentView(root);
-        File model=new File(new File(new File(getFilesDir(),"makehuman"),"studio-v2"),BODY);
-        if(!model.isFile()||model.length()<1_000_000||model.length()>14_000_000){
-            status.setText("Module 3D absent. Dans cette application de test, ouvrir d’abord le mannequin 3D et installer le module Studio. Revenir ensuite ici.");
-            return;
-        }
+        // The diagnostic GLB is packaged inside the experimental APK so that
+        // the viewer is available even when the app has no saved profile.
+        // Production profile storage is intentionally not accessed here.
         try {
             initializeFilament();
             // Use no camera manipulator: orbit is explicitly controlled below
             // to keep the test viewpoint reproducible between screenshots.
             viewer=new ModelViewer(surface, Engine.create(),
                 new UiHelper(UiHelper.ContextErrorPolicy.DONT_CHECK), null);
-            byte[] bytes=new byte[(int)model.length()];
-            try(FileInputStream input=new FileInputStream(model)){
-                int offset=0;
-                while(offset<bytes.length){
-                    int n=input.read(bytes,offset,bytes.length-offset);
-                    if(n<0)throw new java.io.EOFException("GLB incomplet");
-                    offset+=n;
+            byte[] bytes;
+            try(java.io.InputStream input=getAssets().open("filament-base-body.glb")) {
+                java.io.ByteArrayOutputStream output=new java.io.ByteArrayOutputStream(12_000_000);
+                byte[] chunk=new byte[65536];
+                int n;
+                while((n=input.read(chunk))!=-1){
+                    if(output.size()+n>14_000_000)
+                        throw new java.io.IOException("Modèle 3D trop volumineux");
+                    output.write(chunk,0,n);
                 }
+                bytes=output.toByteArray();
             }
+            if(bytes.length<1_000_000)
+                throw new java.io.IOException("Modèle 3D incomplet");
             ByteBuffer buffer=ByteBuffer.allocateDirect(bytes.length).order(ByteOrder.nativeOrder());
             buffer.put(bytes);
             buffer.flip();
