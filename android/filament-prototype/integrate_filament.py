@@ -30,8 +30,8 @@ build=build.replace("applicationId 'fr.monevolution.app'","applicationId 'fr.mon
 # SDK 37 updates only compilation APIs; keep targetSdk 35 / minSdk 24.
 assert "compileSdk 35" in build and "targetSdk 35" in build and "minSdk 24" in build
 build=build.replace("compileSdk 35","compileSdk 37",1)
-build=build.replace("versionCode 159","versionCode 161",1)
-build=build.replace("versionName '1.6.143'","versionName '1.6.145-filament-no-profile'",1)
+build=build.replace("versionCode 159","versionCode 162",1)
+build=build.replace("versionName '1.6.143'","versionName '1.6.146-filament-skeleton-fix'",1)
 assert "filament-utils-android" not in build
 build+="\n// Isolated Filament POC; only this experimental build resolves the library.\n"
 build+="dependencies { implementation 'com.google.android.filament:filament-utils-android:1.81.0' }\n"
