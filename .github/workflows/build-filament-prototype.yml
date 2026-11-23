@@ -8,7 +8,7 @@ on:
       - 'android/filament-prototype/**'
       - '.github/workflows/build-filament-prototype.yml'
 permissions:
-  contents: write
+  contents: read
 jobs:
   release:
     runs-on: ubuntu-latest
