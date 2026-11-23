@@ -33,6 +33,17 @@ assert "filament-utils-android" not in build
 build+="\n// Isolated Filament POC; only this experimental build resolves the library.\n"
 build+="dependencies { implementation 'com.google.android.filament:filament-utils-android:1.81.0' }\n"
 gradle.write_text(build,encoding="utf-8")
+# Filament-utils pulls AndroidX annotation; legacy IMC Gradle did not need
+# AndroidX until this experiment, so enable it in the generated test project.
+props=root.parent/"gradle.properties"
+current=props.read_text(encoding="utf-8") if props.exists() else ""
+if "android.useAndroidX=" in current:
+    current="\n".join("android.useAndroidX=true" if line.startswith("android.useAndroidX=") else line
+        for line in current.splitlines())+"\n"
+else:
+    current+="\nandroid.useAndroidX=true\n"
+props.write_text(current,encoding="utf-8")
+
 
 source=java.read_text(encoding="utf-8")
 anchor="        @JavascriptInterface public void makeHumanStudioInstall(){"
