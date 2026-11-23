@@ -9,6 +9,7 @@ import { profileCategory, allowedOutfitsFor } from './profile-rules.mjs';
 import { latestMeasurements, visualRatios, deformPosition } from './measurement-morph.mjs';
 import { createStudioMarkers } from './measurement-markers.mjs';
 import { isStudioEnabled, setStudioEnabled } from './visibility-preference.mjs';
+import { hideMaskFor, coveredTriangle, behindOpaqueGarment } from './clothing-coverage.mjs';
 
 (()=>{
 'use strict';
@@ -29,16 +30,6 @@ const CLOTHES={
  skirt:{label:'T-shirt et jupe',files:['clothing_tshirt.glb','clothing_skirt.glb','clothing_shoes.glb']}
 };
 // Only licensed fitted garment meshes are exposed in the profile-specific choices.
-const BODY_ZONE={feet:1,legs:2,hips:4,torso:8,coat:16,underwear_m:32,underwear_f:64,bra:128,shorts:256,shirt:512,hoodie:1024,dress:2048,jacket:4096,boots:8192};
-const GARMENT_ZONE={
- 'clothing_tshirt.glb':['torso'],
- 'clothing_shirt.glb':['shirt'],
- 'clothing_hoodie.glb':['hoodie'],
- 'clothing_jeans.glb':['legs'],
- 'clothing_shorts.glb':['shorts'],
- 'clothing_skirt.glb':['hips'],
- 'clothing_shoes.glb':['feet']
-};
 const css=document.createElement('style');
 css.id='makehuman-studio-style';
 css.textContent=[
@@ -281,10 +272,8 @@ function masterSkin(){
 const baseSkinIndices=new WeakMap();
 function concealCoveredSkin(files){
  if(!body)return;
- const mask=files.reduce((sum,name)=>{
-  for(const zone of GARMENT_ZONE[name]||[])sum|=BODY_ZONE[zone]||0;
-  return sum;
- },0);
+ const mask=hideMaskFor(files);
+ const {minY,height}=getBodyBounds();
  body.traverse(mesh=>{
   if(!mesh.isSkinnedMesh||!mesh.geometry)return;
   if(!baseSkinIndices.has(mesh)){
@@ -295,20 +284,26 @@ function concealCoveredSkin(files){
   }
   const initial=baseSkinIndices.get(mesh);
   if(!initial)return;
-  const attr=mesh.geometry.getAttribute('_cczone')||mesh.geometry.getAttribute('_CCZONE');
-  if(!attr||!mask){
+  if(!mask){
    mesh.geometry.setIndex(new THREE.BufferAttribute(new initial.constructor(initial),1));
    return;
   }
+  const geo=mesh.geometry;
+  const attr=geo.getAttribute('_cczone')||geo.getAttribute('_CCZONE');
+  const pos=geo.getAttribute('position');
+  if(!pos)return;
   const kept=[];
   for(let i=0;i<initial.length;i+=3){
    const a=initial[i],b=initial[i+1],c=initial[i+2];
-   const hidden=(Math.round(attr.getX(a))&mask)!==0 &&
-     (Math.round(attr.getX(b))&mask)!==0 &&
-     (Math.round(attr.getX(c))&mask)!==0;
-   if(!hidden)kept.push(a,b,c);
+   const hiddenByZone=attr&&coveredTriangle([attr.getX(a),attr.getX(b),attr.getX(c)],mask);
+   // If a GLB body vertex lacks _CCZONE at a garment seam, use a conservative
+   // position-based fallback. Limit to the covered torso/hips/legs only.
+   const yn=((pos.getY(a)+pos.getY(b)+pos.getY(c))/3-minY)/height;
+   const xn=(Math.abs(pos.getX(a))+Math.abs(pos.getX(b))+Math.abs(pos.getX(c)))/(3*height);
+   const hiddenByFabric=behindOpaqueGarment(yn,xn,files);
+   if(!hiddenByZone&&!hiddenByFabric)kept.push(a,b,c);
   }
-  mesh.geometry.setIndex(new THREE.BufferAttribute(new initial.constructor(kept),1));
+  geo.setIndex(new THREE.BufferAttribute(new initial.constructor(kept),1));
  });
 }
 
@@ -512,6 +507,7 @@ function refreshScene(force){
  const p=profileInfo();
  if(!p){stopPreview();note.textContent='Profil incomplet ou sexe non précisé : tableau uniquement.';return;}
  if(profileId!==p.id && !visibilityEnabled(p.id)){
+  autoTriedProfiles.delete(String(profileId));
   stopPreview();
   note.textContent='Mannequin désactivé pour ce profil. Active-le pour le conserver aux prochains démarrages.';
   return;
