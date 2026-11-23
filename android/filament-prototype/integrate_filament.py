@@ -54,6 +54,8 @@ camera.write_text(cam.replace('fr.monevolution.app.camera',
 xml=manifest.read_text(encoding="utf-8")
 assert 'fr.monevolution.app.camera' in xml and '</application>' in xml
 xml=xml.replace('fr.monevolution.app.camera','fr.monevolution.filamenttest.camera')
+# Do not intercept the production app's share links from a test install.
+xml=xml.replace('android:scheme="monevolution"','android:scheme="monevolutionfilament"')
 xml=xml.replace('android:label="Mon Évolution IMC"','android:label="IMC Filament TEST"')
 xml=xml.replace('</application>',
     '  <activity android:name=".FilamentPreviewActivity" android:exported="false"/>\n  </application>',1)
