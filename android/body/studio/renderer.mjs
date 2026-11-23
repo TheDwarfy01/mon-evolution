@@ -6,7 +6,8 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { profileCategory, allowedOutfitsFor } from './profile-rules.mjs';
-import { REGIONS, latestMeasurements, visualRatios, deformPosition, validMeasure } from './measurement-morph.mjs';
+import { latestMeasurements, visualRatios, deformPosition } from './measurement-morph.mjs';
+import { createStudioMarkers } from './measurement-markers.mjs';
 
 (()=>{
 'use strict';
@@ -76,7 +77,7 @@ const parser=new GLTFLoader();
 let renderer=null,scene=null,camera=null,mixer=null,figure=null,body=null,lighting=null;
 let active=false,busy=false,disposed=false,autoShowAfterInstall=false,currentKey='',oldStatus='',firstRun=true;
 let lastY=0,yaw=0,pointer=null,raf=0,profileId='',lastProfileCheck=0;
-let studioBounds=null,markerSelection='',lastMarkerKey='',bodyGeometryVersion=0;
+let studioBounds=null,studioMarkers=null,markerProfile=null;
 const basePositions=new WeakMap();
 const loaded=new Map(),pending=new Map(),clothing=new Map(),hairObjects=new Map();
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
@@ -182,6 +183,10 @@ function init(){
  camera=new THREE.OrthographicCamera(-.78,.78,1.12,-1.12,.01,40);
  camera.position.set(0,1.05,4.5);camera.lookAt(0,.9,0);
  window.addEventListener('resize',renderOnce);
+ studioMarkers=createStudioMarkers({
+  stage,figure,camera,getBounds:getBodyBounds,
+  getProfile:()=>markerProfile,isActive:()=>active
+ });
 }
 function registerMaterials(group,type,p){
  group.traverse(o=>{
@@ -359,6 +364,7 @@ function renderOnce(){
  camera.top=half;camera.bottom=-half;camera.updateProjectionMatrix();
  figure.rotation.y=yaw;
  renderer.render(scene,camera);
+ studioMarkers?.update();
 }
 function frame(t){
  if(!active)return;
@@ -375,6 +381,7 @@ function frame(t){
 }
 function configure(){
  const p=profileInfo();if(!p||!body)return;
+ markerProfile=p;
  syncOutfitControl(p);
  const opts=choices(p);
  if(profileId!==p.id){profileId=p.id;hairSel.value=opts.hair;clothSel.value=opts.clothes;}
@@ -484,6 +491,7 @@ async function startPreview(){
 }
 function stopPreview(){
  active=false;if(raf)cancelAnimationFrame(raf);raf=0;lastY=0;
+ studioMarkers?.update();
  stage.classList.remove('bm-makehuman-active');
  btn.textContent='Afficher le mannequin 3D';
  note.textContent='Masqué. Le module reste installé pour les prochaines ouvertures.';
