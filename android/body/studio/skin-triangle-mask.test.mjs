@@ -97,3 +97,16 @@ test('new armhole protection preserves the original triangle indices and group b
  assert.deepEqual(Array.from(original),[0,1,2,3,4,5]);
  assert.equal(result.length,original.length);
 });
+
+test('keep near-armpit triangles visible even on a wider measured silhouette',()=>{
+ const h=1.659;
+ const points=[
+  [.115*h,.61*h],[.132*h,.65*h],[.14*h,.68*h],
+  [.06*h,.61*h],[.07*h,.65*h],[.08*h,.68*h]
+ ];
+ const pos={getX:i=>points[i][0],getY:i=>points[i][1]};
+ const top=['clothing_tshirt.glb'];
+ assert.equal(touchesSleeveOpening([0,1,2],pos,0,h,top),true);
+ assert.equal(touchesSleeveOpening([3,4,5],pos,0,h,top),false);
+ assert.equal(touchesSleeveOpening([0,1,2],pos,0,h,['clothing_jeans.glb']),false);
+});
