@@ -6,6 +6,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { profileCategory, allowedOutfitsFor } from './profile-rules.mjs';
+import { FACE_CHOICES,faceMorphsFor } from './face-presets.mjs';
 import { latestMeasurements, visualRatios, deformPosition } from './measurement-morph.mjs';
 import { createStudioMarkers } from './measurement-markers.mjs';
 import { estimatedThighIntensity,softenInnerThigh } from './thigh-fill.mjs';
@@ -66,6 +67,8 @@ function selectOption(label,options){
  field.append(select);controls.append(field);return select;
 }
 const hairSel=selectOption('Coiffure',Object.entries(HAIRS));
+// Use only facial shape keys confirmed to exist in the actual exported GLB.
+const faceSel=selectOption('Visage',FACE_CHOICES.map(o=>[o.id,o.label]));
 const clothSel=selectOption('Tenue',Object.entries(CLOTHES).map(([id,o])=>[id,o.label]));
 // Only one authorized outfit remains, so hide the unnecessary choice.
 clothSel.parentElement.hidden=true;
@@ -157,6 +160,7 @@ function choices(p){
  try{options=JSON.parse(localStorage.getItem('mh-studio-v2-'+p.id)||'{}')||{}}catch{}
  const allowed=allowedOutfits(p);
  return {hair:HAIRS[options.hair]?options.hair:(p.sex==='female'?'bob02':'short02'),
+  face:FACE_CHOICES.some(o=>o.id===options.face)?options.face:'soft',
   clothes:allowed.includes(options.clothes)?options.clothes:(allowed[0]||'classic')};
 }
 function syncOutfitControl(p){
@@ -174,7 +178,7 @@ function syncOutfitControl(p){
 function saveChoice(){
  const p=profileInfo();if(!p)return;
  try{localStorage.setItem('mh-studio-v2-'+p.id,
-  JSON.stringify({hair:hairSel.value,clothes:clothSel.value}));}catch{}
+  JSON.stringify({hair:hairSel.value,face:faceSel.value,clothes:clothSel.value}));}catch{}
  refreshScene(true);
 }
 async function readGlb(name){
@@ -442,9 +446,9 @@ function configure(){
  syncOutfitControl(p);
  syncVisualMode(p);
  const opts=choices(p);
- if(profileId!==p.id){profileId=p.id;hairSel.value=opts.hair;clothSel.value=opts.clothes;}
+ if(profileId!==p.id){profileId=p.id;hairSel.value=opts.hair;faceSel.value=opts.face;clothSel.value=opts.clothes;}
  if(!allowedOutfits(p).includes(clothSel.value))clothSel.value=opts.clothes;
- const inf=findMorphInfluences(p);
+ const inf={...findMorphInfluences(p),...faceMorphsFor(p.kind,faceSel.value)};
  applyMorph(body,inf);
  registerMaterials(body,'body',p);
  for(const group of clothing.values())applyMorph(group,inf);
@@ -531,7 +535,7 @@ async function startPreview(){
    if(idle)mixer.clipAction(idle).setLoop(THREE.LoopRepeat).play();
   }
   syncOutfitControl(p);
-  const opts=choices(p);hairSel.value=opts.hair;clothSel.value=opts.clothes;
+  const opts=choices(p);hairSel.value=opts.hair;faceSel.value=opts.face;clothSel.value=opts.clothes;
   profileId=p.id;
   autoTriedProfiles.add(String(p.id));
   await ensureAccessories(p);
@@ -572,7 +576,7 @@ function refreshScene(force){
  }
  const k=[p.id,p.sex,p.age.toFixed(2),p.height,p.weight,p.initial,
   JSON.stringify(p.measurements),p.measurementDate,visualMode(p),p.skin,p.hair,p.eyes,p.lastDate,
-  hairSel.value,clothSel.value].join('|');
+  hairSel.value,faceSel.value,clothSel.value].join('|');
  if(force||k!==currentKey){
   currentKey=k;
   configure();
@@ -622,6 +626,7 @@ btn.addEventListener('click',()=>{
  bridge.makeHumanStudioInstall();
 });
 hairSel.addEventListener('change',saveChoice);
+faceSel.addEventListener('change',saveChoice);
 clothSel.addEventListener('change',saveChoice);
 canvas.addEventListener('webglcontextlost',e=>{
  e.preventDefault();
