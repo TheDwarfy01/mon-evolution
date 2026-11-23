@@ -31,7 +31,7 @@ build=build.replace("versionCode 159","versionCode 160",1)
 build=build.replace("versionName '1.6.143'","versionName '1.6.144-filament-test'",1)
 assert "filament-utils-android" not in build
 build+="\n// Isolated Filament POC; only this experimental build resolves the library.\n"
-build+="dependencies { implementation 'com.google.android.filament:filament-utils-android:1.81.0' }\n"
+build+="dependencies { implementation 'com.google.android.filament:filament-utils-android:1.67.0' }\n"
 gradle.write_text(build,encoding="utf-8")
 # Filament-utils pulls AndroidX annotation; legacy IMC Gradle did not need
 # AndroidX until this experiment, so enable it in the generated test project.
@@ -89,4 +89,4 @@ assert 'filament-test.js' not in page and '</body></html>' in page
 page=page.replace('</body></html>',
     '<script src="filament-test.js"></script>\n</body></html>',1)
 html.write_text(page,encoding="utf-8")
-print("Experimental Filament 1.81 integration ready: isolated appId, unique provider, native viewer.")
+print("Experimental Filament 1.67 integration ready: isolated appId, unique provider, native viewer.")
