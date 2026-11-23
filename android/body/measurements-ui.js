@@ -333,6 +333,9 @@
   rec.updatedAt=new Date().toISOString();
   save();
   renderData();
+  window.dispatchEvent(new CustomEvent('mon-evolution-measurements-changed',{
+   detail:{profileId:p.id,date}
+  }));
   get('bm-status').textContent='✓ Mensurations du '+day(date)+' enregistrées.';
  }
  function renderHistory(){
@@ -360,6 +363,9 @@
     if(!confirm('Supprimer les mensurations et la photo du '+day(r.date)+' sur ce profil ?'))return;
     p[RECORDS]=p[RECORDS].filter(x=>x.id!==r.id);
     save();renderData();dateChosen();
+    window.dispatchEvent(new CustomEvent('mon-evolution-measurements-changed',{
+     detail:{profileId:p.id,date:r.date,deleted:true}
+    }));
    };
    buttons.append(edit,del);row.append(detail,buttons);parent.append(row);
   }
