@@ -28,11 +28,8 @@ const HAIRS={
  long01:'Long',ponytail01:'Queue-de-cheval',braid01:'Tresse',afro01:'Bouclé'
 };
 const CLOTHES={
- classic:{label:'T-shirt et jean',files:['clothing_tshirt.glb','clothing_jeans.glb','clothing_shoes.glb']},
- shirt:{label:'Chemise et jean',files:['clothing_shirt.glb','clothing_jeans.glb','clothing_shoes.glb']},
- casual:{label:'Sweat et jean',files:['clothing_hoodie.glb','clothing_jeans.glb','clothing_shoes.glb']},
- summer:{label:'T-shirt et short',files:['clothing_tshirt.glb','clothing_shorts.glb','clothing_shoes.glb']},
- skirt:{label:'T-shirt et jupe',files:['clothing_tshirt.glb','clothing_skirt.glb','clothing_shoes.glb']}
+ // A single stable outfit avoids abrupt leg-color boundaries and garment swaps.
+ classic:{label:'T-shirt et jean',files:['clothing_tshirt.glb','clothing_jeans.glb','clothing_shoes.glb']}
 };
 // Only licensed fitted garment meshes are exposed in the profile-specific choices.
 const css=document.createElement('style');
@@ -70,6 +67,8 @@ function selectOption(label,options){
 }
 const hairSel=selectOption('Coiffure',Object.entries(HAIRS));
 const clothSel=selectOption('Tenue',Object.entries(CLOTHES).map(([id,o])=>[id,o.label]));
+// Only one authorized outfit remains, so hide the unnecessary choice.
+clothSel.parentElement.hidden=true;
 panel.insertAdjacentElement('afterend',controls);
 // Display modes only change the artistic 3D body; not the records or growth data.
 const shapeControls=document.createElement('div');shapeControls.className='bm-shape-controls';
@@ -179,7 +178,7 @@ function saveChoice(){
  refreshScene(true);
 }
 async function readGlb(name){
- if(!/^(?:base_body_anim|hair_(?:short02|short04|bob02|long01|ponytail01|braid01|afro01)|clothing_(?:tshirt|shirt|hoodie|jeans|shorts|skirt|shoes))\.glb$/.test(name)){
+ if(!/^(?:base_body_anim|hair_(?:short02|short04|bob02|long01|ponytail01|braid01|afro01)|clothing_(?:tshirt|jeans|shoes))\.glb$/.test(name)){
   throw Error('Fichier 3D non autorisé');
  }
  const size=bridge.makeHumanStudioBytes(name);
