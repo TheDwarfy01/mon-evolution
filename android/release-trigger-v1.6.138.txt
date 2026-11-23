@@ -1,0 +1,1 @@
+Mon Evolution IMC 1.6.138 : calibrage visuel facultatif du ventre en mode Selon mon poids, par profil. Un exemple 95,4 vers 160 cm est uniquement visuel ; l'estimation suit les futurs changements de poids, mais le mannequin et l'historique restent inchangés. Les modèles femmes/enfants ne sont pas modifiés en l'absence de captures de référence.
