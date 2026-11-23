@@ -1152,7 +1152,7 @@ jobs:
           node --check android/body/studio/landmark-layout.mjs
           node --check android/body/studio/measurement-markers.mjs
           grep -Fq 'estimateVisualMeasurements(p)' android/body/studio/renderer.mjs
-          grep -Fq 'layoutLandmarkCallouts(items,width,height' android/body/studio/measurement-markers.mjs
+          grep -Fq 'layoutLandmarkCallouts(clean,width,height' android/body/studio/measurement-markers.mjs
           grep -Fq "[['measured','Mes mesures'],['neutral','↺ Réinitialiser'],['estimated','≈ Selon mon poids']]" android/body/studio/renderer.mjs
           grep -Fq 'maskIndexedTriangles(initial' android/body/studio/renderer.mjs
           ! grep -Fq 'const kept=[]' android/body/studio/renderer.mjs
