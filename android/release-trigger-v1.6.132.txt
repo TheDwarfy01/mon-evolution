@@ -1,0 +1,1 @@
+Version 1.6.132: trois modes de silhouette 3D par profil sans modifier les mensurations, estimations visuelles prudentes d'après âge/taille/poids/sexe, étiquettes anatomiques permanentes et tirets de liaison, tests automatisés.
