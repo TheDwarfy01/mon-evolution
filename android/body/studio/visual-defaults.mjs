@@ -40,7 +40,7 @@ export function estimateVisualMeasurements({height,weight,age,sex,child}={}){
  const baselineWeight=Math.pow(metres,3)*childDensity;
  const childBulk=Math.pow(clamp(weight/baselineWeight,.58,2.35),1/3);
  const artisticFactors={
-  neck:.012,chest:.026,arm:.018,forearm:.015,
+  neck:.012,chest:.026,arm:.024,forearm:.019,
   waist:.032,belly:.036,hips:.029,thigh:.023,calf:.018
  };
  const young=child?clamp((12-age)/12,0,1):0;

@@ -85,3 +85,14 @@ test('estimated adult female shape remains a distinct sex-specific silhouette',(
  assert.ok(male.waist>female.waist);
  assert.ok(female.hips>male.hips);
 });
+
+test('upper arm and forearm scale moderately with weight for female and male',()=>{
+ for(const sex of ['female','male']){
+  const light=estimateVisualMeasurements({sex,height:170,weight:70,age:40,child:false});
+  const heavy=estimateVisualMeasurements({sex,height:170,weight:116,age:40,child:false});
+  assert.ok(heavy.arm>light.arm+6);
+  assert.ok(heavy.forearm>light.forearm+4);
+  assert.ok(heavy.arm<heavy.belly*.45);
+  assert.ok(heavy.forearm<heavy.arm);
+ }
+});

@@ -100,3 +100,53 @@ test('weight-estimated shape responds smoothly across adult weight changes',()=>
  for(let i=1;i<depths.length;i++)assert.ok(depths[i]>=depths[i-1]-1e-8,'weight increase should not shrink belly');
  assert.ok(depths.at(-1)>depths[0]+.025);
 });
+
+test('high-BMI estimated upper arm gets thickness at humerus rather than only at shirt shoulder',()=>{
+ const kg=116,cm=170,H=1.659;
+ const estimatedValues=estimateVisualMeasurements({sex:'female',height:cm,weight:kg,age:40,child:false});
+ const ratios=visualRatios(estimatedValues,cm,kg,false,true);
+ // Approximate GLB upper arm: shoulder (.17,1.32), elbow (.33,1.14).
+ const samples=[
+  {label:'upper arm',x:.278,y:.745*H,z:.058},
+  {label:'elbow',x:.329,y:.687*H,z:.055},
+  {label:'forearm',x:.392,y:.638*H,z:.046}
+ ];
+ for(const sample of samples){
+  const next=deformPosition(sample.x,sample.y,sample.z,0,H,ratios,true);
+  assert.ok(next.every(Number.isFinite),sample.label+' finite');
+  assert.ok(next[2]>sample.z+.004,sample.label+' gains circumference depth');
+  assert.ok(Math.abs(next[0]-sample.x)<.08,sample.label+' does not jump');
+ }
+});
+test('estimated torso does not over-inflate sleeves relative to the upper arm',()=>{
+ const cm=170,kg=116,H=1.659;
+ const m=estimateVisualMeasurements({sex:'female',height:cm,weight:kg,age:40,child:false});
+ const ratio=visualRatios(m,cm,kg,false,true);
+ const sleeve={x:.255,y:.76*H,z:.06};
+ const elbow={x:.33,y:.69*H,z:.06};
+ const grow=p=>deformPosition(p.x,p.y,p.z,0,H,ratio,true)[2]-p.z;
+ assert.ok(grow(elbow)>.006,'upper arm is not starved');
+ assert.ok(grow(sleeve)<.038,'shoulder sleeve does not balloon');
+});
+test('male and female measured profiles and all neutral profiles remain unchanged',()=>{
+ const H=1.659;
+ const measures={chest:140,arm:50,forearm:32,waist:120,belly:150};
+ const ratios=visualRatios(measures,170,116,false,false);
+ for(const x of [.16,.23,.29,.34,.40])for(const yn of [.62,.69,.75,.80]){
+  const pos=[x,H*yn,.065];
+  const old=deformPosition(...pos,0,H,ratios);
+  assert.deepEqual(deformPosition(...pos,0,H,ratios,false),old);
+  assert.deepEqual(deformPosition(...pos,0,H,{},false),pos);
+  assert.deepEqual(deformPosition(...pos,0,H,{},true),pos);
+ }
+});
+test('estimated arm response is continuous at side and shoulder transitions',()=>{
+ const H=1.659,m=estimateVisualMeasurements({sex:'male',height:170,weight:116,age:40,child:false});
+ const ratio=visualRatios(m,170,116,false,true);
+ for(const x0 of [.18,.25,.35])for(const yn of [.59,.63,.70,.76,.82]){
+  const a=deformPosition(x0,yn*H,.055,0,H,ratio,true);
+  const b=deformPosition(x0+.0001,(yn+.0001)*H,.055,0,H,ratio,true);
+  assert.ok(Math.hypot(a[0]-b[0],a[1]-b[1],a[2]-b[2])<.002,
+   'no sharp seam x='+x0+' y='+yn);
+ }
+});

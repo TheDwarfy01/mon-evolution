@@ -58,7 +58,12 @@ export function deformPosition(x,y,z,minY,height,ratios,estimated=false){
  for(const r of REGIONS){
   const ratio=ratios[r.key];
   if(!Number.isFinite(ratio))continue;
-  let alpha=gauss(yn,r.y,r.r)*(ratio-1);
+  // In estimated adult mode the arms hang from shoulder to elbow and wrist:
+  // the old arm/forearm peaks (.665/.535) sat too low, beside the torso.
+  // Preserve measured and child deformations exactly as before.
+  const centerY=estimated?(r.key==='arm'?.735:r.key==='forearm'?.635:r.y):r.y;
+  const radius=estimated&&(r.key==='arm'||r.key==='forearm')?.075:r.r;
+  let alpha=gauss(yn,centerY,radius)*(ratio-1);
   if(r.kind==='center'){center+=alpha;centerWeight+=gauss(yn,r.y,r.r);}
   else if(r.kind==='arm')arm+=alpha;
   else leg+=alpha;
@@ -66,8 +71,20 @@ export function deformPosition(x,y,z,minY,height,ratios,estimated=false){
  const ax=Math.abs(x);
  const mid=clamp((ax-height*.16)/(height*.08),0,1);
  const legs=clamp((ax-height*.05)/(height*.08),0,1);
- const torsoFactor=(1-mid);
- const armFactor=mid;
+ // At high weight, the old torso/arm split assigned most upper-arm
+ // vertices to the chest and inflated sleeves while leaving forearms thin.
+ // Locate the limb smoothly from the side of the chest towards elbow/wrist.
+ // Measured silhouettes preserve the existing split.
+ const smoothstep=t=>{const v=clamp(t,0,1);return v*v*(3-2*v);};
+ const armProximity=estimated?
+  smoothstep((ax/height-.118)/.078)*
+  smoothstep((yn-.57)/.085)*
+  (1-smoothstep((yn-.83)/.065)):0;
+ const armFactor=estimated?Math.max(mid,armProximity):mid;
+ const shoulderDamping=estimated?
+  1-.58*smoothstep((yn-.70)/.10)*
+      smoothstep((ax/height-.082)/.095):1;
+ const torsoFactor=(1-armFactor)*shoulderDamping;
  const legFactor=legs;
  // Average overlapping torso zones so that individual edited circumferences
  // remain responsive at higher weights rather than clipping immediately.
@@ -75,18 +92,21 @@ export function deformPosition(x,y,z,minY,height,ratios,estimated=false){
  const effectiveCenter=estimated&&centerWeight>0?
   (center/Math.max(1,centerWeight))*.70:center;
  const cap=estimated?.35:.23;
- const amount=clamp(effectiveCenter*torsoFactor+arm*armFactor+leg*legFactor,-cap,cap);
+ const armResponse=estimated?1.16:1;
+ const amount=clamp(effectiveCenter*torsoFactor+arm*armFactor*armResponse+leg*legFactor,-cap,cap);
  // Extremities: dilate about each limb axis, never push the limb sideways
  // as a whole. Torso and hips expand symmetrically about the mid-line.
  // Never snap the deformation axis at an arbitrary limb threshold:
  // that creates visible cracks at elbows and thigh seams as points pass .7.
- const smoothstep=t=>{const v=clamp(t,0,1);return v*v*(3-2*v);};
  const upper=smoothstep((yn-.43)/.14);
  const lower=1-smoothstep((yn-.40)/.14);
  const armBlend=smoothstep((armFactor-.25)/.65)*upper;
  const legBlend=smoothstep((legFactor-.25)/.65)*lower;
+ // A bent arm's approximate medial axis varies from shoulder to wrist.
+ // A fixed x=.22H axis was inappropriate near the female shoulder/upper arm.
+ const armAxis=estimated?height*clamp(.100+(.795-yn)*.91,.100,.274):height*.22;
  const axis=Math.sign(x)*(
-  height*.22*armBlend + midX*legBlend*(1-armBlend)
+  armAxis*armBlend + midX*legBlend*(1-armBlend)
  );
  return [axis+(x-axis)*(1+amount),y,z*(1+amount)];
 }
