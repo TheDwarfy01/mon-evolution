@@ -5,7 +5,7 @@
  */
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
+import { profileCategory, allowedOutfitsFor } from './profile-rules.mjs';
 
 (()=>{
 'use strict';
@@ -25,13 +25,7 @@ const CLOTHES={
  summer:{label:'T-shirt et short',files:['clothing_tshirt.glb','clothing_shorts.glb','clothing_shoes.glb']},
  skirt:{label:'T-shirt et jupe',files:['clothing_tshirt.glb','clothing_skirt.glb','clothing_shoes.glb']}
 };
-// Only outfits with a known fitted MakeHuman target are offered per profile.
-const OUTFITS_BY_PROFILE={
- adult_male:['classic','summer'],
- adult_female:['classic','summer','skirt'],
- child_male:['classic','summer'],
- child_female:['classic','summer']
-};
+// Only licensed fitted garment meshes are exposed in the profile-specific choices.
 const BODY_ZONE={feet:1,legs:2,hips:4,torso:8,coat:16,underwear_m:32,underwear_f:64,bra:128,shorts:256,shirt:512,hoodie:1024,dress:2048,jacket:4096,boots:8192};
 const GARMENT_ZONE={
  'clothing_tshirt.glb':['torso'],
@@ -97,24 +91,21 @@ function profileInfo(){
  if(!weights.length||!(+p.height>40))return null;
  // The profile itself is authoritative. The old appearance selector may
  // contain a stale sex and must NEVER override the person it represents.
- if(p.sex!=='female'&&p.sex!=='male')return null;
- if(typeof p.birthDate!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(p.birthDate))return null;
+ const kind=profileCategory(p);
+ if(!kind)return null;
  const weight=+weights.at(-1).weight,initial=+weights[0].weight;
- const birthMs=new Date(p.birthDate+'T12:00:00').getTime();
- if(!Number.isFinite(birthMs)||birthMs>Date.now())return null;
- const age=clamp((Date.now()-birthMs)/31556952000,0,105);
- const child=age<18,app=p.bodyAppearance||{};
+ const {age,child}=kind,app=p.bodyAppearance||{};
  const records=(p.bodyMeasurements||[]).filter(r=>r&&r.date).slice()
   .sort((a,b)=>a.date.localeCompare(b.date));
  const last=records.at(-1)||{};
- return {id:p.id||'',sex:p.sex,kind:(child?'child_':'adult_')+p.sex,
+ return {id:p.id||'',sex:kind.sex,kind:kind.kind,
    age,child,height:+p.height,weight,initial,
    skin:app.skin||'#D99E78',hair:app.hair||'#4A2D22',eyes:app.eyes||'#593826',
    waist:+last.waist||null,hips:+last.hips||null,
    lastDate:weights.at(-1).date};
 }
 function allowedOutfits(p){
- return OUTFITS_BY_PROFILE[p.kind]||[];
+ return allowedOutfitsFor(p.kind);
 }
 function choices(p){
  let options={};
@@ -313,11 +304,16 @@ function renderOnce(){
 }
 function frame(t){
  if(!active)return;
- if(mixer&&lastY){mixer.update(Math.min(.05,(t-lastY)/1000));}
- lastY=t;
- if(t-lastProfileCheck>800){lastProfileCheck=t;refreshScene(false);}
- renderOnce();
- raf=requestAnimationFrame(frame);
+ try{
+  if(mixer&&lastY){mixer.update(Math.min(.05,(t-lastY)/1000));}
+  lastY=t;
+  if(t-lastProfileCheck>800){lastProfileCheck=t;refreshScene(false);}
+  renderOnce();
+  if(active)raf=requestAnimationFrame(frame);
+ }catch(err){
+  stopPreview();
+  note.textContent='Erreur 3D : le tableau est conservé ('+String(err.message||err)+').';
+ }
 }
 function configure(){
  const p=profileInfo();if(!p||!body)return;
@@ -354,9 +350,10 @@ async function addAsset(name,mode,p){
  // This prevents animations shifting garments away from the moving body.
  g.scene.traverse(o=>{if(o.isSkinnedMesh)meshes.push(o);});
  if(!meshes.length)throw Error('Vêtement incompatible : '+name);
- const masterBones=new Set(main.skeleton.bones.map(b=>b.name));
- if(meshes.some(m=>m.skeleton?.bones?.some(b=>!masterBones.has(b.name))))
-  throw Error('Ossature incompatible : '+name);
+ const masterNames=main.skeleton.bones.map(b=>b.name);
+ if(meshes.some(m=>!m.skeleton || m.skeleton.bones.length!==masterNames.length ||
+   m.skeleton.bones.some((bone,i)=>bone.name!==masterNames[i])))
+  throw Error('Ordre des os incompatible : '+name);
  const group=new THREE.Group();
  parent.add(group);
  for(const mesh of meshes){
@@ -466,6 +463,11 @@ btn.addEventListener('click',()=>{
 });
 hairSel.addEventListener('change',saveChoice);
 clothSel.addEventListener('change',saveChoice);
+canvas.addEventListener('webglcontextlost',e=>{
+ e.preventDefault();
+ stopPreview();
+ note.textContent='Rendu graphique interrompu. Le tableau des mensurations reste accessible.';
+});
 canvas.addEventListener('pointerdown',e=>{
  if(!active)return;
  pointer={x:e.clientX,angle:yaw};canvas.setPointerCapture(e.pointerId);
