@@ -1,0 +1,1 @@
+Version 1.6.135 — affichage essentiel de six repères selon l'angle du mannequin, option repères détaillés, points Ventre/Poitrine masqués en vue arrière, sans déplacement des coordonnées ni modification des mesures enregistrées.
