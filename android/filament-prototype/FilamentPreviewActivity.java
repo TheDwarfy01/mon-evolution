@@ -107,7 +107,7 @@ public final class FilamentPreviewActivity extends Activity {
             if(viewer.getAsset()==null)throw new IllegalStateException("Chargement GLB impossible");
             viewer.setAutoPlayAnimations(false);
             // Model is normalized into a cube at origin. Camera stays outside.
-            viewer.transformToUnitCube();
+            viewer.transformToUnitCube(new com.google.android.filament.utils.Float3(0f,0f,0f));
             surface.post(()->{
                 if(viewer!=null) viewer.getCamera().lookAt(0,0,4,0,0,0,0,1,0);
             });
