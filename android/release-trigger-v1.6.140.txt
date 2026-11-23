@@ -1,0 +1,1 @@
+Mon Évolution IMC v1.6.140 — correction ciblée des bras trop maigres et des épaules/manches trop gonflées en mode Selon mon poids. La déformation du haut du bras et de l'avant-bras est rééquilibrée suivant les articulations et la morphologie du profil. Préserver le ventre, les repères et toutes les mesures réelles de la 1.6.139. Vérifier les tests 3D et signer le nouvel APK.
