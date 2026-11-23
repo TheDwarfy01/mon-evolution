@@ -1,0 +1,14 @@
+name: Geometry diagnostics of the public 3D Studio mesh
+on:
+  push:
+    paths: ['android/body/studio/geometry-inspection-trigger.txt']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect GLB bone names, proportions and node positions
+        run: python3 android/body/studio/inspect_geometry.py
