@@ -1,4 +1,4 @@
-name: Filament v1.6.144 - essai Android isole
+name: Filament v1.6.145 - sans profil
 on:
   workflow_dispatch:
   pull_request:
@@ -1148,6 +1148,35 @@ jobs:
           grep -Fq "FilamentPreviewActivity" android/source-1.6.143/app/src/main/AndroidManifest.xml
           grep -Fq "openFilamentPreview()" android/source-1.6.143/app/src/main/java/fr/monevolution/app/MainActivity.java
           test -s android/source-1.6.143/app/src/main/java/fr/monevolution/app/FilamentPreviewActivity.java
+      - name: Embarquer le GLB Studio pour tester sans aucun profil
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/filament-pack
+          gh release download avatar-studio-v2 --pattern 'makehuman-studio-v2.zip' --dir /tmp/filament-pack
+          python3 - <<'PY'
+          from zipfile import ZipFile
+          from pathlib import Path
+          import hashlib, json, struct
+          archive=Path('/tmp/filament-pack/makehuman-studio-v2.zip')
+          assert archive.is_file() and archive.stat().st_size>9_000_000
+          with ZipFile(archive) as bundle:
+              manifest=json.loads(bundle.read('manifest.json'))
+              data=bundle.read('base_body_anim.glb')
+              assert manifest['assetLicense']=='CC0-1.0'
+              assert len(data)>1_000_000 and len(data)<14_000_000
+              assert data[:4]==b'glTF'
+              assert struct.unpack_from('<I',data,8)[0]==len(data)
+              expected=manifest['files']['base_body_anim.glb']['sha256']
+              assert hashlib.sha256(data).hexdigest()==expected
+          dst=Path('android/source-1.6.143/app/src/main/assets/filament-base-body.glb')
+          dst.write_bytes(data)
+          print('GLB valide intégré dans APK Filament',len(data),'octets')
+          PY
+          grep -Fq 'android.intent.category.LAUNCHER' android/source-1.6.143/app/src/main/AndroidManifest.xml
+          grep -Fq 'filament-base-body.glb' android/source-1.6.143/app/src/main/java/fr/monevolution/app/FilamentPreviewActivity.java
+          grep -Fq "versionName '1.6.145-filament-no-profile'" android/source-1.6.143/app/build.gradle
       - name: Installer SDK Android
         run: |
           set -euo pipefail
@@ -1180,13 +1209,13 @@ jobs:
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" sign \
             --ks /tmp/mon-evolution.jks --ks-key-alias "$KEY_ALIAS" \
             --ks-pass env:KEYSTORE_PASS --key-pass env:KEY_PASS \
-            --out downloads/Mon_Evolution_IMC_Filament_TEST_v1.6.144.apk /tmp/mon-evolution-aligned.apk
-          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose downloads/Mon_Evolution_IMC_Filament_TEST_v1.6.144.apk
+            --out downloads/Mon_Evolution_IMC_Filament_TEST_SANS_PROFIL_v1.6.145.apk /tmp/mon-evolution-aligned.apk
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose downloads/Mon_Evolution_IMC_Filament_TEST_SANS_PROFIL_v1.6.145.apk
           rm -f /tmp/mon-evolution.jks
       - name: Conserver l APK de test comme artefact prive de compilation
         uses: actions/upload-artifact@v4
         with:
-          name: Mon_Evolution_IMC_Filament_TEST_v1.6.144
-          path: downloads/Mon_Evolution_IMC_Filament_TEST_v1.6.144.apk
+          name: Mon_Evolution_IMC_Filament_TEST_SANS_PROFIL_v1.6.145
+          path: downloads/Mon_Evolution_IMC_Filament_TEST_SANS_PROFIL_v1.6.145.apk
           retention-days: 7
           if-no-files-found: error
