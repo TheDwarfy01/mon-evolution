@@ -33,3 +33,24 @@ export function touchesExposedArm(vertices,skinIndices,skinWeights,boneNames){
  }
  return false;
 }
+
+/* Keep the underarm surface visible at the sleeve opening.
+ * Wide body and fitted shirt morphs can separate at the armpit:
+ * masking adjacent torso triangles creates dark triangular holes.
+ * Only the lateral upper torso of a worn shirt is protected.
+ */
+export function touchesSleeveOpening(vertices,position,minY,height,files){
+ if(!(height>.1)||!position||!Array.isArray(files))return false;
+ if(!files.some(f=>['clothing_tshirt.glb','clothing_shirt.glb',
+   'clothing_hoodie.glb'].includes(f)))return false;
+ const xs=[],ys=[];
+ for(const vertex of vertices){
+  const x=position.getX(vertex),y=position.getY(vertex);
+  if(!Number.isFinite(x)||!Number.isFinite(y))return false;
+  xs.push(Math.abs(x)/height);ys.push((y-minY)/height);
+ }
+ const outer=Math.max(...xs),inner=Math.min(...xs);
+ const low=Math.min(...ys),high=Math.max(...ys);
+ return high>=.605&&low<=.82&&outer>=.132&&
+  (inner>=.080||outer>=.172);
+}
