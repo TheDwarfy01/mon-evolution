@@ -1,0 +1,24 @@
+name: Vérifier la stabilité des mannequins 3D
+on:
+  push:
+    paths:
+      - 'android/body/studio/**'
+      - '.github/workflows/test-studio-stability.yml'
+  pull_request:
+    paths:
+      - 'android/body/studio/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntaxe du moteur 3D
+        run: node --check android/body/studio/renderer.mjs
+      - name: Tests de profils, vêtements, maillages et mensurations
+        run: node --test android/body/studio/*.test.mjs
