@@ -51,6 +51,8 @@ export function touchesSleeveOpening(vertices,position,minY,height,files){
  }
  const outer=Math.max(...xs),inner=Math.min(...xs);
  const low=Math.min(...ys),high=Math.max(...ys);
- return high>=.605&&low<=.82&&outer>=.132&&
-  (inner>=.080||outer>=.172);
+ // Keep a slightly wider armpit band intact. Prefer continuous visible skin
+ // to aggressive triangle removal at sleeve edges when morphs vary.
+ return high>=.58&&low<=.84&&outer>=.112&&
+  (inner>=.070||outer>=.150);
 }
