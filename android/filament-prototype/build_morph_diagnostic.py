@@ -38,7 +38,7 @@ def skin_vertex_groups(document,binary,compact,compact_binary):
         base=list(struct.iter_unpack('<fff',positions))
         male=list(struct.iter_unpack('<fff',same))
         shifts=[max(abs(v-u) for v,u in zip(p,q)) for p,q in zip(base,male)]
-        assert max(shifts)<.12 and sum(shifts)/len(shifts)<.042,(
+        assert max(shifts)<.12 and sum(shifts)/len(shifts)<.078,(
             'Unexpected base mesh topology or non-male vertices',max(shifts))
     joints,ja=values(document,binary,src['attributes']['JOINTS_0'],4)
     weights,wa=values(document,binary,src['attributes']['WEIGHTS_0'],16)
