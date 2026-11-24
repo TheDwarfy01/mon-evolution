@@ -31,8 +31,8 @@ public final class FilamentPreviewActivity extends Activity {
     private Skybox background;
     private Choreographer.FrameCallback frameCallback;
     private boolean running;
-    private float lastX;
-    private double yaw;
+    private int touchMoves=0;
+    private String loadError="";
     private TextView status;
     private String currentModel="filament-test-cube.glb";
     private String currentLabel="Cube test";
@@ -72,17 +72,24 @@ public final class FilamentPreviewActivity extends Activity {
         status.setText("Test Filament : cube orange au démarrage, puis mannequin simplifié.");
         root.addView(status);
         LinearLayout modes=new LinearLayout(this);
+        modes.setOrientation(LinearLayout.VERTICAL);
         modes.setPadding(dp(this,6),0,dp(this,6),dp(this,4));
-        String[] names={"Corps simple","Cube test","Corps complet"};
-        String[] files={"filament-simple-body.glb","filament-test-cube.glb","filament-base-body.glb"};
-        for(int i=0;i<names.length;i++){
-            final String filename=files[i],label=names[i];
-            Button button=new Button(this);
-            button.setText(label);
-            button.setTextSize(11);
-            button.setAllCaps(false);
-            modes.addView(button,new LinearLayout.LayoutParams(0,dp(this,44),1f));
-            button.setOnClickListener(v->switchModel(filename,label));
+        String[] names={"Corps simple","Corps détaillé","Cube test","Rig original"};
+        String[] files={"filament-simple-body.glb","filament-detailed-static.glb",
+                        "filament-test-cube.glb","filament-base-body.glb"};
+        for(int rowIndex=0;rowIndex<2;rowIndex++){
+            LinearLayout buttonRow=new LinearLayout(this);
+            for(int column=0;column<2;column++){
+                int i=rowIndex*2+column;
+                final String filename=files[i],label=names[i];
+                Button button=new Button(this);
+                button.setText(label);
+                button.setTextSize(12);
+                button.setAllCaps(false);
+                buttonRow.addView(button,new LinearLayout.LayoutParams(0,dp(this,42),1f));
+                button.setOnClickListener(v->switchModel(filename,label));
+            }
+            modes.addView(buttonRow);
         }
         root.addView(modes);
         SurfaceView surface=new SurfaceView(this);
@@ -90,7 +97,7 @@ public final class FilamentPreviewActivity extends Activity {
         root.addView(surface,new LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,0,1f));
         TextView help=new TextView(this);
-        help.setText("Corps simple = maillage fixe CC0. Cube = vérification moteur. Corps complet = squelette et morphing. Faites glisser pour tourner. Aucun profil requis.");
+        help.setText("Glissez un doigt pour tourner, pincez pour zoomer. Corps détaillé : peau et visage d'origine, sans animation. Rig original : diagnostic du GLB articulé. Aucun profil requis.");
         help.setTextSize(12);
         help.setTextColor(Color.WHITE);
         help.setPadding(dp(this,14),dp(this,10),dp(this,14),dp(this,12));
@@ -112,8 +119,9 @@ public final class FilamentPreviewActivity extends Activity {
         // Production profile storage is intentionally not accessed here.
         try {
             initializeFilament();
-            // Use no camera manipulator: orbit is explicitly controlled below
-            // to keep the test viewpoint reproducible between screenshots.
+            // Use Filament's native camera manipulator with its own touch events.
+            // Never apply Camera.lookAt directly: ModelViewer.render overwrites it
+            // from the manipulator on every frame.
             viewer=new ModelViewer(surface, Engine.create(),
                 new UiHelper(UiHelper.ContextErrorPolicy.DONT_CHECK), new com.google.android.filament.utils.Manipulator.Builder().targetPosition(0f,0f,-4f).orbitHomePosition(0f,0f,0f).build(com.google.android.filament.utils.Manipulator.Mode.ORBIT));
             // A visible gray-blue backdrop helps distinguish missing geometry
@@ -127,22 +135,15 @@ public final class FilamentPreviewActivity extends Activity {
                 if(viewer!=null && surface.getWidth()>0 && surface.getHeight()>0){
                     double aspect=(double)surface.getWidth()/surface.getHeight();
                     viewer.getCamera().setLensProjection(28.0,aspect,0.05,100.0);
-                    cameraAtYaw();
+                    // ModelViewer.render retrieves the camera pose from the manipulator.
                 }
             });
-            switchModel("filament-test-cube.glb","Cube test");
+            switchModel("filament-simple-body.glb","Corps simple");
             surface.setOnTouchListener((view,event)->{
-                if(event.getActionMasked()==MotionEvent.ACTION_DOWN){
-                    lastX=event.getX();
-                    return true;
-                }
-                if(event.getActionMasked()==MotionEvent.ACTION_MOVE){
-                    float now=event.getX();
-                    yaw+=(now-lastX)*0.008;
-                    lastX=now;
-                    cameraAtYaw();
-                    return true;
-                }
+                // Forward raw touches to ModelViewer's GestureDetector; it updates
+                // the orbit camera, pan and pinch-to-zoom on the next frame.
+                viewer.onTouchEvent(event);
+                if(event.getActionMasked()==MotionEvent.ACTION_MOVE)touchMoves++;
                 return true;
             });
             frameCallback=new Choreographer.FrameCallback(){
@@ -172,9 +173,10 @@ public final class FilamentPreviewActivity extends Activity {
             int total=viewer.getAsset()==null?0:viewer.getAsset().getEntities().length;
             int renderable=viewer.getAsset()==null?0:viewer.getAsset().getRenderableEntities().length;
             int progress=Math.round(100f*viewer.getProgress());
-            String message=currentLabel+" | GPU "+progress+"% | objet "+renderable+
+            String message=currentLabel+" | GPU "+progress+"% | objets "+renderable+
                 " | scène "+sceneCount+" | frames "+renderedFrames+
-                " | surface "+stage.getWidth()+"x"+stage.getHeight();
+                " | gestes "+touchMoves+" | surface "+stage.getWidth()+"x"+stage.getHeight();
+            if(!loadError.isEmpty())message+=" | CHARGEMENT : "+loadError;
             if(!lastRenderError.isEmpty())message+=" | "+lastRenderError;
             status.setText(message);
             android.util.Log.i("IMC_Filament_Diagnostic",message+" total="+total);
@@ -183,16 +185,12 @@ public final class FilamentPreviewActivity extends Activity {
         }
     }
 
-    private void cameraAtYaw(){
-        if(viewer==null)return;
-        double distance=4.0;
-        viewer.getCamera().lookAt(
-            Math.sin(yaw)*distance,0.15,-4+Math.cos(yaw)*distance,
-            0,0,-4,0,1,0);
-    }
-
     private void switchModel(String file,String label){
         if(viewer==null)return;
+        currentModel=file;
+        currentLabel=label;
+        loadError="";
+        touchMoves=0;
         try{
             byte[] bytes;
             try(java.io.InputStream input=getAssets().open(file)){
@@ -219,17 +217,15 @@ public final class FilamentPreviewActivity extends Activity {
                 viewer.setAutoPlayAnimations(false);
             }
             viewer.transformToUnitCube(new com.google.android.filament.utils.Float3(0f,0f,-4f));
-            yaw=0;
-            cameraAtYaw();
-            currentModel=file;
-            currentLabel=label;
+            // Keep the touch-controlled camera instead of resetting it via lookAt.
             frameCount=0;
             renderedFrames=0;
             lastRenderError="";
             status.setText(label+" · "+bytes.length+" octets · GPU en cours");
         }catch(Exception ex){
-            status.setText(label+" : ECHEC "+ex.getClass().getSimpleName()+
-                (ex.getMessage()==null?"":" · "+ex.getMessage()));
+            loadError=ex.getClass().getSimpleName()+
+                (ex.getMessage()==null?"":" · "+ex.getMessage());
+            status.setText(label+" : ECHEC "+loadError);
         }
     }
 
