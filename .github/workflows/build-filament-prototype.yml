@@ -1202,7 +1202,10 @@ jobs:
           fi
       - name: Compiler l'application
         working-directory: android/source-1.6.143
-        run: gradle --no-daemon :app:assembleRelease
+        run: |
+          set -euo pipefail
+          df -h .
+          gradle --no-daemon --stacktrace --info --max-workers=2 :app:assembleRelease
       - name: Signer l'APK avec la cle officielle existante
         env:
           KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
