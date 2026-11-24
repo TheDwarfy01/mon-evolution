@@ -29,7 +29,17 @@ def skin_vertex_groups(document,binary,compact,compact_binary):
         return data[offset:offset+length],acc
     positions,pa=values(document,binary,src['attributes']['POSITION'],12)
     same,pb=values(compact,compact_binary,dst['attributes']['POSITION'],12)
-    assert pa['count']==pb['count'] and positions==same, "Body vertex mapping changed"
+    assert pa['count']==pb['count'], "Body vertex count changed"
+    if positions!=same:
+        # Gender-male baked base differs from the neutral base only by the
+        # native CC0 gender_male shape. Vertex order must remain unchanged.
+        # MakeHuman morph coordinates are quantized normalized signed int16;
+        # maximum native gender displacement is well below 0.12 metres.
+        base=list(struct.iter_unpack('<fff',positions))
+        male=list(struct.iter_unpack('<fff',same))
+        shifts=[max(abs(v-u) for v,u in zip(p,q)) for p,q in zip(base,male)]
+        assert max(shifts)<.12 and sum(shifts)/len(shifts)<.042,(
+            'Unexpected base mesh topology or non-male vertices',max(shifts))
     joints,ja=values(document,binary,src['attributes']['JOINTS_0'],4)
     weights,wa=values(document,binary,src['attributes']['WEIGHTS_0'],16)
     assert ja['count']==wa['count']==pa['count']
