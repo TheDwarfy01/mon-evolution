@@ -61,23 +61,29 @@ def gaussian(x,c,s):return math.exp(-.5*((x-c)/s)**2)
 def warp_global(x,y,z,lo,hi,w,change):
     h=hi-lo;t=(y-lo)/h
     torso=w.get('torso',0);clav=w.get('clavicle',0)
-    waist=gaussian(t,.60,.090)
-    hips=gaussian(t,.525,.075)
-    back=1-smooth((z-.02)/.16)
-    # Different but coordinated anatomical fullness responses. Do not
-    # stretch height or translate the complete limbs across the torso.
-    torso_x=.155+.10*waist+.12*hips
-    torso_z=.165+.16*waist+.17*hips*(.75+.5*back)
-    x_gain=(torso*torso_x+clav*.135+w.get('neck',0)*.15+
-            w.get('upperarm',0)*.21+w.get('lowerarm',0)*.16+
-            w.get('hand',0)*.065+w.get('thigh',0)*.25+
-            w.get('calf',0)*.16+w.get('foot',0)*.035+
-            w.get('head',0)*.12)
-    z_gain=(torso*torso_z+clav*.14+w.get('neck',0)*.16+
-            w.get('upperarm',0)*.21+w.get('lowerarm',0)*.16+
-            w.get('hand',0)*.065+w.get('thigh',0)*.25+
-            w.get('calf',0)*.16+w.get('foot',0)*.035+
-            w.get('head',0)*.105)
+    # Broad, low-curvature torso transition. The original narrow Gaussian
+    # hips (.525/.075) caused two isolated lateral bulges ("love handles")
+    # when global fullness and local belly fullness were combined.
+    # Broad curves keep the pelvis and upper thigh continuous.
+    waist=gaussian(t,.61,.19)
+    belly=gaussian(t,.600,.145)
+    glutes=gaussian(t,.510,.115)
+    front=smooth((z-.005)/.145)
+    back=1-smooth((z+.045)/.135)
+    # At full positive setting the torso broadens more gently sideways than
+    # it projects forward. Keep thighs/shoulders/arms proportionate.
+    torso_x=.295+.105*waist
+    torso_z=.365+.28*belly*front+.20*glutes*back
+    x_gain=(torso*torso_x+clav*.29+w.get('neck',0)*.25+
+            w.get('upperarm',0)*.38+w.get('lowerarm',0)*.33+
+            w.get('hand',0)*.095+w.get('thigh',0)*.43+
+            w.get('calf',0)*.31+w.get('foot',0)*.055+
+            w.get('head',0)*.20)
+    z_gain=(torso*torso_z+clav*.30+w.get('neck',0)*.25+
+            w.get('upperarm',0)*.38+w.get('lowerarm',0)*.33+
+            w.get('hand',0)*.095+w.get('thigh',0)*.43+
+            w.get('calf',0)*.31+w.get('foot',0)*.055+
+            w.get('head',0)*.19)
     arm_axis=min(.274,max(.1025,.1025+(.795-t)*.94))*h
     arm_axis=math.copysign(arm_axis,x)
     leg_axis=math.copysign(.125*h,x)
@@ -90,12 +96,23 @@ def warp_global(x,y,z,lo,hi,w,change):
     # on the body and all separate face primitives use IDENTICAL transforms
     # above 1.44 m, preserving eyelid, mouth and eyeball registration.
     head=smooth((y-(hi-.279))/.060)
-    x_gain=(1-head)*x_gain+head*.12
-    z_gain=(1-head)*z_gain+head*.105
+    x_gain=(1-head)*x_gain+head*.20
+    z_gain=(1-head)*z_gain+head*.19
     axis=(1-head)*axis
     zcenter=(1-head)*zcenter+head*.055
-    return (axis+(x-axis)*(1+change*x_gain),y,
-            zcenter+(z-zcenter)*(1+change*z_gain))
+    # Thinning remains conservative (no collapsed limbs), but positive
+    # fullness can extend to a much larger silhouette at slider maximum.
+    strength=change if change>=0 else change*.55
+    # Add dedicated forward abdominal projection, not a side bump.
+    # The front surface alone moves in +Z; its upper/lower edges taper
+    # continuously through the broad belly Gaussian.
+    front_belly=torso*belly*front*(1-head)
+    forward= max(0.,strength)*front_belly*.084*h
+    # Backward volume at the glutes follows the pelvis / upper-thigh weights.
+    butt_weight=torso+.45*w.get('thigh',0)
+    posterior= -max(0.,strength)*butt_weight*glutes*back*.050*h
+    return (axis+(x-axis)*(1+strength*x_gain),y,
+            zcenter+(z-zcenter)*(1+strength*z_gain)+forward+posterior)
 
 def append_target(doc,buf,positions,lo,hi,skin,sign):
     block=bytearray()
@@ -148,15 +165,28 @@ def build(morph,original,destination):
     assert all(len(p['targets'])==2 for p in check['meshes'][1]['primitives'])
     assert len(check['meshes'][0]['weights'])==20
     assert len(check['meshes'][1]['weights'])==2
-    # Both directions are centered on the unchanged neutral mesh.
+    # Bounds/continuity checks: a much larger abdomen, smooth flanks,
+    # proportional arms, shoulders, head, glutes and legs at maximum.
+    # Unlike the old mirror targets, slimming is deliberately less aggressive.
+    changed_axes={'head':0,'torso':0,'upperarm':0,'thigh':0,'calf':0}
+    max_dx=max_dz=0.
     for i,(x,y,z) in enumerate(body_points):
         up=warp_global(x,y,z,lo,hi,skin[i],1.)
         down=warp_global(x,y,z,lo,hi,skin[i],-1.)
-        for a,b,neutral in zip(up,down,(x,y,z)):
-            assert math.isfinite(a) and math.isfinite(b)
-            assert abs((a+b)/2-neutral)<2e-6
-        assert abs(up[0]-x)<.10 and abs(up[2]-z)<.15
-    print('Visual global mass targets OK:',len(binary),'bytes; body 20, face 2, unmodified neutral positions')
+        assert up[1]==y and down[1]==y
+        assert all(math.isfinite(v) for v in up+down)
+        max_dx=max(max_dx,abs(up[0]-x))
+        max_dz=max(max_dz,abs(up[2]-z))
+        assert abs(up[0]-x)<.26 and abs(up[2]-z)<.45
+        assert abs(down[0]-x)<.15 and abs(down[2]-z)<.18
+        for region in changed_axes:
+            if skin[i].get(region,0)>.75 and abs(up[0]-x)+abs(up[2]-z)>.00025:
+                changed_axes[region]+=1
+    assert all(v>30 for v in changed_axes.values()),changed_axes
+    # Visage and eyes use identical transform function at all extreme settings.
+    for primitive in check['meshes'][1]['primitives']:
+        assert len(primitive['targets'])==2
+    print('Visual global mass targets OK:',len(binary),'bytes; body 20, face 2, max deviation',max_dx,max_dz,'regions',changed_axes)
 
 if __name__=='__main__':
     assert len(sys.argv)==4
