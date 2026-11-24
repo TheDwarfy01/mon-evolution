@@ -1221,7 +1221,7 @@ jobs:
           grep -Fq 'Corpulence globale ·' android/source-1.6.143/app/src/main/java/fr/monevolution/app/FilamentPreviewActivity.java
           grep -Fq '200' android/source-1.6.143/app/src/main/java/fr/monevolution/app/FilamentPreviewActivity.java
           grep -Fq 'forward=' android/filament-prototype/build_global_proportional.py
-          grep -Fq 'flancs' android/source-1.6.143/app/src/main/java/fr/monevolution/app/FilamentPreviewActivity.java
+          grep -Fq 'épaules et bras élargis' android/source-1.6.143/app/src/main/java/fr/monevolution/app/FilamentPreviewActivity.java
           grep -Fq 'manager.setMorphWeights(instance,weights,0);' android/source-1.6.143/app/src/main/java/fr/monevolution/app/FilamentPreviewActivity.java
           grep -Fq 'filament-morph-global.glb' android/source-1.6.143/app/src/main/java/fr/monevolution/app/FilamentPreviewActivity.java
           grep -Fq 'filament-male-morph.glb' android/source-1.6.143/app/src/main/java/fr/monevolution/app/FilamentPreviewActivity.java
