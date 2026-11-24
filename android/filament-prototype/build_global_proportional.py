@@ -74,7 +74,9 @@ def warp_global(x,y,z,lo,hi,w,change,male=False):
     waist=gaussian(t,.61,.19)
     belly=gaussian(t,.600,.145)
     # Wide, softly-tapered posterior contour: avoid a pointed glute peak.
-    glutes=gaussian(t,.490,.172)
+    # Glute/pelvis fullness extends down into the upper thighs, unlike the
+    # isolated spherical rear lobe seen in previous test screenshots.
+    glutes=gaussian(t,.475,.198)
     front=smooth((z-.008)/.18)
     back=1-smooth((z+.07)/.18)
     # At full positive setting the torso broadens more gently sideways than
@@ -84,14 +86,17 @@ def warp_global(x,y,z,lo,hi,w,change,male=False):
         # heavy male shoulder girdle, broad rib cage, thick upper arms,
         # pronounced upper thighs and posterior gluteal volume. Avoid
         # isolated round projections on the flanks and a spherical belly.
-        torso_x=.35+.07*waist+.05*glutes
-        # Broad chest/abdomen instead of a tight forward-projecting dome.
-        torso_z=.35+.035*belly*front+.13*glutes*back
-        shoulder=.40
+        # Male frontal silhouette: broad shoulder girdle and trunk. Rear
+        # silhouette reference: hips blend into powerful upper thighs instead
+        # of two pinched lateral lobes.
+        torso_x=.36+.06*waist+.075*glutes
+        # Belly remains volumetric, not an isolated protruding sphere.
+        torso_z=.345+.022*belly*front+.12*glutes*back
+        shoulder=.41
         upperarm=.55
         forearm=.43
-        thigh=.83
-        calf=.42
+        thigh=.89
+        calf=.45
         head_x=.21
         head_z=.20
     else:
@@ -142,7 +147,7 @@ def warp_global(x,y,z,lo,hi,w,change,male=False):
     butt_weight=torso+.45*w.get('thigh',0)
     # The earlier .13*h male posterior translation created a sharp protrusion.
     # Replace it with a small displacement spread over a much wider band.
-    posterior= -max(0.,strength)*butt_weight*glutes*back*(.028 if male else .050)*h
+    posterior= -max(0.,strength)*butt_weight*glutes*back*(.024 if male else .050)*h
     return (axis+(x-axis)*(1+strength*x_gain),y,
             zcenter+(z-zcenter)*(1+strength*z_gain)+forward+posterior)
 
@@ -226,6 +231,13 @@ def build(morph,original,destination,male=False):
         assert len(upper)>25
         extremes=[abs(warp_global(*p,lo,hi,s,1.,True)[2]-p[2]) for p,s in upper]
         assert max(extremes)<.29,('posterior peak too large',max(extremes))
+        # In obese male morphology a sizeable share of the change is carried
+        # by the upper thighs, not just the front abdominal profile.
+        thigh_vertices=[i for i,s in enumerate(skin) if s.get('thigh',0)>.75]
+        assert len(thigh_vertices)>60
+        nonzero=sum(abs(warp_global(*body_points[i],lo,hi,skin[i],1.,True)[0]-
+                        body_points[i][0])>.012 for i in thigh_vertices)
+        assert nonzero>100,('insufficient upper-thigh volume',nonzero)
     print('Visual global mass targets OK:',len(binary),'bytes; body 20, face 2, max deviation',max_dx,max_dz,'regions',changed_axes)
 
 if __name__=='__main__':
