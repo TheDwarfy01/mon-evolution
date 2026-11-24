@@ -46,6 +46,10 @@ public final class FilamentPreviewActivity extends Activity {
     private SurfaceView stage;
     private LinearLayout morphPanel;
     private SeekBar morphSlider;
+    private SeekBar massSlider;
+    private TextView massLabel;
+    private float globalMass=0f;
+    private int faceTargetCount=0;
     private Spinner morphSelector;
     private TextView morphValueLabel;
     private final float[] morphValues=new float[9];
@@ -90,9 +94,9 @@ public final class FilamentPreviewActivity extends Activity {
         LinearLayout modes=new LinearLayout(this);
         modes.setOrientation(LinearLayout.VERTICAL);
         modes.setPadding(dp(this,6),0,dp(this,6),dp(this,4));
-        String[] names={"Morphologie 9 zones","Détails textures","Détails couleurs",
+        String[] names={"Morphologie + corpulence","Détails textures","Détails couleurs",
                         "Corps simple","Cube test","Rig original"};
-        String[] files={"filament-morph-9.glb","filament-detail-textures.glb",
+        String[] files={"filament-morph-global.glb","filament-detail-textures.glb",
                         "filament-detail-colors.glb","filament-simple-body.glb",
                         "filament-test-cube.glb","filament-base-body.glb"};
         for(int rowIndex=0;rowIndex<3;rowIndex++){
@@ -118,6 +122,27 @@ public final class FilamentPreviewActivity extends Activity {
         morphPanel=new LinearLayout(this);
         morphPanel.setOrientation(LinearLayout.VERTICAL);
         morphPanel.setPadding(dp(this,10),dp(this,2),dp(this,10),dp(this,2));
+
+        massLabel=new TextView(this);
+        massLabel.setTextColor(Color.WHITE);
+        massLabel.setTextSize(14);
+        massLabel.setPadding(dp(this,6),dp(this,2),0,0);
+        morphPanel.addView(massLabel);
+        massSlider=new SeekBar(this);
+        massSlider.setMax(100);
+        massSlider.setProgress(50);
+        morphPanel.addView(massSlider,new LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,dp(this,35)));
+        massSlider.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
+            @Override public void onProgressChanged(SeekBar seek,int progress,boolean fromUser){
+                if(!fromUser)return;
+                globalMass=(progress-50)/50f;
+                refreshMorphLabel();
+                applyMorphWeights();
+            }
+            @Override public void onStartTrackingTouch(SeekBar seek){}
+            @Override public void onStopTrackingTouch(SeekBar seek){}
+        });
         LinearLayout selectRow=new LinearLayout(this);
         morphSelector=new Spinner(this);
         ArrayAdapter<String> adapter=new ArrayAdapter<>(this,
@@ -163,12 +188,14 @@ public final class FilamentPreviewActivity extends Activity {
         reset.setOnClickListener(v->{
             java.util.Arrays.fill(morphValues,0f);
             morphSlider.setProgress(50);
+            globalMass=0f;
+            massSlider.setProgress(50);
             refreshMorphLabel();
             applyMorphWeights();
         });
         refreshMorphLabel();
         TextView help=new TextView(this);
-        help.setText("Essai visuel non médical : choisissez une zone, puis déplacez le curseur. 50 = forme de base. Aucun changement n'est enregistré dans vos profils. Tournez avec un doigt et zoomez avec deux.");
+        help.setText("Corpulence globale : grossit ou affine ensemble visage, épaules, bras, tronc, fesses et jambes, sans changer la taille. Réglages locaux : neuf zones distinctes. Simulation indicative, pas une prédiction médicale. Aucun profil modifié.");
         help.setTextSize(12);
         help.setTextColor(Color.WHITE);
         help.setPadding(dp(this,14),dp(this,10),dp(this,14),dp(this,12));
@@ -209,7 +236,7 @@ public final class FilamentPreviewActivity extends Activity {
                     // ModelViewer.render retrieves the camera pose from the manipulator.
                 }
             });
-            switchModel("filament-morph-9.glb","Morphologie 9 zones");
+            switchModel("filament-morph-global.glb","Morphologie + corpulence");
             surface.setOnTouchListener((view,event)->{
                 // Forward raw touches to ModelViewer's GestureDetector; it updates
                 // the orbit camera, pan and pinch-to-zoom on the next frame.
@@ -238,6 +265,10 @@ public final class FilamentPreviewActivity extends Activity {
         }
     }
     private void refreshMorphLabel(){
+        if(massLabel!=null){
+            massLabel.setText("Corpulence globale · "+Math.round(100+30*globalMass)+
+                " % (volume indicatif)");
+        }
         if(morphValueLabel==null)return;
         int percentage=Math.round(100+23*morphValues[activeRegion]);
         morphValueLabel.setText(MORPH_LABELS[activeRegion]+" "+percentage+" %");
@@ -245,25 +276,42 @@ public final class FilamentPreviewActivity extends Activity {
 
     private void applyMorphWeights(){
         if(viewer==null||viewer.getAsset()==null||
-           !currentModel.equals("filament-morph-9.glb"))return;
+           !currentModel.equals("filament-morph-global.glb"))return;
         try {
-            float[] weights=new float[18];
+            // Body: first 18 weights preserve the proven independent 9-zone controls,
+            // the last pair drives global body fullness.
+            float[] weights=new float[20];
             for(int i=0;i<9;i++){
                 weights[i*2]=Math.max(0,morphValues[i]);
                 weights[i*2+1]=Math.max(0,-morphValues[i]);
             }
+            weights[18]=Math.max(0,globalMass);
+            weights[19]=Math.max(0,-globalMass);
+            // Face: exactly matching global head targets on all facial submeshes.
+            float[] faceWeights={weights[18],weights[19]};
             RenderableManager manager=viewer.getEngine().getRenderableManager();
-            int found=0;
+            int bodyFound=0,faceFound=0;
             for(int entity:viewer.getAsset().getRenderableEntities()){
                 int instance=manager.getInstance(entity);
-                if(instance!=0 && manager.getMorphTargetCount(instance)>=18){
+                if(instance==0)continue;
+                int count=manager.getMorphTargetCount(instance);
+                if(count>=20){
                     manager.setMorphWeights(instance,weights,0);
-                    found++;
+                    bodyFound++;
+                }else if(count==2){
+                    manager.setMorphWeights(instance,faceWeights,0);
+                    faceFound++;
                 }
             }
-            morphTargetCount=found;
-            if(found>0)morphUpdates++;
-            else loadError="18 morph targets non disponibles sur ce GLB";
+            morphTargetCount=bodyFound;
+            faceTargetCount=faceFound;
+            if(bodyFound>0&&faceFound>0){
+                morphUpdates++;
+                loadError="";
+            }else{
+                loadError="Contrôle de corpulence incomplet : corps "+bodyFound+
+                    ", visage "+faceFound;
+            }
         }catch(Throwable ex){
             loadError="Morph : "+ex.getClass().getSimpleName()+" "+ex.getMessage();
         }
@@ -279,8 +327,9 @@ public final class FilamentPreviewActivity extends Activity {
             String message=currentLabel+" | GPU "+progress+"% | objets "+renderable+
                 " | scène "+sceneCount+" | frames "+renderedFrames+
                 " | gestes "+touchMoves+" | surface "+stage.getWidth()+"x"+stage.getHeight();
-            if(currentModel.equals("filament-morph-9.glb"))
-                message+=" | cibles "+morphTargetCount+" | réglages "+morphUpdates;
+            if(currentModel.equals("filament-morph-global.glb"))
+                message+=" | corps "+morphTargetCount+" visage "+faceTargetCount+
+                    " | réglages "+morphUpdates;
             if(!loadError.isEmpty())message+=" | CHARGEMENT : "+loadError;
             if(!lastRenderError.isEmpty())message+=" | "+lastRenderError;
             status.setText(message);
@@ -297,8 +346,9 @@ public final class FilamentPreviewActivity extends Activity {
         loadError="";
         touchMoves=0;
         morphTargetCount=0;
+        faceTargetCount=0;
         if(morphPanel!=null)
-            morphPanel.setVisibility(file.equals("filament-morph-9.glb")?
+            morphPanel.setVisibility(file.equals("filament-morph-global.glb")?
                 android.view.View.VISIBLE:android.view.View.GONE);
         try{
             byte[] bytes;
