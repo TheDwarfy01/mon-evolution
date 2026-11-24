@@ -9,6 +9,10 @@ import android.view.SurfaceView;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.LinearLayout;
+import android.widget.SeekBar;
+import android.widget.Spinner;
+import android.widget.ArrayAdapter;
+import com.google.android.filament.RenderableManager;
 import android.widget.TextView;
 import android.graphics.Color;
 import com.google.android.filament.Engine;
@@ -40,6 +44,18 @@ public final class FilamentPreviewActivity extends Activity {
     private String lastRenderError="";
     private int frameCount=0;
     private SurfaceView stage;
+    private LinearLayout morphPanel;
+    private SeekBar morphSlider;
+    private Spinner morphSelector;
+    private TextView morphValueLabel;
+    private final float[] morphValues=new float[9];
+    private int morphTargetCount=0;
+    private int morphUpdates=0;
+    private int activeRegion=5;
+    private static final String[] MORPH_LABELS={
+        "Cou","Poitrine","Bras","Avant-bras","Taille",
+        "Ventre","Hanches","Cuisse","Mollet"
+    };
 
     private static void initializeFilament() throws Exception {
         // Utils is a Kotlin object; its init method can have a Java static wrapper
@@ -74,10 +90,11 @@ public final class FilamentPreviewActivity extends Activity {
         LinearLayout modes=new LinearLayout(this);
         modes.setOrientation(LinearLayout.VERTICAL);
         modes.setPadding(dp(this,6),0,dp(this,6),dp(this,4));
-        String[] names={"Corps simple","Détails couleurs","Détails textures","Cube test","Rig original"};
-        String[] files={"filament-simple-body.glb","filament-detail-colors.glb",
-                        "filament-detail-textures.glb","filament-test-cube.glb",
-                        "filament-base-body.glb"};
+        String[] names={"Morphologie 9 zones","Détails textures","Détails couleurs",
+                        "Corps simple","Cube test","Rig original"};
+        String[] files={"filament-morph-9.glb","filament-detail-textures.glb",
+                        "filament-detail-colors.glb","filament-simple-body.glb",
+                        "filament-test-cube.glb","filament-base-body.glb"};
         for(int rowIndex=0;rowIndex<3;rowIndex++){
             LinearLayout buttonRow=new LinearLayout(this);
             int end=Math.min(names.length,rowIndex*2+2);
@@ -97,8 +114,61 @@ public final class FilamentPreviewActivity extends Activity {
         stage=surface;
         root.addView(surface,new LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,0,1f));
+
+        morphPanel=new LinearLayout(this);
+        morphPanel.setOrientation(LinearLayout.VERTICAL);
+        morphPanel.setPadding(dp(this,10),dp(this,2),dp(this,10),dp(this,2));
+        LinearLayout selectRow=new LinearLayout(this);
+        morphSelector=new Spinner(this);
+        ArrayAdapter<String> adapter=new ArrayAdapter<>(this,
+            android.R.layout.simple_spinner_dropdown_item,MORPH_LABELS);
+        morphSelector.setAdapter(adapter);
+        selectRow.addView(morphSelector,new LinearLayout.LayoutParams(0,dp(this,44),1));
+        morphValueLabel=new TextView(this);
+        morphValueLabel.setTextColor(Color.WHITE);
+        morphValueLabel.setTextSize(12);
+        morphValueLabel.setGravity(Gravity.CENTER_VERTICAL);
+        selectRow.addView(morphValueLabel,new LinearLayout.LayoutParams(0,dp(this,44),1));
+        Button reset=new Button(this);
+        reset.setText("Réinitialiser");
+        reset.setAllCaps(false);
+        selectRow.addView(reset,new LinearLayout.LayoutParams(0,dp(this,44),1));
+        morphPanel.addView(selectRow);
+        morphSlider=new SeekBar(this);
+        morphSlider.setMax(100);
+        morphSlider.setProgress(50);
+        morphPanel.addView(morphSlider,new LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,dp(this,40)));
+        root.addView(morphPanel);
+        morphSelector.setSelection(activeRegion);
+        morphSelector.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener(){
+            @Override public void onItemSelected(android.widget.AdapterView<?> parent,
+                android.view.View view,int position,long id){
+                activeRegion=position;
+                morphSlider.setProgress(Math.round(50+50*morphValues[position]));
+                refreshMorphLabel();
+            }
+            @Override public void onNothingSelected(android.widget.AdapterView<?> parent){}
+        });
+        morphSlider.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
+            @Override public void onProgressChanged(SeekBar seek,int progress,boolean fromUser){
+                if(!fromUser)return;
+                morphValues[activeRegion]=(progress-50)/50f;
+                refreshMorphLabel();
+                applyMorphWeights();
+            }
+            @Override public void onStartTrackingTouch(SeekBar seek){}
+            @Override public void onStopTrackingTouch(SeekBar seek){}
+        });
+        reset.setOnClickListener(v->{
+            java.util.Arrays.fill(morphValues,0f);
+            morphSlider.setProgress(50);
+            refreshMorphLabel();
+            applyMorphWeights();
+        });
+        refreshMorphLabel();
         TextView help=new TextView(this);
-        help.setText("Glissez pour tourner et pincez pour zoomer. Détails couleurs : corps + visage sans textures. Détails textures : mêmes formes avec la peau et les yeux. Rig original : test des 92 morphings. Aucun profil requis.");
+        help.setText("Essai visuel non médical : choisissez une zone, puis déplacez le curseur. 50 = forme de base. Aucun changement n'est enregistré dans vos profils. Tournez avec un doigt et zoomez avec deux.");
         help.setTextSize(12);
         help.setTextColor(Color.WHITE);
         help.setPadding(dp(this,14),dp(this,10),dp(this,14),dp(this,12));
@@ -139,7 +209,7 @@ public final class FilamentPreviewActivity extends Activity {
                     // ModelViewer.render retrieves the camera pose from the manipulator.
                 }
             });
-            switchModel("filament-simple-body.glb","Corps simple");
+            switchModel("filament-morph-9.glb","Morphologie 9 zones");
             surface.setOnTouchListener((view,event)->{
                 // Forward raw touches to ModelViewer's GestureDetector; it updates
                 // the orbit camera, pan and pinch-to-zoom on the next frame.
@@ -167,6 +237,38 @@ public final class FilamentPreviewActivity extends Activity {
                 (ex.getMessage()==null?"":(" · "+ex.getMessage())));
         }
     }
+    private void refreshMorphLabel(){
+        if(morphValueLabel==null)return;
+        int percentage=Math.round(100+23*morphValues[activeRegion]);
+        morphValueLabel.setText(MORPH_LABELS[activeRegion]+" "+percentage+" %");
+    }
+
+    private void applyMorphWeights(){
+        if(viewer==null||viewer.getAsset()==null||
+           !currentModel.equals("filament-morph-9.glb"))return;
+        try {
+            float[] weights=new float[18];
+            for(int i=0;i<9;i++){
+                weights[i*2]=Math.max(0,morphValues[i]);
+                weights[i*2+1]=Math.max(0,-morphValues[i]);
+            }
+            RenderableManager manager=viewer.getEngine().getRenderableManager();
+            int found=0;
+            for(int entity:viewer.getAsset().getRenderableEntities()){
+                int instance=manager.getInstance(entity);
+                if(instance!=0 && manager.getMorphTargetCount(instance)>=18){
+                    manager.setMorphWeights(instance,weights,0);
+                    found++;
+                }
+            }
+            morphTargetCount=found;
+            if(found>0)morphUpdates++;
+            else loadError="18 morph targets non disponibles sur ce GLB";
+        }catch(Throwable ex){
+            loadError="Morph : "+ex.getClass().getSimpleName()+" "+ex.getMessage();
+        }
+    }
+
     private void refreshDiagnostic(){
         if(viewer==null)return;
         try {
@@ -177,6 +279,8 @@ public final class FilamentPreviewActivity extends Activity {
             String message=currentLabel+" | GPU "+progress+"% | objets "+renderable+
                 " | scène "+sceneCount+" | frames "+renderedFrames+
                 " | gestes "+touchMoves+" | surface "+stage.getWidth()+"x"+stage.getHeight();
+            if(currentModel.equals("filament-morph-9.glb"))
+                message+=" | cibles "+morphTargetCount+" | réglages "+morphUpdates;
             if(!loadError.isEmpty())message+=" | CHARGEMENT : "+loadError;
             if(!lastRenderError.isEmpty())message+=" | "+lastRenderError;
             status.setText(message);
@@ -192,6 +296,10 @@ public final class FilamentPreviewActivity extends Activity {
         currentLabel=label;
         loadError="";
         touchMoves=0;
+        morphTargetCount=0;
+        if(morphPanel!=null)
+            morphPanel.setVisibility(file.equals("filament-morph-9.glb")?
+                android.view.View.VISIBLE:android.view.View.GONE);
         try{
             byte[] bytes;
             try(java.io.InputStream input=getAssets().open(file)){
@@ -218,6 +326,7 @@ public final class FilamentPreviewActivity extends Activity {
                 viewer.setAutoPlayAnimations(false);
             }
             viewer.transformToUnitCube(new com.google.android.filament.utils.Float3(0f,0f,-4f));
+            applyMorphWeights();
             // Keep the touch-controlled camera instead of resetting it via lookAt.
             frameCount=0;
             renderedFrames=0;
