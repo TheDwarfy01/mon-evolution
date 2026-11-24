@@ -130,13 +130,15 @@ public final class FilamentPreviewActivity extends Activity {
         morphPanel.addView(massLabel);
         massSlider=new SeekBar(this);
         massSlider.setMax(100);
-        massSlider.setProgress(50);
+        // Neutral is 40: the upper 60% of travel offers a wider obesity range.
+        massSlider.setProgress(40);
         morphPanel.addView(massSlider,new LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,dp(this,35)));
         massSlider.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
             @Override public void onProgressChanged(SeekBar seek,int progress,boolean fromUser){
                 if(!fromUser)return;
-                globalMass=(progress-50)/50f;
+                globalMass=progress<=40 ?
+                    (progress-40)/40f : (progress-40)/60f;
                 refreshMorphLabel();
                 applyMorphWeights();
             }
@@ -189,13 +191,13 @@ public final class FilamentPreviewActivity extends Activity {
             java.util.Arrays.fill(morphValues,0f);
             morphSlider.setProgress(50);
             globalMass=0f;
-            massSlider.setProgress(50);
+            massSlider.setProgress(40);
             refreshMorphLabel();
             applyMorphWeights();
         });
         refreshMorphLabel();
         TextView help=new TextView(this);
-        help.setText("Corpulence globale : grossit ou affine ensemble visage, épaules, bras, tronc, fesses et jambes, sans changer la taille. Réglages locaux : neuf zones distinctes. Simulation indicative, pas une prédiction médicale. Aucun profil modifié.");
+        help.setText("Corpulence 65–200 : silhouette globale, ventre et fesses plus volumineux, flancs adoucis. Le curseur local Ventre va de 75 à 170 et projette surtout vers l'avant. Aucun poids réel calculé ni profil modifié.");
         help.setTextSize(12);
         help.setTextColor(Color.WHITE);
         help.setPadding(dp(this,14),dp(this,10),dp(this,14),dp(this,12));
@@ -266,11 +268,16 @@ public final class FilamentPreviewActivity extends Activity {
     }
     private void refreshMorphLabel(){
         if(massLabel!=null){
-            massLabel.setText("Corpulence globale · "+Math.round(100+30*globalMass)+
-                " % (volume indicatif)");
+            int progress=massSlider==null?40:massSlider.getProgress();
+            int index=progress<=40?Math.round(65+35f*progress/40):
+                Math.round(100+100f*(progress-40)/60);
+            massLabel.setText("Corpulence globale · "+index+
+                " (indice visuel 65–200, pas le poids en %)");
         }
         if(morphValueLabel==null)return;
-        int percentage=Math.round(100+23*morphValues[activeRegion]);
+        int percentage=activeRegion==5?
+            Math.round(100+(morphValues[activeRegion]>=0?70:25)*morphValues[activeRegion]):
+            Math.round(100+23*morphValues[activeRegion]);
         morphValueLabel.setText(MORPH_LABELS[activeRegion]+" "+percentage+" %");
     }
 
