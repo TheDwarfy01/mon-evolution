@@ -115,7 +115,7 @@ public final class FilamentPreviewActivity extends Activity {
             // Use no camera manipulator: orbit is explicitly controlled below
             // to keep the test viewpoint reproducible between screenshots.
             viewer=new ModelViewer(surface, Engine.create(),
-                new UiHelper(UiHelper.ContextErrorPolicy.DONT_CHECK), null);
+                new UiHelper(UiHelper.ContextErrorPolicy.DONT_CHECK), new com.google.android.filament.utils.Manipulator.Builder().targetPosition(0f,0f,-4f).orbitHomePosition(0f,0f,0f).build(com.google.android.filament.utils.Manipulator.Mode.ORBIT));
             // A visible gray-blue backdrop helps distinguish missing geometry
             // from a genuinely black surface.
             background=new Skybox.Builder().color(0.13f,0.17f,0.22f,1f)
@@ -169,8 +169,8 @@ public final class FilamentPreviewActivity extends Activity {
         if(viewer==null)return;
         try {
             int sceneCount=viewer.getScene().getEntityCount();
-            int total=viewer.getAsset()==null?0:viewer.getAsset().getEntityCount();
-            int renderable=viewer.getAsset()==null?0:viewer.getAsset().getRenderableEntityCount();
+            int total=viewer.getAsset()==null?0:viewer.getAsset().getEntities().length;
+            int renderable=viewer.getAsset()==null?0:viewer.getAsset().getRenderableEntities().length;
             int progress=Math.round(100f*viewer.getProgress());
             String message=currentLabel+" | GPU "+progress+"% | objet "+renderable+
                 " | scène "+sceneCount+" | frames "+renderedFrames+
