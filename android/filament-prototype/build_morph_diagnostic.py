@@ -5,7 +5,7 @@ import json, math, struct, sys
 from pathlib import Path
 REGIONS=[('neck',.845,.055,'center'),('chest',.705,.082,'center'),
  ('arm',.745,.085,'arm'),('forearm',.648,.085,'arm'),('waist',.643,.057,'center'),
- ('belly',.600,.059,'center'),('hips',.557,.071,'center'),
+ ('belly',.600,.105,'center'),('hips',.557,.071,'center'),
  ('thigh',.340,.102,'leg'),('calf',.165,.082,'leg')]
 def smooth(x):
  x=max(0.,min(1.,x));return x*x*(3.-2.*x)
@@ -90,6 +90,14 @@ def warp(key,x,y,z,lo,hi,change,skin):
         leg_bone=skin.get('thigh',0)+.20*skin.get('calf',0) if key=='thigh' else skin.get('calf',0)+.18*skin.get('thigh',0)
         influence=vertical*smooth_band(leg_bone,.04,.6)*no_feet
         axis=math.copysign(h*.125,x)
+    # Local belly control projects mainly FORWARD, not sideways.
+    # Previous uniform xyz scaling produced exaggerated side lobes when
+    # combined with the global fullness slider. Front-only projection also
+    # preserves the abdominal/back contour on the opposite side.
+    if key=='belly':
+        forward=smooth_band(z,.008,.145)
+        return (axis+(x-axis)*(1+change*influence*.10),
+                y,z+change*influence*forward*.185)
     amplitude=change*influence
     return axis+(x-axis)*(1+amplitude),y,z*(1+amplitude)
 
@@ -116,11 +124,22 @@ def build(source,original,out):
   for sign,suffix in [(1,'plus'),(-1,'moins')]:
    block=bytearray();changed=0
    for i,(x,y,z) in enumerate(points):
-    nx,ny,nz=warp(key,x,y,z,lo,hi,sign*.23,skin_groups[i])
+    strength=(.70 if sign>0 else -.25) if key=='belly' else sign*.23
+    nx,ny,nz=warp(key,x,y,z,lo,hi,strength,skin_groups[i])
     delta=(nx-x,ny-y,nz-z)
     changed+=abs(delta[0])+abs(delta[2])>1e-7
     block.extend(struct.pack('<fff',*delta))
    assert changed>50,(key,changed)
+   if key=='belly' and sign>0:
+    # A larger belly should project substantially forward while keeping
+    # lateral x displacement well below the z projection.
+    positive=[struct.unpack_from('<fff',block,i*12) for i in range(len(points))
+              if skin_groups[i].get('torso',0)>.80 and
+                 .53<(points[i][1]-lo)/(hi-lo)<.67 and points[i][2]>.06]
+    assert len(positive)>25
+    forward=max(dz for _,_,dz in positive)
+    lateral=max(abs(dx) for dx,_,_ in positive)
+    assert forward>.07 and lateral<.020,(forward,lateral)
    # Critical safety checks on every target, both directions:
    # belly/waist/chest/hps cannot translate hands, wrists or upper arms.
    if key in ('belly','waist','chest','hips','neck'):
