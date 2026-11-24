@@ -73,9 +73,10 @@ def warp_global(x,y,z,lo,hi,w,change,male=False):
     # Broad curves keep the pelvis and upper thigh continuous.
     waist=gaussian(t,.61,.19)
     belly=gaussian(t,.600,.145)
-    glutes=gaussian(t,.510,.115)
-    front=smooth((z-.005)/.145)
-    back=1-smooth((z+.045)/.135)
+    # Wide, softly-tapered posterior contour: avoid a pointed glute peak.
+    glutes=gaussian(t,.490,.172)
+    front=smooth((z-.008)/.18)
+    back=1-smooth((z+.07)/.18)
     # At full positive setting the torso broadens more gently sideways than
     # it projects forward. Keep thighs/shoulders/arms proportionate.
     if male:
@@ -83,12 +84,13 @@ def warp_global(x,y,z,lo,hi,w,change,male=False):
         # heavy male shoulder girdle, broad rib cage, thick upper arms,
         # pronounced upper thighs and posterior gluteal volume. Avoid
         # isolated round projections on the flanks and a spherical belly.
-        torso_x=.33+.075*waist+.060*glutes
-        torso_z=.29+.090*belly*front+.23*glutes*back
+        torso_x=.35+.07*waist+.05*glutes
+        # Broad chest/abdomen instead of a tight forward-projecting dome.
+        torso_z=.35+.035*belly*front+.13*glutes*back
         shoulder=.40
         upperarm=.55
         forearm=.43
-        thigh=.77
+        thigh=.83
         calf=.42
         head_x=.21
         head_z=.20
@@ -135,10 +137,12 @@ def warp_global(x,y,z,lo,hi,w,change,male=False):
     # The front surface alone moves in +Z; its upper/lower edges taper
     # continuously through the broad belly Gaussian.
     front_belly=torso*belly*front*(1-head)
-    forward= max(0.,strength)*front_belly*(.035 if male else .084)*h
+    forward= max(0.,strength)*front_belly*(.014 if male else .084)*h
     # Backward volume at the glutes follows the pelvis / upper-thigh weights.
     butt_weight=torso+.45*w.get('thigh',0)
-    posterior= -max(0.,strength)*butt_weight*glutes*back*(.13 if male else .050)*h
+    # The earlier .13*h male posterior translation created a sharp protrusion.
+    # Replace it with a small displacement spread over a much wider band.
+    posterior= -max(0.,strength)*butt_weight*glutes*back*(.028 if male else .050)*h
     return (axis+(x-axis)*(1+strength*x_gain),y,
             zcenter+(z-zcenter)*(1+strength*z_gain)+forward+posterior)
 
@@ -214,6 +218,14 @@ def build(morph,original,destination,male=False):
     # Visage and eyes use identical transform function at all extreme settings.
     for primitive in check['meshes'][1]['primitives']:
         assert len(primitive['targets'])==2
+    if male:
+        # Upper buttock and upper thigh must blend smoothly, rather than
+        # creating the triangular projection visible in the screenshot.
+        upper=[(p,skin[i]) for i,p in enumerate(body_points)
+               if .46<(p[1]-lo)/(hi-lo)<.59 and p[2]<.11]
+        assert len(upper)>25
+        extremes=[abs(warp_global(*p,lo,hi,s,1.,True)[2]-p[2]) for p,s in upper]
+        assert max(extremes)<.29,('posterior peak too large',max(extremes))
     print('Visual global mass targets OK:',len(binary),'bytes; body 20, face 2, max deviation',max_dx,max_dz,'regions',changed_axes)
 
 if __name__=='__main__':
