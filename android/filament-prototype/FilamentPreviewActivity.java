@@ -197,7 +197,7 @@ public final class FilamentPreviewActivity extends Activity {
         });
         refreshMorphLabel();
         TextView help=new TextView(this);
-        help.setText("Homme recalibré : base MakeHuman masculine, épaules et bras élargis, cuisses plus épaisses, fesses plus développées, ventre moins sphérique. Compare à Ancienne morphologie. Indices visuels, sans modifier les profils.");
+        help.setText("Homme recalibré : ventre arrondi sans effet ballon, fesses progressives reliées aux cuisses. La correction de ventre est limitée si la corpulence est déjà maximale. Comparaison avec l'ancienne morphologie disponible. Aucune donnée de profil modifiée.");
         help.setTextSize(12);
         help.setTextColor(Color.WHITE);
         help.setPadding(dp(this,14),dp(this,10),dp(this,14),dp(this,12));
@@ -292,6 +292,13 @@ public final class FilamentPreviewActivity extends Activity {
             for(int i=0;i<9;i++){
                 weights[i*2]=Math.max(0,morphValues[i]);
                 weights[i*2+1]=Math.max(0,-morphValues[i]);
+            }
+            // At severe global fullness, the abdomen is already enlarged.
+            // Reduce additional LOCAL positive belly projection so both
+            // sliders at maximum do not create an unnatural balloon.
+            if(currentModel.equals("filament-male-morph.glb")&&globalMass>0f){
+                float complement=1f-0.60f*globalMass;
+                weights[10]*=complement; // region index 5: belly PLUS
             }
             weights[18]=Math.max(0,globalMass);
             weights[19]=Math.max(0,-globalMass);
