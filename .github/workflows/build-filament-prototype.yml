@@ -1190,7 +1190,7 @@ jobs:
           grep -Fq 'filament-detail-colors.glb' android/source-1.6.143/app/src/main/java/fr/monevolution/app/FilamentPreviewActivity.java
           grep -Fq 'filament-detail-textures.glb' android/source-1.6.143/app/src/main/java/fr/monevolution/app/FilamentPreviewActivity.java
           grep -Fq 'viewer.onTouchEvent(event);' android/source-1.6.143/app/src/main/java/fr/monevolution/app/FilamentPreviewActivity.java
-          grep -Fq 'filament-detailed-static.glb' android/source-1.6.143/app/src/main/java/fr/monevolution/app/FilamentPreviewActivity.java
+          grep -Fq 'filament-detail-colors.glb' android/source-1.6.143/app/src/main/java/fr/monevolution/app/FilamentPreviewActivity.java
           grep -Fq 'android.intent.category.LAUNCHER' android/source-1.6.143/app/src/main/AndroidManifest.xml
           grep -Fq 'filament-base-body.glb' android/source-1.6.143/app/src/main/java/fr/monevolution/app/FilamentPreviewActivity.java
           grep -Fq 'viewer.getAnimator().updateBoneMatrices();' android/source-1.6.143/app/src/main/java/fr/monevolution/app/FilamentPreviewActivity.java
