@@ -34,8 +34,10 @@ public final class FilamentPreviewActivity extends Activity {
     private float lastX;
     private double yaw;
     private TextView status;
-    private String currentModel="filament-simple-body.glb";
-    private String currentLabel="Corps statique";
+    private String currentModel="filament-test-cube.glb";
+    private String currentLabel="Cube test";
+    private int renderedFrames=0;
+    private String lastRenderError="";
     private int frameCount=0;
     private SurfaceView stage;
 
@@ -67,7 +69,7 @@ public final class FilamentPreviewActivity extends Activity {
         status.setTextColor(Color.rgb(189,232,224));
         status.setTextSize(13);
         status.setPadding(dp(this,15),0,dp(this,15),dp(this,12));
-        status.setText("Diagnostic indépendant du profil : corps simple, cube et GLB d'origine.");
+        status.setText("Test Filament : cube orange au démarrage, puis mannequin simplifié.");
         root.addView(status);
         LinearLayout modes=new LinearLayout(this);
         modes.setPadding(dp(this,6),0,dp(this,6),dp(this,4));
@@ -128,7 +130,7 @@ public final class FilamentPreviewActivity extends Activity {
                     cameraAtYaw();
                 }
             });
-            switchModel("filament-simple-body.glb","Corps simple");
+            switchModel("filament-test-cube.glb","Cube test");
             surface.setOnTouchListener((view,event)->{
                 if(event.getActionMasked()==MotionEvent.ACTION_DOWN){
                     lastX=event.getX();
@@ -146,12 +148,16 @@ public final class FilamentPreviewActivity extends Activity {
             frameCallback=new Choreographer.FrameCallback(){
                 @Override public void doFrame(long time){
                     if(!running||viewer==null)return;
-                    viewer.render(time);
-                    if(++frameCount%80==0){
-                        int pct=Math.round(100f*viewer.getProgress());
-                        status.setText(currentLabel+" · ressources "+pct+" % · rotation active");
+                    try {
+                        if(viewer.render(time))renderedFrames++;
+                        if(++frameCount%45==0) refreshDiagnostic();
+                    }catch(Throwable error){
+                        lastRenderError=error.getClass().getSimpleName()+
+                            (error.getMessage()==null?"":(" : "+error.getMessage()));
+                        status.setText("ERREUR RENDU : "+lastRenderError);
+                    }finally{
+                        if(running)Choreographer.getInstance().postFrameCallback(this);
                     }
-                    Choreographer.getInstance().postFrameCallback(this);
                 }
             };
         }catch(Exception ex){
@@ -159,6 +165,24 @@ public final class FilamentPreviewActivity extends Activity {
                 (ex.getMessage()==null?"":(" · "+ex.getMessage())));
         }
     }
+    private void refreshDiagnostic(){
+        if(viewer==null)return;
+        try {
+            int sceneCount=viewer.getScene().getEntityCount();
+            int total=viewer.getAsset()==null?0:viewer.getAsset().getEntityCount();
+            int renderable=viewer.getAsset()==null?0:viewer.getAsset().getRenderableEntityCount();
+            int progress=Math.round(100f*viewer.getProgress());
+            String message=currentLabel+" | GPU "+progress+"% | objet "+renderable+
+                " | scène "+sceneCount+" | frames "+renderedFrames+
+                " | surface "+stage.getWidth()+"x"+stage.getHeight();
+            if(!lastRenderError.isEmpty())message+=" | "+lastRenderError;
+            status.setText(message);
+            android.util.Log.i("IMC_Filament_Diagnostic",message+" total="+total);
+        }catch(Exception ex){
+            status.setText("Erreur diagnostic : "+ex.toString());
+        }
+    }
+
     private void cameraAtYaw(){
         if(viewer==null)return;
         double distance=4.0;
@@ -200,7 +224,9 @@ public final class FilamentPreviewActivity extends Activity {
             currentModel=file;
             currentLabel=label;
             frameCount=0;
-            status.setText(label+" · GLB "+bytes.length+" octets · chargement en cours");
+            renderedFrames=0;
+            lastRenderError="";
+            status.setText(label+" · "+bytes.length+" octets · GPU en cours");
         }catch(Exception ex){
             status.setText(label+" : ECHEC "+ex.getClass().getSimpleName()+
                 (ex.getMessage()==null?"":" · "+ex.getMessage()));
