@@ -37,7 +37,7 @@ def skin_vertex_groups(document,binary,compact,compact_binary):
     names=[document['nodes'][idx].get('name','') for idx in document['skins'][0]['joints']]
     categories=[]
     for name in names:
-        if name=='pelvis' or name.startswith('spine_'): cat='torso'
+        if name in ('Root','pelvis') or name.startswith('spine_'): cat='torso'
         elif name.startswith('neck_'): cat='neck'
         elif name=='head': cat='head'
         elif name.startswith('clavicle_'):cat='clavicle'
