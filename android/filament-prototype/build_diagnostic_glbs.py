@@ -62,6 +62,42 @@ def make_glb(label, vertices, indices, num_vertices, num_indices, tint):
     result += struct.pack("<II",len(binary),0x004e4942)+binary
     return result
 
+
+def make_detailed_static_glb(document, binary):
+    """Keep the original CC0 face, eyes, brows, textures and materials.
+    Exclude unsupported GPU morph/skin state solely for this visual diagnosis.
+    Original complete rig remains available as its own separate test mode.
+    """
+    doc=json.loads(json.dumps(document))
+    mesh_nodes=[node for node in doc["nodes"] if "mesh" in node]
+    assert len(mesh_nodes)>=5, "Expected original body and facial submeshes"
+    doc["nodes"]=[{"name":node.get("name","Mesh"),"mesh":node["mesh"]} for node in mesh_nodes]
+    doc["scenes"]=[{"nodes":list(range(len(mesh_nodes)))}]
+    doc["scene"]=0
+    doc.pop("skins",None)
+    doc.pop("animations",None)
+    for mesh in doc["meshes"]:
+        mesh.pop("weights",None)
+        for primitive in mesh["primitives"]:
+            primitive.pop("targets",None)
+            for attribute in list(primitive["attributes"]):
+                if attribute.startswith(("JOINTS_","WEIGHTS_")):
+                    primitive["attributes"].pop(attribute)
+    for material in doc["materials"]:
+        material.setdefault("extensions",{})["KHR_materials_unlit"]={}
+        material.pop("normalTexture",None)
+        material.pop("occlusionTexture",None)
+    if "KHR_materials_unlit" not in doc.setdefault("extensionsUsed",[]):
+        doc["extensionsUsed"].append("KHR_materials_unlit")
+    doc["asset"]["generator"]="Mon Evolution IMC Filament static-textured diagnosis"
+    packed_json=pad(json.dumps(doc,separators=(",",":")).encode("utf8"),b" ")
+    packed_bin=pad(binary)
+    total_size=12+8+len(packed_json)+8+len(packed_bin)
+    result=struct.pack("<III",0x46546c67,2,total_size)
+    result+=struct.pack("<II",len(packed_json),0x4e4f534a)+packed_json
+    result+=struct.pack("<II",len(packed_bin),0x004e4942)+packed_bin
+    return result
+
 def main(source, target):
     doc, raw = read_glb(Path(source).read_bytes())
     body = doc["meshes"][0]["primitives"][0]
@@ -71,6 +107,8 @@ def main(source, target):
     assert av["count"] > 10000 and 0.75 < av["max"][1] - av["min"][1] < 2.5
     output = Path(target)
     output.mkdir(parents=True,exist_ok=True)
+    output.joinpath("filament-detailed-static.glb").write_bytes(
+        make_detailed_static_glb(doc,raw))
     output.joinpath("filament-simple-body.glb").write_bytes(make_glb(
         "Corps statique CC0",verts,indices,av["count"],ai["count"],[0.92,0.5,0.32,1]))
     # A simple, unlit cube proves the native engine can render even without the original asset.
@@ -82,11 +120,18 @@ def main(source, target):
     ib=b"".join(struct.pack("<H",i) for f in faces for i in f)
     output.joinpath("filament-test-cube.glb").write_bytes(make_glb(
         "Cube diagnostic",vb,ib,8,len(faces)*3,[1,.65,.1,1]))
-    for filename in ("filament-simple-body.glb","filament-test-cube.glb"):
+    for filename in ("filament-simple-body.glb","filament-test-cube.glb","filament-detailed-static.glb"):
         path=output/filename
         assert path.stat().st_size > 500
         d, _=read_glb(path.read_bytes())
-        assert len(d["meshes"])==1 and "skins" not in d and "animations" not in d
+        assert "skins" not in d and "animations" not in d
+        if filename=="filament-detailed-static.glb":
+            assert len(d["meshes"])>=5
+            assert len(d.get("images",[]))>=6
+            assert all("skin" not in node for node in d["nodes"])
+            assert all(not p.get("targets") for mesh in d["meshes"] for p in mesh["primitives"])
+        else:
+            assert len(d["meshes"])==1
         position=d["accessors"][0]
         assert all(hi>lo for lo,hi in zip(position["min"],position["max"]))
         print("bounds",position["min"],position["max"])
