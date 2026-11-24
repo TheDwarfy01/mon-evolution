@@ -74,19 +74,20 @@ public final class FilamentPreviewActivity extends Activity {
         LinearLayout modes=new LinearLayout(this);
         modes.setOrientation(LinearLayout.VERTICAL);
         modes.setPadding(dp(this,6),0,dp(this,6),dp(this,4));
-        String[] names={"Corps simple","Corps détaillé","Cube test","Rig original"};
-        String[] files={"filament-simple-body.glb","filament-detailed-static.glb",
-                        "filament-test-cube.glb","filament-base-body.glb"};
-        for(int rowIndex=0;rowIndex<2;rowIndex++){
+        String[] names={"Corps simple","Détails couleurs","Détails textures","Cube test","Rig original"};
+        String[] files={"filament-simple-body.glb","filament-detail-colors.glb",
+                        "filament-detail-textures.glb","filament-test-cube.glb",
+                        "filament-base-body.glb"};
+        for(int rowIndex=0;rowIndex<3;rowIndex++){
             LinearLayout buttonRow=new LinearLayout(this);
-            for(int column=0;column<2;column++){
-                int i=rowIndex*2+column;
+            int end=Math.min(names.length,rowIndex*2+2);
+            for(int i=rowIndex*2;i<end;i++){
                 final String filename=files[i],label=names[i];
                 Button button=new Button(this);
                 button.setText(label);
                 button.setTextSize(12);
                 button.setAllCaps(false);
-                buttonRow.addView(button,new LinearLayout.LayoutParams(0,dp(this,42),1f));
+                buttonRow.addView(button,new LinearLayout.LayoutParams(0,dp(this,40),1f));
                 button.setOnClickListener(v->switchModel(filename,label));
             }
             modes.addView(buttonRow);
@@ -97,7 +98,7 @@ public final class FilamentPreviewActivity extends Activity {
         root.addView(surface,new LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,0,1f));
         TextView help=new TextView(this);
-        help.setText("Glissez un doigt pour tourner, pincez pour zoomer. Corps détaillé : peau et visage d'origine, sans animation. Rig original : diagnostic du GLB articulé. Aucun profil requis.");
+        help.setText("Glissez pour tourner et pincez pour zoomer. Détails couleurs : corps + visage sans textures. Détails textures : mêmes formes avec la peau et les yeux. Rig original : test des 92 morphings. Aucun profil requis.");
         help.setTextSize(12);
         help.setTextColor(Color.WHITE);
         help.setPadding(dp(this,14),dp(this,10),dp(this,14),dp(this,12));
