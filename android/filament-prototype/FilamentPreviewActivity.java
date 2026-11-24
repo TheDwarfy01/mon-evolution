@@ -94,10 +94,10 @@ public final class FilamentPreviewActivity extends Activity {
         LinearLayout modes=new LinearLayout(this);
         modes.setOrientation(LinearLayout.VERTICAL);
         modes.setPadding(dp(this,6),0,dp(this,6),dp(this,4));
-        String[] names={"Morphologie + corpulence","Détails textures","Détails couleurs",
+        String[] names={"Homme recalibré","Ancienne morphologie","Détails textures",
                         "Corps simple","Cube test","Rig original"};
-        String[] files={"filament-morph-global.glb","filament-detail-textures.glb",
-                        "filament-detail-colors.glb","filament-simple-body.glb",
+        String[] files={"filament-male-morph.glb","filament-morph-global.glb",
+                        "filament-detail-textures.glb","filament-simple-body.glb",
                         "filament-test-cube.glb","filament-base-body.glb"};
         for(int rowIndex=0;rowIndex<3;rowIndex++){
             LinearLayout buttonRow=new LinearLayout(this);
@@ -197,7 +197,7 @@ public final class FilamentPreviewActivity extends Activity {
         });
         refreshMorphLabel();
         TextView help=new TextView(this);
-        help.setText("Corpulence 65–200 : silhouette globale, ventre et fesses plus volumineux, flancs adoucis. Le curseur local Ventre va de 75 à 170 et projette surtout vers l'avant. Aucun poids réel calculé ni profil modifié.");
+        help.setText("Homme recalibré : base MakeHuman masculine, épaules et bras élargis, cuisses plus épaisses, fesses plus développées, ventre moins sphérique. Compare à Ancienne morphologie. Indices visuels, sans modifier les profils.");
         help.setTextSize(12);
         help.setTextColor(Color.WHITE);
         help.setPadding(dp(this,14),dp(this,10),dp(this,14),dp(this,12));
@@ -238,7 +238,7 @@ public final class FilamentPreviewActivity extends Activity {
                     // ModelViewer.render retrieves the camera pose from the manipulator.
                 }
             });
-            switchModel("filament-morph-global.glb","Morphologie + corpulence");
+            switchModel("filament-male-morph.glb","Homme recalibré");
             surface.setOnTouchListener((view,event)->{
                 // Forward raw touches to ModelViewer's GestureDetector; it updates
                 // the orbit camera, pan and pinch-to-zoom on the next frame.
@@ -283,7 +283,8 @@ public final class FilamentPreviewActivity extends Activity {
 
     private void applyMorphWeights(){
         if(viewer==null||viewer.getAsset()==null||
-           !currentModel.equals("filament-morph-global.glb"))return;
+           !(currentModel.equals("filament-morph-global.glb")||
+            currentModel.equals("filament-male-morph.glb")))return;
         try {
             // Body: first 18 weights preserve the proven independent 9-zone controls,
             // the last pair drives global body fullness.
@@ -334,7 +335,8 @@ public final class FilamentPreviewActivity extends Activity {
             String message=currentLabel+" | GPU "+progress+"% | objets "+renderable+
                 " | scène "+sceneCount+" | frames "+renderedFrames+
                 " | gestes "+touchMoves+" | surface "+stage.getWidth()+"x"+stage.getHeight();
-            if(currentModel.equals("filament-morph-global.glb"))
+            if(currentModel.equals("filament-morph-global.glb")||
+               currentModel.equals("filament-male-morph.glb"))
                 message+=" | corps "+morphTargetCount+" visage "+faceTargetCount+
                     " | réglages "+morphUpdates;
             if(!loadError.isEmpty())message+=" | CHARGEMENT : "+loadError;
@@ -355,7 +357,9 @@ public final class FilamentPreviewActivity extends Activity {
         morphTargetCount=0;
         faceTargetCount=0;
         if(morphPanel!=null)
-            morphPanel.setVisibility(file.equals("filament-morph-global.glb")?
+            morphPanel.setVisibility(
+                (file.equals("filament-morph-global.glb")||
+                 file.equals("filament-male-morph.glb"))?
                 android.view.View.VISIBLE:android.view.View.GONE);
         try{
             byte[] bytes;
