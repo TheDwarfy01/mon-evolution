@@ -32,6 +32,13 @@ def accessor_data(document, binary, index, element_size):
 def make_glb(label, vertices, indices, num_vertices, num_indices, tint):
     assert len(vertices) == num_vertices * 12
     assert len(indices) == num_indices * 2
+    positions=list(struct.iter_unpack("<fff",vertices))
+    assert len(positions)==num_vertices
+    import math
+    assert all(math.isfinite(v) for xyz in positions for v in xyz), "Non-finite mesh position"
+    vmin=[min(xyz[axis] for xyz in positions) for axis in range(3)]
+    vmax=[max(xyz[axis] for xyz in positions) for axis in range(3)]
+    assert all(lo < hi for lo,hi in zip(vmin,vmax)), "Degenerate mesh bounds"
     binary = pad(vertices) + pad(indices)
     json_glb = {
         "asset": {"version": "2.0", "generator": "Mon Evolution IMC Filament diagnostic"},
@@ -39,7 +46,8 @@ def make_glb(label, vertices, indices, num_vertices, num_indices, tint):
         "bufferViews": [
             {"buffer":0,"byteOffset":0,"byteLength":len(vertices),"target":34962},
             {"buffer":0,"byteOffset":len(pad(vertices)),"byteLength":len(indices),"target":34963}],
-        "accessors":[{"bufferView":0,"componentType":5126,"count":num_vertices,"type":"VEC3"},
+        "accessors":[{"bufferView":0,"componentType":5126,"count":num_vertices,"type":"VEC3",
+                      "min":vmin,"max":vmax},
                      {"bufferView":1,"componentType":5123,"count":num_indices,"type":"SCALAR"}],
         "materials":[{"name":label,"doubleSided":True,
                       "pbrMetallicRoughness":{"baseColorFactor":tint,"metallicFactor":0,"roughnessFactor":1},
@@ -79,6 +87,9 @@ def main(source, target):
         assert path.stat().st_size > 500
         d, _=read_glb(path.read_bytes())
         assert len(d["meshes"])==1 and "skins" not in d and "animations" not in d
+        position=d["accessors"][0]
+        assert all(hi>lo for lo,hi in zip(position["min"],position["max"]))
+        print("bounds",position["min"],position["max"])
         print(filename, path.stat().st_size, "bytes")
 
 if __name__ == "__main__":
