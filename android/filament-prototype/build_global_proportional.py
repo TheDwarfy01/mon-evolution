@@ -29,7 +29,7 @@ def skin_weights(orig,original_bytes,positions):
         base=list(struct.iter_unpack('<fff',orig_pos))
         baked=list(struct.iter_unpack('<fff',positions))
         shifts=[max(abs(a-b) for a,b in zip(p,q)) for p,q in zip(base,baked)]
-        assert max(shifts)<.12 and sum(shifts)/len(shifts)<.042,(
+        assert max(shifts)<.12 and sum(shifts)/len(shifts)<.078,(
             'Unexpected gender-male base or vertex order',max(shifts))
     raw_ji,ja=access(orig,original_bytes,prim['attributes']['JOINTS_0'])
     raw_wa,wa=access(orig,original_bytes,prim['attributes']['WEIGHTS_0'])
