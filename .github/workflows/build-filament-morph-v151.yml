@@ -1,4 +1,4 @@
-name: Filament v1.6.156 - sans profil
+name: Filament v1.6.157 - sans profil
 on:
   workflow_dispatch:
   pull_request:
@@ -1223,6 +1223,7 @@ jobs:
           grep -Fq 'forward=' android/filament-prototype/build_global_proportional.py
           grep -Fq "ventre arrondi sans effet ballon" android/source-1.6.143/app/src/main/java/fr/monevolution/app/FilamentPreviewActivity.java
           grep -Fq 'weights[10]*=complement' android/source-1.6.143/app/src/main/java/fr/monevolution/app/FilamentPreviewActivity.java
+          grep -Fq 'insufficient upper-thigh volume' android/filament-prototype/build_global_proportional.py
           grep -Fq 'manager.setMorphWeights(instance,weights,0);' android/source-1.6.143/app/src/main/java/fr/monevolution/app/FilamentPreviewActivity.java
           grep -Fq 'filament-morph-global.glb' android/source-1.6.143/app/src/main/java/fr/monevolution/app/FilamentPreviewActivity.java
           grep -Fq 'filament-male-morph.glb' android/source-1.6.143/app/src/main/java/fr/monevolution/app/FilamentPreviewActivity.java
@@ -1236,7 +1237,7 @@ jobs:
           grep -Fq 'filament-test-cube.glb' android/source-1.6.143/app/src/main/java/fr/monevolution/app/FilamentPreviewActivity.java
           grep -Fq 'viewer.setAutoPlayAnimations(true);' android/source-1.6.143/app/src/main/java/fr/monevolution/app/FilamentPreviewActivity.java
           grep -Fq 'viewer.setAutoPlayAnimations(false);' android/source-1.6.143/app/src/main/java/fr/monevolution/app/FilamentPreviewActivity.java
-          grep -Fq "versionName '1.6.156-filament-male-smooth'" android/source-1.6.143/app/build.gradle
+          grep -Fq "versionName '1.6.157-filament-silhouette'" android/source-1.6.143/app/build.gradle
       - name: Installer SDK Android
         run: |
           set -euo pipefail
@@ -1272,13 +1273,13 @@ jobs:
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" sign \
             --ks /tmp/mon-evolution.jks --ks-key-alias "$KEY_ALIAS" \
             --ks-pass env:KEYSTORE_PASS --key-pass env:KEY_PASS \
-            --out downloads/Mon_Evolution_IMC_Filament_TEST_SANS_PROFIL_v1.6.156.apk /tmp/mon-evolution-aligned.apk
-          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose downloads/Mon_Evolution_IMC_Filament_TEST_SANS_PROFIL_v1.6.156.apk
+            --out downloads/Mon_Evolution_IMC_Filament_TEST_SANS_PROFIL_v1.6.157.apk /tmp/mon-evolution-aligned.apk
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose downloads/Mon_Evolution_IMC_Filament_TEST_SANS_PROFIL_v1.6.157.apk
           rm -f /tmp/mon-evolution.jks
       - name: Conserver l APK de test comme artefact prive de compilation
         uses: actions/upload-artifact@v4
         with:
-          name: Mon_Evolution_IMC_Filament_TEST_SANS_PROFIL_v1.6.156
-          path: downloads/Mon_Evolution_IMC_Filament_TEST_SANS_PROFIL_v1.6.156.apk
+          name: Mon_Evolution_IMC_Filament_TEST_SANS_PROFIL_v1.6.157
+          path: downloads/Mon_Evolution_IMC_Filament_TEST_SANS_PROFIL_v1.6.157.apk
           retention-days: 7
           if-no-files-found: error
