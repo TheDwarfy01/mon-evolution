@@ -19,6 +19,7 @@ import { estimateVisualMeasurements, readVisualMode, writeVisualMode } from './v
 import {annySnapshot} from './anny-profile.mjs';
 import {ANNY_ANCHORS,annyWeights,visualIndex,annyFile,isAnnyFile} from './anny-inline.mjs';
 import {REGIONS} from './measurement-morph.mjs';
+import {initialView,boundedView,pinchView} from './studio-zoom.mjs';
 
 (()=>{
 'use strict';
@@ -40,7 +41,7 @@ const css=document.createElement('style');
 css.id='makehuman-studio-style';
 css.textContent=[
  '#body-measurements #bm-model.bm-makehuman-active{position:relative!important;isolation:isolate!important;background:radial-gradient(ellipse at 55% 35%,#28536b,#0f263b 78%)!important;}',
- '#body-measurements #bm-model canvas.bm-makehuman-canvas{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;display:block!important;z-index:2!important;touch-action:pan-y;border-radius:12px;}',
+ '#body-measurements #bm-model canvas.bm-makehuman-canvas{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;display:block!important;z-index:2!important;touch-action:none;border-radius:12px;}',
  '#body-measurements .bm-mh-panel{display:flex!important;align-items:center;justify-content:center;gap:9px;flex-wrap:wrap;margin:10px 0 14px!important;padding:11px;border:1px solid #2d6279;border-radius:13px;background:#12354c;}',
  '#body-measurements .bm-mh-panel button{cursor:pointer;border:1px solid #6fcfb9;border-radius:11px;padding:10px 14px;background:#185f68;color:#effffb;min-height:43px;font-weight:650;}',
  '#body-measurements .bm-mh-panel span{font-size:11px;color:#b9d7df;text-align:center;line-height:1.35;width:100%;}',
@@ -50,6 +51,10 @@ css.textContent=[
  '#body-measurements .bm-shape-controls{display:flex;gap:6px;align-items:stretch;flex-wrap:wrap;margin:5px 0 8px}',
  '#body-measurements .bm-shape-controls button{flex:1 1 90px;min-width:0;cursor:pointer;border:1px solid #47788b;border-radius:9px;background:#153b52;color:#e8fbff;padding:8px 6px;min-height:41px;font-size:11px}',
  '#body-measurements .bm-shape-controls button[aria-pressed="true"]{background:#1b706e;border-color:#8feeda;color:#fff;font-weight:800}',
+ '#body-measurements .bm-zoom-tools{position:absolute;left:8px;top:8px;z-index:11;display:flex;gap:4px;align-items:center;background:#0b2c40df;border:1px solid #47788b;padding:3px;border-radius:9px;touch-action:manipulation}',
+ '#body-measurements .bm-zoom-tools[hidden]{display:none!important}',
+ '#body-measurements .bm-zoom-tools button{border:1px solid #47788b;background:#153b52;color:#effffb;border-radius:6px;min-height:33px;min-width:33px;font-size:15px;padding:4px 7px;touch-action:manipulation}',
+ '#body-measurements .bm-zoom-tools button:disabled{opacity:.4}',
  '#body-measurements .bm-shape-warning{width:100%;font-size:11px;color:#bdd8df;line-height:1.4;margin:2px 0 0}',
  '#body-measurements #bm-main.bm-table-only .bm-studio-controls,#body-measurements #bm-main.bm-table-only .bm-shape-controls{display:none!important;}'
 ].join('\n');
@@ -145,10 +150,15 @@ function setAnnyLayout(enabled){
 const canvas=document.createElement('canvas');canvas.className='bm-makehuman-canvas';
 canvas.setAttribute('aria-label','Mannequin 3D MakeHuman habillé');canvas.setAttribute('role','img');
 stage.append(canvas);
+const zoomTools=document.createElement('div');zoomTools.className='bm-zoom-tools';zoomTools.hidden=true;zoomTools.setAttribute('aria-label','Zoom du mannequin');
+const zoomMinus=document.createElement('button'),zoomReset=document.createElement('button'),zoomPlus=document.createElement('button');
+for(const [button,label,title] of [[zoomMinus,'−','Dézoomer'],[zoomReset,'100 %','Rétablir la vue entière'],[zoomPlus,'+','Zoomer']]){button.type='button';button.textContent=label;button.title=title;button.setAttribute('aria-label',title);zoomTools.append(button);}
+stage.append(zoomTools);
 const parser=new GLTFLoader();
 let renderer=null,scene=null,camera=null,mixer=null,figure=null,body=null,lighting=null;
 let active=false,busy=false,disposed=false,autoShowAfterInstall=false,currentKey='',oldStatus='',firstRun=true;
-let lastY=0,yaw=0,pointer=null,raf=0,profileId='',lastProfileCheck=0;
+let lastY=0,yaw=0,raf=0,profileId='',lastProfileCheck=0;
+let cameraView=initialView();const pointers=new Map();
 let studioBounds=null,studioMarkers=null,markerProfile=null,studioBones=[];
 let bodyKind='',annyMesh=null,annyCurrent=null;
 const visualDrafts=new Map();
@@ -185,6 +195,7 @@ function setVisualMode(mode){
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 function ensureMounted(){
  if(!stage.contains(canvas))stage.append(canvas);
+ if(!stage.contains(zoomTools))stage.append(zoomTools);
  if(!panel.isConnected)stage.before(panel);
  if(!controls.isConnected)panel.after(controls);
  if(!shapeControls.isConnected){if(isAnny(profileInfo()))stage.after(shapeControls);else controls.after(shapeControls);}
@@ -497,9 +508,10 @@ function renderOnce(){
  if(canvas.width!==Math.floor(w*renderer.getPixelRatio())||
     canvas.height!==Math.floor(h*renderer.getPixelRatio()))
      renderer.setSize(w,h,false);
- const ratio=w/h,half=1.2;
- camera.left=-half*ratio;camera.right=half*ratio;
- camera.top=half;camera.bottom=-half;camera.updateProjectionMatrix();
+ const ratio=w/h;cameraView=boundedView(cameraView.zoom,cameraView.x,cameraView.y,ratio);
+ const half=1.2/cameraView.zoom;
+ camera.left=cameraView.x-half*ratio;camera.right=cameraView.x+half*ratio;
+ camera.top=cameraView.y+half;camera.bottom=cameraView.y-half;camera.updateProjectionMatrix();
  figure.rotation.y=yaw;
  renderer.render(scene,camera);
  studioMarkers?.update();
@@ -680,7 +692,7 @@ async function startPreview(){
   }
   configure();
   stage.classList.add('bm-makehuman-active');
-  active=true;profileId=p.id;autoTriedProfiles.add(String(p.id));currentKey='';btn.textContent='Masquer le mannequin 3D';
+  active=true;cameraView=initialView();syncZoom();profileId=p.id;autoTriedProfiles.add(String(p.id));currentKey='';btn.textContent='Masquer le mannequin 3D';
   stage.classList.toggle('bm-anny-active',adult);setAnnyLayout(adult);fallback.hidden=true;fallback.style.display='none';
   rememberVisibility(p.id,true);
   note.textContent=(adult?'Anny intégré hors ligne':'3D Studio')+' • rendu indicatif • pivoter avec le doigt';
@@ -688,7 +700,7 @@ async function startPreview(){
   raf=requestAnimationFrame(frame);
  }catch(e){
   console.error('MakeHuman Studio:',e);
-  active=false;stage.classList.remove('bm-makehuman-active','bm-anny-active');gauges.hidden=true;
+  active=false;zoomTools.hidden=true;pointers.clear();stage.classList.remove('bm-makehuman-active','bm-anny-active');gauges.hidden=true;
   if(isAnny(profileInfo())){fallback.hidden=false;fallback.style.display='';}
   btn.textContent='Réessayer le modèle 3D';
   note.textContent='Visualisation indisponible : '+String(e.message||e);
@@ -699,7 +711,7 @@ function stopPreview(manual=false){
   const current=profileInfo();
   if(current)rememberVisibility(current.id,false);
  }
- active=false;if(raf)cancelAnimationFrame(raf);raf=0;lastY=0;
+ active=false;zoomTools.hidden=true;pointers.clear();if(raf)cancelAnimationFrame(raf);raf=0;lastY=0;
  studioMarkers?.update();
  stage.classList.remove('bm-makehuman-active','bm-anny-active');gauges.hidden=true;
  btn.textContent='Afficher le mannequin 3D';
@@ -797,15 +809,36 @@ canvas.addEventListener('webglcontextlost',e=>{
  if(isAnny(profileInfo())){fallback.hidden=false;fallback.style.display='';}
  note.textContent='Rendu graphique interrompu. Le tableau des mensurations reste accessible.';
 });
-canvas.addEventListener('pointerdown',e=>{
+function syncZoom(){
+ zoomTools.hidden=!active;
+ zoomReset.textContent=Math.round(cameraView.zoom*100)+' %';
+ zoomMinus.disabled=cameraView.zoom<=1.001;zoomPlus.disabled=cameraView.zoom>=2.999;
+}
+function stepZoom(factor){
  if(!active)return;
- pointer={x:e.clientX,angle:yaw};canvas.setPointerCapture(e.pointerId);
+ cameraView=boundedView(cameraView.zoom*factor,cameraView.x,cameraView.y,canvas.clientWidth/Math.max(1,canvas.clientHeight));
+ syncZoom();renderOnce();
+}
+zoomPlus.onclick=()=>stepZoom(1.25);zoomMinus.onclick=()=>stepZoom(.8);
+zoomReset.onclick=()=>{cameraView=initialView();syncZoom();renderOnce();};
+function localPoint(e){const r=canvas.getBoundingClientRect();return {x:e.clientX-r.left,y:e.clientY-r.top};}
+canvas.addEventListener('pointerdown',e=>{
+ if(!active||pointers.size>=2)return;
+ if(e.pointerType==='mouse'&&e.button!==0)return;
+ pointers.set(e.pointerId,localPoint(e));canvas.setPointerCapture(e.pointerId);
 });
 canvas.addEventListener('pointermove',e=>{
- if(pointer){yaw=pointer.angle+(e.clientX-pointer.x)*.008;renderOnce();}
+ if(!active||!pointers.has(e.pointerId))return;
+ const before=[...pointers.values()],point=localPoint(e),prev=pointers.get(e.pointerId);
+ pointers.set(e.pointerId,point);
+ if(pointers.size===2){
+  cameraView=pinchView(cameraView,before,[...pointers.values()],canvas.clientWidth,canvas.clientHeight);
+  syncZoom();
+ }else yaw+=(point.x-prev.x)*.008;
+ renderOnce();
 });
-canvas.addEventListener('pointerup',()=>{pointer=null;});
-canvas.addEventListener('pointercancel',()=>{pointer=null;});
+for(const event of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(event,e=>pointers.delete(e.pointerId));
+canvas.addEventListener('wheel',e=>{if(!active||!e.ctrlKey)return;e.preventDefault();stepZoom(Math.exp(-e.deltaY*.002));},{passive:false});
 window.addEventListener('mon-evolution-appearance-changed',()=>refreshScene(true));
 window.addEventListener('mon-evolution-measurements-changed',event=>{
  const detail=event?.detail||{};

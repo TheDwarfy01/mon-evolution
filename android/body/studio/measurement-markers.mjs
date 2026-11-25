@@ -174,7 +174,7 @@ export function createStudioMarkers({stage,figure,camera,getBounds,getProfile,ge
    pos.project(camera);
    const x=(pos.x*.5+.5)*width,y=(-pos.y*.5+.5)*height;
    const dot=buttons.get(r.key),tag=tags.get(r.key);
-   if(!Number.isFinite(x)||!Number.isFinite(y)||pos.z<=-1||pos.z>=1){
+   if(!Number.isFinite(x)||!Number.isFinite(y)||pos.z<=-1||pos.z>=1||x<0||x>width||y<0||y>height){
     dot.hidden=true;tag.hidden=true;paths.get(r.key).setAttribute('points','');continue;
    }
    const px=Math.max(13,Math.min(width-13,x));
