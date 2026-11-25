@@ -71,7 +71,7 @@ export function createStudioMarkers({stage,figure,camera,getBounds,getProfile,ge
  }
  function openEditor(r,event){
   event?.preventDefault();event?.stopPropagation();
-  if(!isActive())return;
+  if(!isActive()||stage.classList.contains('bm-color-mode'))return;
   const p=getProfile(),target=document.getElementById('bm-'+r.key);
   const editDate=document.getElementById('bm-date');
   if(!target||!editDate||target.disabled){
@@ -140,7 +140,7 @@ export function createStudioMarkers({stage,figure,camera,getBounds,getProfile,ge
  new MutationObserver(keepMounted).observe(stage,{childList:true});
  function update(){
   const p=getProfile();
-  if(!isActive()||!p||!camera||!figure){
+  if(!isActive()||!p||!camera||!figure||stage.classList.contains('bm-color-mode')){
    for(const btn of buttons.values())btn.hidden=true;
    for(const tag of tags.values())tag.hidden=true;
    leaders.style.display='none';density.hidden=true;close();return;

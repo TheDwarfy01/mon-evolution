@@ -43,6 +43,18 @@
   '#body-measurements #bm-colors[hidden]{display:none!important}',
   '#body-measurements #bm-colors{margin:7px 0 4px;padding:8px;border-radius:10px;background:#0c283d;border:1px solid #355c72;gap:7px}',
   '#body-measurements #bm-colors .bm-swatch{width:26px;height:26px}',
+  '#body-measurements #bm-model > #bm-colors{position:absolute!important;right:7px;top:57px;width:44%;max-width:188px;box-sizing:border-box;z-index:13;display:grid;gap:10px;margin:0;padding:9px;background:#0b2c40eF;border:1px solid #568a9c;border-radius:10px;touch-action:pan-y}',
+  '#body-measurements #bm-model > #bm-colors[hidden]{display:none!important}',
+  '#body-measurements #bm-model > #bm-colors .bm-color-slider-row{display:block}',
+  '#body-measurements #bm-model > #bm-colors .bm-color-preview{display:none}',
+  '#body-measurements #bm-model > #bm-colors .bm-color-range{width:100%;box-sizing:border-box;padding:0;border:0;outline-offset:2px;touch-action:none}',
+  '#body-measurements #bm-model > #bm-colors .bm-color-range::-webkit-slider-thumb{width:23px;height:23px;margin-top:-4px}',
+  '#body-measurements #bm-model > #bm-colors .bm-color-value{font-size:10px;line-height:1.15;overflow-wrap:anywhere}',
+  '#body-measurements #bm-model .bm-colors-toggle{position:absolute;right:8px;top:8px;z-index:14;min-height:34px;min-width:38px;padding:5px 8px;border:1px solid #639ba3;border-radius:8px;background:#103e52ef;color:#e3fffb;font-size:17px;touch-action:manipulation}',
+  '#body-measurements #bm-model .bm-colors-toggle[aria-expanded="true"]{background:#226e70;border-color:#91efdc}',
+  '#body-measurements #bm-model.bm-color-mode .bm-point,#body-measurements #bm-model.bm-color-mode .bm-measure-lines,#body-measurements #bm-model.bm-color-mode .bm-studio-landmarks,#body-measurements #bm-model.bm-color-mode .bm-studio-leaders,#body-measurements #bm-model.bm-color-mode .bm-studio-entry,#body-measurements #bm-model.bm-color-mode .bm-studio-density{display:none!important}',
+  '#body-measurements #bm-model .bm-studio-density{top:auto!important;bottom:8px!important}',
+  '#body-measurements #bm-main.bm-table-only .bm-colors-toggle,#body-measurements #bm-main.bm-table-only #bm-colors{display:none!important}',
   '#body-measurements .bm-hint{font-size:11px}',
   '#body-measurements .bm-ref-side{display:grid;gap:8px;align-content:start}',
   '#body-measurements .bm-ref-side>.bm-card{margin:0}',
@@ -172,16 +184,39 @@
  paletteIcon.className='bm-shortcut-icon';
  paletteIcon.textContent='🎨';
  customize.append(paletteIcon,document.createTextNode('Personnalisation'));
- customize.onclick=()=>{
+ const colorToggle=document.createElement('button');
+ colorToggle.type='button';colorToggle.className='bm-colors-toggle';
+ colorToggle.textContent='🎨';colorToggle.title='Afficher les couleurs';
+ colorToggle.setAttribute('aria-label','Afficher les couleurs');
+ colorToggle.setAttribute('aria-controls','bm-colors');
+ colorToggle.setAttribute('aria-expanded','false');
+ function syncColorMode(){
+  const open=!palette.hidden;
+  stage.classList.toggle('bm-color-mode',open);
+  for(const button of [customize,colorToggle])button.setAttribute('aria-expanded',String(open));
+  colorToggle.textContent=open?'✕':'🎨';
+  colorToggle.title=open?'Masquer les couleurs et retrouver les mesures':'Afficher les couleurs';
+  colorToggle.setAttribute('aria-label',colorToggle.title);
+  window.dispatchEvent(new Event('mon-evolution-color-mode-changed'));
+ }
+ customize.onclick=colorToggle.onclick=()=>{
   palette.hidden=!palette.hidden;
-  customize.setAttribute('aria-expanded',String(!palette.hidden));
-  if(!palette.hidden)requestAnimationFrame(()=>palette.scrollIntoView({behavior:'smooth',block:'nearest'}));
+  syncColorMode();
+  if(!palette.hidden){
+   const r=stage.getBoundingClientRect();
+   if(r.top<0||r.bottom>window.innerHeight)stage.scrollIntoView({behavior:'smooth',block:'start'});
+  }
  };
  nav.append(customize);
  stage.insertAdjacentElement('afterend',nav);
  palette.hidden=true;
- const latest=document.getElementById('bm-latest');
- if(latest)palette.insertAdjacentElement('afterend',latest);
+ stage.append(palette,colorToggle);
+ // Stage may be rebuilt after profile changes, so reattach the existing controls.
+ new MutationObserver(()=>{
+  if(!stage.contains(palette))stage.append(palette);
+  if(!stage.contains(colorToggle))stage.append(colorToggle);
+ }).observe(stage,{childList:true});
+ syncColorMode();
  // Keep date, all saved measurements, chart and history intact.
  const form=right.querySelector('.bm-card');
  if(form){

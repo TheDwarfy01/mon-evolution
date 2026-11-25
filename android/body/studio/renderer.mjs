@@ -509,8 +509,11 @@ function renderOnce(){
     canvas.height!==Math.floor(h*renderer.getPixelRatio()))
      renderer.setSize(w,h,false);
  const ratio=w/h;cameraView=boundedView(cameraView.zoom,cameraView.x,cameraView.y,ratio);
- const half=1.2/cameraView.zoom;
- camera.left=cameraView.x-half*ratio;camera.right=cameraView.x+half*ratio;
+ const colorMode=stage.classList.contains('bm-color-mode');
+ // Shift the figure left at normal zoom so the color panel does not cover it.
+ const half=1.2/cameraView.zoom*(colorMode&&cameraView.zoom<=1.001?1.15:1);
+ const shift=colorMode&&cameraView.zoom<=1.001?half*ratio*.40:0;
+ camera.left=cameraView.x+shift-half*ratio;camera.right=cameraView.x+shift+half*ratio;
  camera.top=cameraView.y+half;camera.bottom=cameraView.y-half;camera.updateProjectionMatrix();
  figure.rotation.y=yaw;
  renderer.render(scene,camera);
@@ -840,6 +843,7 @@ canvas.addEventListener('pointermove',e=>{
 for(const event of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(event,e=>pointers.delete(e.pointerId));
 canvas.addEventListener('wheel',e=>{if(!active||!e.ctrlKey)return;e.preventDefault();stepZoom(Math.exp(-e.deltaY*.002));},{passive:false});
 window.addEventListener('mon-evolution-appearance-changed',()=>refreshScene(true));
+window.addEventListener('mon-evolution-color-mode-changed',()=>{studioMarkers?.close();renderOnce();});
 window.addEventListener('mon-evolution-measurements-changed',event=>{
  const detail=event?.detail||{};
  const p=profileInfo();

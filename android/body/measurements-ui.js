@@ -256,8 +256,12 @@
   // Discarding the WebGL canvas here silently reverted the UI to old photos
   // whenever a profile, measure or appearance changed.
   const makeHumanCanvas=stage.querySelector(':scope > canvas.bm-makehuman-canvas');
+  const palette=stage.querySelector(':scope > #bm-colors');
+  const colorToggle=stage.querySelector(':scope > .bm-colors-toggle');
   stage.innerHTML=svg(a.model,a.skin,a.hair,a.eyes);
   if(makeHumanCanvas)stage.append(makeHumanCanvas);
+  if(palette)stage.append(palette);
+  if(colorToggle)stage.append(colorToggle);
   const modelButtons=get('bm-models');
   modelButtons.replaceChildren();
   for(const [key,name] of [['male','♂ Homme'],['female','♀ Femme']]){
@@ -313,7 +317,10 @@
     const color=gradientColor(colors,range.value);
     current[APPEARANCE]={...appearance(current),[property]:color};dirty=true;display(color);
     // Live preview without rebuilding the WebGL stage or the active slider.
-    if(!get('bm-model').classList.contains('bm-makehuman-active'))renderMannequin();
+    if(!get('bm-model').classList.contains('bm-makehuman-active')){
+     const picture=get('bm-model').querySelector(':scope > svg.bm-man'),app=appearance(current);
+     if(picture)picture.outerHTML=svg(app.model,app.skin,app.hair,app.eyes);
+    }
     window.dispatchEvent(new Event('mon-evolution-appearance-changed'));
    });
    for(const event of ['change','blur','pointercancel'])range.addEventListener(event,commit);
