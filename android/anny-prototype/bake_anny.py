@@ -8,6 +8,7 @@ import numpy as np
 import torch
 import anny
 import socket
+from native_weight import extend_native
 
 # Fail rather than silently fetching external body assets.
 def no_network(*a, **kw):
@@ -75,18 +76,26 @@ def export(gender,path):
     variants=[sample(gender,changes=changes) for changes in local]
     # Heavy endpoint: only native phenotype and native local-change parameters.
     # Keep male chest and stomach tone native, avoid manually sculpting ribs or breasts.
-    heavy={k:.65 for i in (2,3,4,6,7,8) for k in regions[i]}
-    heavy['torso-scale-depth-incr']=.65
-    variants += [sample(gender,1.,heavy),sample(gender,0.)]
+    old_heavy={k:.65 for i in (2,3,4,6,7,8) for k in regions[i]}
+    old_heavy['torso-scale-depth-incr']=.65
+    heavy={k:.95 for k in old_heavy}
+    old_endpoint=sample(gender,1.,old_heavy)
+    native_endpoint=sample(gender,1.,heavy)
+    extended,factor=extend_native(base,old_endpoint,native_endpoint)
+    variants += [extended,sample(gender,0.)]
     # Keep the original garment classification, then apply the rig displacement
     # after fabric smoothing. Heavy endpoint uses a smaller angle for clearance.
     posed_base=sample(gender,arm_angle=12.)
     posed=[sample(gender,changes=changes,arm_angle=12. if i not in (4,6) else 8.) for i,changes in enumerate(local)]
-    posed += [sample(gender,1.,heavy,arm_angle=5.),sample(gender,0.,arm_angle=13.)]
+    # Native arm articulation is evaluated separately from the volume
+    # extrapolation. Leave extra clearance for the new heavy endpoint.
+    posed += [sample(gender,1.,heavy,arm_angle=2.5),sample(gender,0.,arm_angle=13.)]
     offsets=np.stack([posed_base-base]+[p-q for p,q in zip(posed,variants)])
+    offsets[19]=posed[18]-native_endpoint
     assert offsets.shape==(21,len(base),3) and np.isfinite(offsets).all()
     np.save(path.with_suffix('.pose.npy'),offsets)
     print('Arm pose base width',float(np.ptp(base[:,0])),'->',float(np.ptp(posed_base[:,0])))
+    assert np.abs(extended-base).max()<.45
     assert all(v.shape==base.shape for v in variants)
     assert all(np.max(np.abs(v-base))>1e-5 for v in variants)
     # One topologically continuous body; colour only, no duplicate cloth shells.

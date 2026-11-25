@@ -129,3 +129,33 @@ def torso_panel_solver(reference,shirt,h,female,faces):
     def solve(q):
         return navel(pecs(q))
     return solve
+
+def male_pec_finish(reference,shirt,faces,h):
+    """Very local fabric peak relief: preserve sternum and the native rib cage."""
+    front=reference[1762];back=reference[3911]
+    sign=1. if front[2]>=back[2] else -1.
+    cx=float((reference[:,0].min()+reference[:,0].max())*.5)
+    mid_z=float((front[2]+back[2])*.5)
+    ax=np.abs(reference[:,0]-cx)/h
+    y=(reference[:,1]-front[1])/h
+    # Taper around each pectoral, excluding the sternum, side and lower belly.
+    r=np.hypot((ax-.053)/.043,y/.047)
+    w=np.clip((1.-r)/.50,0.,1.)
+    w=(w*w*(3.-2.*w)*shirt*((reference[:,2]-mid_z)*sign>.004*h)).astype(np.float32)
+    assert np.count_nonzero(w)>5,'Pectoral fabric region not found'
+    graph=adjacency(np.concatenate([faces[:,[0,1]],faces[:,[1,2]],faces[:,[2,0]]]),len(reference))
+    return peak_relief(graph,w,sign,.003*h)
+
+def peak_relief(graph,weight,sign,cap):
+    """No global fit: only suppress outward high-frequency peaks, with a hard cap."""
+    def solve(q):
+        z=q[:,2].copy()
+        out=q.copy()
+        for _ in range(5):
+            mean=average(out,graph)[:,2]
+            outward=np.maximum(0.,(out[:,2]-mean)*sign)
+            out[:,2]-=(sign*.35*weight*outward).astype(out.dtype)
+        moved=np.clip((z-out[:,2])*sign,0.,cap)*weight
+        out[:,2]=z-sign*moved
+        return out
+    return solve

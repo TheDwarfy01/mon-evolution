@@ -6,7 +6,7 @@ import json,struct,sys
 from pathlib import Path
 import numpy as np
 from collections import defaultdict
-from garment_surface import fabric_solver
+from garment_surface import fabric_solver,male_pec_finish
 
 def read(path):
     raw=path.read_bytes()
@@ -29,7 +29,7 @@ def build(src,dest,style,female):
     f=np.concatenate([load(old,raw,q['indices']).reshape(-1,3) for q in ps]).astype(np.int64)
     delta=np.array([load(old,raw,q['POSITION']) for q in p['targets']])
     assert len(delta)==20 and len(v)==13718
-    # Preserve the native Anny endpoint displacements exactly; no extrapolation.
+    # Endpoint amplitude is prepared from native Anny weight directions in bake_anny.
     # Find the four anatomical connected components, rather than treating the eyes as skin.
     parent=np.arange(len(v))
     def find(a):
@@ -91,6 +91,7 @@ def build(src,dest,style,female):
     solve,cloth_inside,seams=fabric_solver(f,group,len(v),h)
     assert np.any(cloth_inside) and np.any(seams)
     shirt_inside=(incident[:,1]==totals)&(totals>0)&(~seams)
+    pec_finish=(lambda q:q) if female else male_pec_finish(v,shirt_inside,f,h)
     offsets=np.load(src.with_suffix('.pose.npy'))
     assert offsets.shape==(21,len(v),3) and np.isfinite(offsets).all()
     def surface(q):
@@ -102,7 +103,11 @@ def build(src,dest,style,female):
         dressed=fabric+normals(fabric,f)*inset[:,None]
         assert np.max(np.linalg.norm(fabric-q,axis=1))<=.00601*h
         assert np.array_equal(fabric[(~cloth_inside)&(~seams)],q[(~cloth_inside)&(~seams)])
-        return dressed
+        finished=pec_finish(dressed)
+        assert np.array_equal(finished[:,:2],dressed[:,:2])
+        assert np.array_equal(finished[~shirt_inside],dressed[~shirt_inside])
+        assert np.max(np.abs(finished[:,2]-dressed[:,2]))<=.00301*h
+        return finished
     base=surface(v)+offsets[0]
     variants=[surface(v+d)+offsets[i+1] for i,d in enumerate(delta)]
     # Arm motion is conservative on the native heavy endpoint.
@@ -113,14 +118,16 @@ def build(src,dest,style,female):
     assert np.abs(delta[18]).max()>.001
     assert np.abs(delta[18]).max()<.45
     # Test the extreme combined shape as well as each isolated morph.
-    combined=base+(variants[18]-base)+.29*(variants[10]-base)+.65*(variants[12]-base)+.65*(variants[14]-base)
+    combined=base+(variants[18]-base)+.2925*(variants[10]-base)+.65*(variants[12]-base)+.65*(variants[14]-base)
+    half=base+.5*(variants[18]-base)
+    assert np.isfinite(half).all()
     assert np.isfinite(combined).all()
-    for q in [base]+variants+[combined]:
+    for q in [base]+variants+[half,combined]:
         lengths=np.linalg.norm(q[edge[:,0]]-q[edge[:,1]],axis=1)
         assert np.isfinite(lengths).all() and lengths.max()<h*.25
     # Normals updated for all morph targets. Shared vertex arrays and indices.
     buf=bytearray()
-    doc={'asset':{'version':'2.0','generator':'IMC Anny v168 native morphs and articulated arms'},
+    doc={'asset':{'version':'2.0','generator':'IMC Anny v171 extended native weight and local male fabric finish'},
          'buffers':[{'byteLength':0}],'bufferViews':[],'accessors':[],'materials':[],
          'meshes':[],'nodes':[{'name':'Anny','mesh':0}],'scenes':[{'nodes':[0]}],'scene':0}
     def acc(arr,typ,ctype,target=None,bounds=False):

@@ -5,7 +5,7 @@ const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
 export function annySnapshot(p,mode,display){
  if(!p||p.child||!['male','female'].includes(p.sex)||!(p.height>=45&&p.height<=240&&p.weight>1&&p.weight<=500))return null;
  const bmi=p.weight/(p.height/100)**2;
- const mass=mode==='neutral'?0:clamp((bmi-23)/(bmi>=23?30:11),-1,1);
+ const mass=mode==='neutral'?0:clamp((bmi-23)/(bmi>=23?60:11),-1,1);
  const expected=estimateVisualMeasurements(p)||{};
  const estimated=new Set(display.estimatedKeys||[]);
  const values=display.values||{};

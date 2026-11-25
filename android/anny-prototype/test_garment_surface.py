@@ -1,6 +1,7 @@
 import unittest
 import numpy as np
-from garment_surface import fabric_solver,front_patch,gentle_chest_solver
+from garment_surface import fabric_solver,front_patch,gentle_chest_solver,adjacency,peak_relief
+from native_weight import native_excursion,extend_native
 
 class GarmentTests(unittest.TestCase):
     def test_smoothing_preserves_exposed_skin_and_vertex_count(self):
@@ -63,4 +64,33 @@ class GarmentTests(unittest.TestCase):
         center=np.argmin(q[:,0]**2+q[:,1]**2)
         self.assertLess(fixed[center,2],bumped[center,2])
         self.assertGreaterEqual(fixed[center,2],bumped[center,2]-.006501)
+    def test_native_direction_doubles_previous_horizontal_excursion(self):
+        x,y=np.meshgrid(np.linspace(-.14,.14,41),np.linspace(0.,1.,51))
+        base=np.stack([x.ravel(),y.ravel(),np.full(x.size,.12)],axis=1).astype(np.float32)
+        old=base.copy();old[:,2]+=.05
+        native=base.copy();native[:,2]+=.08
+        extended,factor=extend_native(base,old,native)
+        self.assertAlmostEqual(factor,1.25,places=4)
+        self.assertAlmostEqual(native_excursion(base,extended)/native_excursion(base,old),2.,places=4)
+        np.testing.assert_array_equal(extended[:,:2],base[:,:2])
+    def test_peak_relief_does_not_move_sternum_or_dig_a_trough(self):
+        x,y=np.meshgrid(np.linspace(-.12,.12,41),np.linspace(-.09,.09,31))
+        z=.20-.15*x*x-.12*y*y
+        q=np.stack([x.ravel(),y.ravel(),z.ravel()],axis=1).astype(np.float32)
+        f=[]
+        for row in range(30):
+            for col in range(40):
+                i=row*41+col;f.extend([[i,i+1,i+41],[i+1,i+42,i+41]])
+        f=np.array(f);graph=adjacency(np.concatenate([f[:,[0,1]],f[:,[1,2]],f[:,[2,0]]]),len(q))
+        weight=(np.abs(q[:,0])>.025).astype(np.float32)
+        bumped=q.copy()
+        bumped[:,2]+=.02*np.exp(-((np.abs(q[:,0])-.055)**2+q[:,1]**2)/.00005)
+        solve=peak_relief(graph,weight,1.,.003)
+        out=solve(bumped)
+        np.testing.assert_array_equal(out[weight==0],bumped[weight==0])
+        np.testing.assert_array_equal(out[:,:2],bumped[:,:2])
+        self.assertGreater(float(np.max(bumped[:,2]-out[:,2])),.0002)
+        self.assertLessEqual(float(np.max(bumped[:,2]-out[:,2])),.003001)
+        self.assertTrue(np.all(out[:,2]<=bumped[:,2]+1e-8))
+        self.assertLess(float(np.max(np.abs(solve(q)-q))),.0002)
 if __name__=='__main__':unittest.main()

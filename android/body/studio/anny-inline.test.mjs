@@ -10,7 +10,7 @@ test('same 20 target formula as validated native Anny viewer',()=>{
 });
 test('neutral and weight limits',()=>{
  assert.deepEqual(annyWeights({mass:0,regions:[]}),Array(20).fill(0));
- assert.equal(visualIndex(-1),65);assert.equal(visualIndex(0),100);assert.equal(visualIndex(1),200);
+ assert.equal(visualIndex(-1),65);assert.equal(visualIndex(0),100);assert.equal(visualIndex(.5),200);assert.equal(visualIndex(1),300);
  assert.equal(annyWeights({mass:-10,regions:[]})[19],1);
 });
 test('both meshes have all nine real front/back anchors',()=>{

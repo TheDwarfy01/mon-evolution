@@ -16,3 +16,8 @@ test('neutral and estimates never become measurements or double deformation',()=
  const e=annySnapshot(p,'estimated',src);assert.equal(e.regions[5].local,0);assert.equal(e.regions[5].estimated,true);
  assert.equal(src.values.belly,150);
 });
+
+test('extended mass mapping keeps old BMI 53 halfway and allows BMI 83',()=>{
+ const at=bmi=>annySnapshot({...p,weight:bmi*(p.height/100)**2},'estimated',{values:{}}).mass;
+ assert.ok(Math.abs(at(53)-.5)<1e-8);assert.ok(Math.abs(at(83)-1)<1e-8);
+});

@@ -18,7 +18,7 @@ export function annyWeights(snap){
  weights[18]=Math.max(0,mass);weights[19]=Math.max(0,-mass);
  return weights;
 }
-export function visualIndex(mass){return Math.round(100+(mass>=0?100:35)*clamp(mass));}
+export function visualIndex(mass){return Math.round(100+(mass>=0?200:35)*clamp(mass));}
 
 // Explicit allowlist shared by the asset selection and validation paths.
 export const ANNY_FILES=Object.freeze({male:'anny-male-long-morph.glb',female:'anny-female-long-morph.glb'});
