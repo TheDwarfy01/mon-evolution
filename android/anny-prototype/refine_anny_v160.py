@@ -6,7 +6,7 @@ import json,struct,sys
 from pathlib import Path
 import numpy as np
 from collections import defaultdict
-from garment_surface import fabric_solver,torso_panel_solver
+from garment_surface import fabric_solver
 
 def read(path):
     raw=path.read_bytes()
@@ -29,12 +29,7 @@ def build(src,dest,style,female):
     f=np.concatenate([load(old,raw,q['indices']).reshape(-1,3) for q in ps]).astype(np.int64)
     delta=np.array([load(old,raw,q['POSITION']) for q in p['targets']])
     assert len(delta)==20 and len(v)==13718
-    # Native phenotype maximum alone yields ~3 cm movement. Extrapolate the
-    # native shape, not a separate balloon, with extra native hip/thigh changes.
-    delta[18]=4.5*delta[18]+.55*delta[[2,4,6,8,12,14,16]].sum(axis=0)+.20*delta[10]
-    delta[19]*=1.25
-    # Limit additional abdominal change and other local edits when globally heavy in Java.
-    delta[10]*=1.6;delta[11]*=1.25
+    # Preserve the native Anny endpoint displacements exactly; no extrapolation.
     # Find the four anatomical connected components, rather than treating the eyes as skin.
     parent=np.arange(len(v))
     def find(a):
@@ -96,25 +91,26 @@ def build(src,dest,style,female):
     solve,cloth_inside,seams=fabric_solver(f,group,len(v),h)
     assert np.any(cloth_inside) and np.any(seams)
     shirt_inside=(incident[:,1]==totals)&(totals>0)&(~seams)
-    panel=torso_panel_solver(v,shirt_inside,h,female,f)
     offsets=np.load(src.with_suffix('.pose.npy'))
     assert offsets.shape==(21,len(v),3) and np.isfinite(offsets).all()
     def surface(q):
+        # Only a bounded surface finish for clothing, no custom anatomical patch.
         fabric=solve(q)
+        displacement=fabric-q
+        length=np.linalg.norm(displacement,axis=1,keepdims=True)
+        fabric=q+displacement*np.minimum(1.,(.006*h)/np.maximum(length,1e-9))
         dressed=fabric+normals(fabric,f)*inset[:,None]
-        fixed=panel(dressed)
-        # Keep every non-depth coordinate and all non-shirt vertices unchanged.
-        assert np.array_equal(fixed[:,:2],dressed[:,:2])
-        assert np.array_equal(fixed[~shirt_inside],dressed[~shirt_inside])
-        return fixed
+        assert np.max(np.linalg.norm(fabric-q,axis=1))<=.00601*h
+        assert np.array_equal(fabric[(~cloth_inside)&(~seams)],q[(~cloth_inside)&(~seams)])
+        return dressed
     base=surface(v)+offsets[0]
     variants=[surface(v+d)+offsets[i+1] for i,d in enumerate(delta)]
-    # Arm motion is conservative on the heavy extrapolated endpoint.
+    # Arm motion is conservative on the native heavy endpoint.
     assert np.ptp(base[:,0])<np.ptp(v[:,0]),'Posed arms did not narrow the base'
     print('Posed base width',float(np.ptp(base[:,0])),'heavy width',float(np.ptp(variants[18][:,0])))
     # Validate numerical integrity and deformation amplitude, not clinical accuracy.
     assert all(np.isfinite(q).all() for q in [base]+variants)
-    assert np.abs(delta[18]).max()>.09
+    assert np.abs(delta[18]).max()>.001
     assert np.abs(delta[18]).max()<.45
     # Test the extreme combined shape as well as each isolated morph.
     combined=base+(variants[18]-base)+.29*(variants[10]-base)+.65*(variants[12]-base)+.65*(variants[14]-base)
@@ -124,7 +120,7 @@ def build(src,dest,style,female):
         assert np.isfinite(lengths).all() and lengths.max()<h*.25
     # Normals updated for all morph targets. Shared vertex arrays and indices.
     buf=bytearray()
-    doc={'asset':{'version':'2.0','generator':'IMC Anny v167 bounded chest and articulated arms'},
+    doc={'asset':{'version':'2.0','generator':'IMC Anny v168 native morphs and articulated arms'},
          'buffers':[{'byteLength':0}],'bufferViews':[],'accessors':[],'materials':[],
          'meshes':[],'nodes':[{'name':'Anny','mesh':0}],'scenes':[{'nodes':[0]}],'scene':0}
     def acc(arr,typ,ctype,target=None,bounds=False):

@@ -73,12 +73,16 @@ def export(gender,path):
     assert base.shape[0]>10000 and faces.max()<len(base)
     local=[{k:sign*.65 for k in region} for region in regions for sign in (1,-1)]
     variants=[sample(gender,changes=changes) for changes in local]
-    variants += [sample(gender,1.),sample(gender,0.)]
+    # Heavy endpoint: only native phenotype and native local-change parameters.
+    # Keep male chest and stomach tone native, avoid manually sculpting ribs or breasts.
+    heavy={k:.65 for i in (2,3,4,6,7,8) for k in regions[i]}
+    heavy['torso-scale-depth-incr']=.65
+    variants += [sample(gender,1.,heavy),sample(gender,0.)]
     # Keep the original garment classification, then apply the rig displacement
     # after fabric smoothing. Heavy endpoint uses a smaller angle for clearance.
     posed_base=sample(gender,arm_angle=12.)
     posed=[sample(gender,changes=changes,arm_angle=12. if i not in (4,6) else 8.) for i,changes in enumerate(local)]
-    posed += [sample(gender,1.,arm_angle=5.),sample(gender,0.,arm_angle=13.)]
+    posed += [sample(gender,1.,heavy,arm_angle=5.),sample(gender,0.,arm_angle=13.)]
     offsets=np.stack([posed_base-base]+[p-q for p,q in zip(posed,variants)])
     assert offsets.shape==(21,len(base),3) and np.isfinite(offsets).all()
     np.save(path.with_suffix('.pose.npy'),offsets)

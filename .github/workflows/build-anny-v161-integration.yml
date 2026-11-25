@@ -1,4 +1,4 @@
-name: Mon Evolution IMC v1.6.167 - Anny integre
+name: Mon Evolution IMC v1.6.168 - Anny integre
 on:
   workflow_dispatch:
   push:
@@ -1345,14 +1345,14 @@ jobs:
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" sign \
             --ks /tmp/mon-evolution.jks --ks-key-alias "$KEY_ALIAS" \
             --ks-pass env:KEYSTORE_PASS --key-pass env:KEY_PASS \
-            --out downloads/Mon_Evolution_IMC_v1.6.167.apk /tmp/mon-evolution-aligned.apk
-          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose downloads/Mon_Evolution_IMC_v1.6.167.apk
+            --out downloads/Mon_Evolution_IMC_v1.6.168.apk /tmp/mon-evolution-aligned.apk
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose downloads/Mon_Evolution_IMC_v1.6.168.apk
           rm -f /tmp/mon-evolution.jks
       - name: Conserver l APK signe de validation
         uses: actions/upload-artifact@v4
         with:
-          name: Mon_Evolution_IMC_v1.6.167
-          path: downloads/Mon_Evolution_IMC_v1.6.167.apk
+          name: Mon_Evolution_IMC_v1.6.168
+          path: downloads/Mon_Evolution_IMC_v1.6.168.apk
           retention-days: 7
           if-no-files-found: error
 
@@ -1361,9 +1361,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          if gh release view v1.6.167 >/dev/null 2>&1; then
-            gh release upload v1.6.167 downloads/Mon_Evolution_IMC_v1.6.167.apk --clobber
-            gh release edit v1.6.167 --prerelease=false --latest
+          if gh release view v1.6.168 >/dev/null 2>&1; then
+            gh release upload v1.6.168 downloads/Mon_Evolution_IMC_v1.6.168.apk --clobber
+            gh release edit v1.6.168 --prerelease=false --latest
           else
-            gh release create v1.6.167 downloads/Mon_Evolution_IMC_v1.6.167.apk --target "$GITHUB_SHA" --latest --title "Mon Évolution IMC 1.6.167 — Anny intégré" --notes "Anny : cage thoracique masculine préservée par un lissage local limité, bras rapprochés par les articulations natives avec angle réduit pour les fortes corpulences, nombril et poitrine féminine préservés. Zoom tactile à deux doigts, déplacement et boutons de zoom 100–300 %. Repères, mesures et historique conservés. Sauvegarde recommandée avant installation."
+            gh release create v1.6.168 downloads/Mon_Evolution_IMC_v1.6.168.apk --target "$GITHUB_SHA" --latest --title "Mon Évolution IMC 1.6.168 — Anny intégré" --notes "Anny 0.6.2 : morphologies et articulations natives, suppression des extrapolations et des retouches du torse, finition du tissu limitée. Bras rapprochés par le squelette Anny, zoom et repères conservés. Plage de corpulence à revalider. Sauvegarde recommandée avant installation."
           fi
