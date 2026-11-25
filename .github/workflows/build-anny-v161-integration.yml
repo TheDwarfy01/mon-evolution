@@ -1,4 +1,4 @@
-name: Mon Evolution IMC v1.6.166 - Anny integre
+name: Mon Evolution IMC v1.6.167 - Anny integre
 on:
   workflow_dispatch:
   push:
@@ -1183,7 +1183,7 @@ jobs:
             for style in long sport; do
               test -s "$assets/anny-$sex-$style-morph.glb"
             done
-            rm "$assets/anny-$sex-morph.glb"
+            rm "$assets/anny-$sex-morph.glb" "$assets/anny-$sex-morph.pose.npy"
           done
       - name: Adapter le visualiseur natif Anny v160
         run: |
@@ -1345,14 +1345,14 @@ jobs:
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" sign \
             --ks /tmp/mon-evolution.jks --ks-key-alias "$KEY_ALIAS" \
             --ks-pass env:KEYSTORE_PASS --key-pass env:KEY_PASS \
-            --out downloads/Mon_Evolution_IMC_v1.6.166.apk /tmp/mon-evolution-aligned.apk
-          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose downloads/Mon_Evolution_IMC_v1.6.166.apk
+            --out downloads/Mon_Evolution_IMC_v1.6.167.apk /tmp/mon-evolution-aligned.apk
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose downloads/Mon_Evolution_IMC_v1.6.167.apk
           rm -f /tmp/mon-evolution.jks
       - name: Conserver l APK signe de validation
         uses: actions/upload-artifact@v4
         with:
-          name: Mon_Evolution_IMC_v1.6.166
-          path: downloads/Mon_Evolution_IMC_v1.6.166.apk
+          name: Mon_Evolution_IMC_v1.6.167
+          path: downloads/Mon_Evolution_IMC_v1.6.167.apk
           retention-days: 7
           if-no-files-found: error
 
@@ -1361,9 +1361,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          if gh release view v1.6.166 >/dev/null 2>&1; then
-            gh release upload v1.6.166 downloads/Mon_Evolution_IMC_v1.6.166.apk --clobber
-            gh release edit v1.6.166 --prerelease=false --latest
+          if gh release view v1.6.167 >/dev/null 2>&1; then
+            gh release upload v1.6.167 downloads/Mon_Evolution_IMC_v1.6.167.apk --clobber
+            gh release edit v1.6.167 --prerelease=false --latest
           else
-            gh release create v1.6.166 downloads/Mon_Evolution_IMC_v1.6.166.apk --target "$GITHUB_SHA" --latest --title "Mon Évolution IMC 1.6.166 — Anny intégré" --notes "Anny : tissu avant du ventre lissé localement au niveau du nombril, pectoraux masculins moins saillants, poitrine féminine préservée. Zoom tactile à deux doigts, déplacement et boutons de zoom 100–300 %. Repères, mesures et historique conservés. Sauvegarde recommandée avant installation."
+            gh release create v1.6.167 downloads/Mon_Evolution_IMC_v1.6.167.apk --target "$GITHUB_SHA" --latest --title "Mon Évolution IMC 1.6.167 — Anny intégré" --notes "Anny : cage thoracique masculine préservée par un lissage local limité, bras rapprochés par les articulations natives avec angle réduit pour les fortes corpulences, nombril et poitrine féminine préservés. Zoom tactile à deux doigts, déplacement et boutons de zoom 100–300 %. Repères, mesures et historique conservés. Sauvegarde recommandée avant installation."
           fi

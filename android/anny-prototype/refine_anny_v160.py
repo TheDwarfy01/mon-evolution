@@ -96,7 +96,9 @@ def build(src,dest,style,female):
     solve,cloth_inside,seams=fabric_solver(f,group,len(v),h)
     assert np.any(cloth_inside) and np.any(seams)
     shirt_inside=(incident[:,1]==totals)&(totals>0)&(~seams)
-    panel=torso_panel_solver(v,shirt_inside,h,female)
+    panel=torso_panel_solver(v,shirt_inside,h,female,f)
+    offsets=np.load(src.with_suffix('.pose.npy'))
+    assert offsets.shape==(21,len(v),3) and np.isfinite(offsets).all()
     def surface(q):
         fabric=solve(q)
         dressed=fabric+normals(fabric,f)*inset[:,None]
@@ -105,8 +107,11 @@ def build(src,dest,style,female):
         assert np.array_equal(fixed[:,:2],dressed[:,:2])
         assert np.array_equal(fixed[~shirt_inside],dressed[~shirt_inside])
         return fixed
-    base=surface(v)
-    variants=[surface(v+d) for d in delta]
+    base=surface(v)+offsets[0]
+    variants=[surface(v+d)+offsets[i+1] for i,d in enumerate(delta)]
+    # Arm motion is conservative on the heavy extrapolated endpoint.
+    assert np.ptp(base[:,0])<np.ptp(v[:,0]),'Posed arms did not narrow the base'
+    print('Posed base width',float(np.ptp(base[:,0])),'heavy width',float(np.ptp(variants[18][:,0])))
     # Validate numerical integrity and deformation amplitude, not clinical accuracy.
     assert all(np.isfinite(q).all() for q in [base]+variants)
     assert np.abs(delta[18]).max()>.09
@@ -119,7 +124,7 @@ def build(src,dest,style,female):
         assert np.isfinite(lengths).all() and lengths.max()<h*.25
     # Normals updated for all morph targets. Shared vertex arrays and indices.
     buf=bytearray()
-    doc={'asset':{'version':'2.0','generator':'IMC Anny v165 smooth front fabric panels'},
+    doc={'asset':{'version':'2.0','generator':'IMC Anny v167 bounded chest and articulated arms'},
          'buffers':[{'byteLength':0}],'bufferViews':[],'accessors':[],'materials':[],
          'meshes':[],'nodes':[{'name':'Anny','mesh':0}],'scenes':[{'nodes':[0]}],'scene':0}
     def acc(arr,typ,ctype,target=None,bounds=False):

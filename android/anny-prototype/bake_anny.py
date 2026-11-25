@@ -2,7 +2,7 @@
 First diagnostic: material regions on one continuous surface, not actual garments.
 No network access or optional SMPL assets permitted during generation.
 """
-import sys, json, struct
+import sys, json, struct, math
 from pathlib import Path
 import numpy as np
 import torch
@@ -31,12 +31,31 @@ regions = [
 ]
 assert all(k in model.local_change_labels for region in regions for k in region)
 names = [f"region_{i}_{sign}" for i in range(9) for sign in ("plus","minus")] + ["weight_plus","weight_minus"]
-def sample(gender,weight=.5,changes=None):
+def sample(gender,weight=.5,changes=None,arm_angle=0.):
     ph = {k:torch.tensor([.5]) for k in model.phenotype_labels}
     ph.update(gender=torch.tensor([gender]),age=torch.tensor([.67]),weight=torch.tensor([weight]),muscle=torch.tensor([.35]))
     kw = {k:torch.tensor([v]) for k,v in (changes or {}).items()}
     with torch.no_grad():
         out=model(phenotype_kwargs=ph,local_changes_kwargs=kw)
+        if arm_angle:
+            # Rotate the actual upper arm joints in the native local-ref axes.
+            # Anny is Z-up, so the front axis is Y. Infer sign from joint position.
+            pose={}
+            bones=out["bone_poses"][0]
+            left=model.bone_labels.index("upperarm01.L")
+            right=model.bone_labels.index("upperarm01.R")
+            center=(float(bones[left,0,3])+float(bones[right,0,3]))*.5
+            for i in (left,right):
+                side=1. if float(bones[i,0,3])>center else -1.
+                a=math.radians(arm_angle)*side
+                c,s=math.cos(a),math.sin(a)
+                pose[model.bone_labels[i]]=torch.tensor([[[c,0.,s,0.],[0.,1.,0.,0.],[-s,0.,c,0.],[0.,0.,0.,1.]]],dtype=torch.float32)
+            posed=model(phenotype_kwargs=ph,local_changes_kwargs=kw,pose_parameters=pose,pose_parameterization="local-ref")
+            before=out["vertices"][0]
+            after=posed["vertices"][0]
+            # Fail rather than bake a pose that accidentally widens the arms.
+            assert float(torch.max(after[:,0])-torch.min(after[:,0])) < float(torch.max(before[:,0])-torch.min(before[:,0])), 'Arm pose did not narrow silhouette'
+            out=posed
     v=out["vertices"][0].detach().cpu().numpy().astype(np.float32)
     # Anny Z-up to glTF Y-up, proper rotation.
     v=v[:,[0,2,1]].copy()
@@ -52,8 +71,18 @@ def normals(v):
 def export(gender,path):
     base=sample(gender)
     assert base.shape[0]>10000 and faces.max()<len(base)
-    variants=[sample(gender,changes={k:sign*.65 for k in region}) for region in regions for sign in (1,-1)]
+    local=[{k:sign*.65 for k in region} for region in regions for sign in (1,-1)]
+    variants=[sample(gender,changes=changes) for changes in local]
     variants += [sample(gender,1.),sample(gender,0.)]
+    # Keep the original garment classification, then apply the rig displacement
+    # after fabric smoothing. Heavy endpoint uses a smaller angle for clearance.
+    posed_base=sample(gender,arm_angle=12.)
+    posed=[sample(gender,changes=changes,arm_angle=12. if i not in (4,6) else 8.) for i,changes in enumerate(local)]
+    posed += [sample(gender,1.,arm_angle=5.),sample(gender,0.,arm_angle=13.)]
+    offsets=np.stack([posed_base-base]+[p-q for p,q in zip(posed,variants)])
+    assert offsets.shape==(21,len(base),3) and np.isfinite(offsets).all()
+    np.save(path.with_suffix('.pose.npy'),offsets)
+    print('Arm pose base width',float(np.ptp(base[:,0])),'->',float(np.ptp(posed_base[:,0])))
     assert all(v.shape==base.shape for v in variants)
     assert all(np.max(np.abs(v-base))>1e-5 for v in variants)
     # One topologically continuous body; colour only, no duplicate cloth shells.

@@ -80,7 +80,29 @@ def front_patch(reference,eligible,cx,cy,rx,ry,depth_limit,front_sign=1.,strengt
         return out
     return solve,int(np.count_nonzero(core))
 
-def torso_panel_solver(reference,shirt,h,female):
+def gentle_chest_solver(reference,eligible,faces,h,cx,cy,sign):
+    """Remove small surface irregularities, not the rib-cage contour.
+    Topological smoothing cannot fit across the opposite side of the torso.
+    """
+    x=(reference[:,0]-cx)/(.105*h)
+    y=(reference[:,1]-cy)/(.064*h)
+    r=np.hypot(x,y)
+    w=np.clip((1-r)/.45,0,1)
+    w=(w*w*(3-2*w)*eligible).astype(np.float32)
+    graph=adjacency(np.concatenate([faces[:,[0,1]],faces[:,[1,2]],faces[:,[2,0]]]),len(reference))
+    # Hard depth cap, at most 0.65% of height (~11 mm for a 170 cm figure).
+    cap=.0065*h
+    def solve(q):
+        z=q[:,2].copy()
+        out=q.copy()
+        for _ in range(8):
+            mean=average(out,graph)[:,2]
+            out[:,2]+=(.32*w*(mean-out[:,2])).astype(out.dtype)
+        out[:,2]=z+np.clip(out[:,2]-z,-cap,cap)*w
+        return out
+    return solve
+
+def torso_panel_solver(reference,shirt,h,female,faces):
     # Existing front/back anatomical anchors from the Anny renderer.
     chest,waist,belly=((1780,3910),(4142,4128),(10772,10797)) if female else ((1762,3911),(4141,4024),(10780,10975))
     pairs=np.array([chest,waist,belly])
@@ -100,11 +122,10 @@ def torso_panel_solver(reference,shirt,h,female):
     assert count>=5,'Anny navel garment patch not found'
     if female:
         return navel
-    # Male pectoral panel is intentionally broader, preserving the chest envelope.
+    # Replace the wide polynomial patch: it cut a trough into the rib cage
+    # on heavy morphs. Use bounded local smoothing instead.
     chest_y=float(front[0,1])
-    pecs,count=front_patch(reference,eligible,cx,chest_y,.135*h,.077*h,.045*h,sign,.94)
-    print('Anny male chest panel vertices',count)
-    assert count>=5,'Anny male chest garment patch not found'
+    pecs=gentle_chest_solver(reference,eligible,faces,h,cx,chest_y,sign)
     def solve(q):
         return navel(pecs(q))
     return solve

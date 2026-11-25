@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-from garment_surface import fabric_solver,front_patch
+from garment_surface import fabric_solver,front_patch,gentle_chest_solver
 
 class GarmentTests(unittest.TestCase):
     def test_smoothing_preserves_exposed_skin_and_vertex_count(self):
@@ -43,4 +43,24 @@ class GarmentTests(unittest.TestCase):
         # Negative defect (indentation) is also flattened.
         q[:len(base),2]=z-.12*np.exp(-(r/.13)**2)
         self.assertLess(abs(solve(q)[i,2]-z[i]),.001)
+    def test_chest_never_collapses_broad_envelope(self):
+        x,y=np.meshgrid(np.linspace(-.14,.14,41),np.linspace(-.10,.10,31))
+        z=.22-.25*x*x-.15*y*y
+        q=np.stack([x.ravel(),y.ravel(),z.ravel()],axis=1).astype(np.float32)
+        f=[]
+        for row in range(30):
+            for col in range(40):
+                i=row*41+col
+                f.extend([[i,i+1,i+41],[i+1,i+42,i+41]])
+        eligible=np.ones(len(q),dtype=bool)
+        solve=gentle_chest_solver(q,eligible,np.array(f),1.,0.,0.,1.)
+        out=solve(q)
+        self.assertLessEqual(float(np.max(np.abs(out[:,2]-q[:,2]))),.006501)
+        np.testing.assert_array_equal(out[:,:2],q[:,:2])
+        self.assertLess(float(np.max(np.abs(out[:,2]-q[:,2]))),.001)
+        bumped=q.copy();bumped[:,2]+=.025*np.exp(-(q[:,0]**2+q[:,1]**2)/.0001)
+        fixed=solve(bumped)
+        center=np.argmin(q[:,0]**2+q[:,1]**2)
+        self.assertLess(fixed[center,2],bumped[center,2])
+        self.assertGreaterEqual(fixed[center,2],bumped[center,2]-.006501)
 if __name__=='__main__':unittest.main()
