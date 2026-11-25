@@ -1,4 +1,4 @@
-name: Anny v1.6.159 - essai local sans profil
+name: Anny v1.6.160 - essai complet sans profil
 on:
   workflow_dispatch:
   push:
@@ -1164,7 +1164,20 @@ jobs:
           tar -xzf "$archive" -C /tmp/anny-source
           find /tmp/anny-source -maxdepth 2 -type f -iname 'LICENSE*' -exec cp {} "$assets/" \;
           cp android/third_party/anny/README.md "$assets/ANNY-SOURCE-NOTICE.md"
-      - name: Adapter le visualiseur natif pour les deux modeles Anny
+      - name: Generer les deux tenues et valider les deformations Anny
+        run: |
+          set -euo pipefail
+          source /tmp/anny-venv/bin/activate
+          assets=android/source-1.6.143/app/src/main/assets
+          python -m py_compile android/anny-prototype/refine_anny_v160.py
+          python android/anny-prototype/refine_anny_v160.py "$assets"
+          for sex in male female; do
+            for style in long sport; do
+              test -s "$assets/anny-$sex-$style-morph.glb"
+            done
+            rm "$assets/anny-$sex-morph.glb"
+          done
+      - name: Adapter le visualiseur natif Anny v160
         run: |
           set -euo pipefail
           python3 - <<'PY'
@@ -1173,7 +1186,7 @@ jobs:
           gradle=root/'build.gradle'
           s=gradle.read_text()
           assert "versionName '1.6.158-filament-male-female-dressed'" in s
-          gradle.write_text(s.replace("versionName '1.6.158-filament-male-female-dressed'","versionName '1.6.159-anny-test'").replace('versionCode 174','versionCode 175').replace('fr.monevolution.filamenttest','fr.monevolution.annytest'))
+          gradle.write_text(s.replace("versionName '1.6.158-filament-male-female-dressed'","versionName '1.6.160-anny-test'").replace('versionCode 174','versionCode 176').replace('fr.monevolution.filamenttest','fr.monevolution.annytest'))
           java=root/'src/main/java/fr/monevolution/app'
           for p in [java/'CameraPhotoProvider.java',root/'src/main/AndroidManifest.xml']:
               p.write_text(p.read_text().replace('fr.monevolution.filamenttest','fr.monevolution.annytest').replace('IMC Filament TEST','IMC Anny TEST').replace('monevolutionfilament','monevolutionanny'))
@@ -1182,22 +1195,93 @@ jobs:
           a=s.index('        String[] names=')
           z=s.index('        for(int rowIndex=',a)
           s=s[:a]+'''        String[] names={"Homme Anny","Femme Anny"};
-                  String[] files={"anny-male-morph.glb","anny-female-morph.glb"};
+                  String[] files={"anny-male-long-morph.glb","anny-female-long-morph.glb"};
           '''+s[z:]
-          s=s.replace('rowIndex<3','rowIndex<1').replace('filament-male-dressed.glb','anny-male-morph.glb').replace('filament-female-dressed.glb','anny-female-morph.glb')
-          s=s.replace('Homme habillé','Homme Anny').replace('FILAMENT · ESSAI 3D','ANNY 0.6.2 · ESSAI 3D')
+          s=s.replace('rowIndex<3','rowIndex<1').replace('filament-male-dressed.glb','anny-male-long-morph.glb').replace('filament-female-dressed.glb','anny-female-long-morph.glb')
+          s=s.replace('Homme habillé','Homme Anny').replace('FILAMENT · ESSAI 3D','ANNY · ESSAI 1.6.160')
           s=s.replace('Test Filament : cube orange au démarrage, puis mannequin simplifié.','Test local Anny · aucun profil requis.')
-          s=s.replace('name.equals("Corps")','name.equals("Anny")')
-          s=s.replace('{1f,1f,1f,1f},{.83f,.68f,.58f,1f}','{.68f,.46f,.34f,1f},{.83f,.68f,.58f,1f}',1)
+          s=s.replace('private Skybox background;','private Skybox background;\n    private com.google.android.filament.IndirectLight ambient;\n    private int outfitChoice=0;')
+          s=s.replace('viewer.getScene().setSkybox(background);','''viewer.getScene().setSkybox(background);
+                      ambient=new com.google.android.filament.IndirectLight.Builder()
+                          .irradiance(1,new float[]{1f,1f,1f}).intensity(38000f).build(viewer.getEngine());
+                      viewer.getScene().setIndirectLight(ambient);
+                      viewer.setCameraFocalLength(40f);
+                      viewer.getCamera().setExposure(12f,1f/125f,100f);''',1)
+          s=s.replace('setLensProjection(28.0,aspect','setLensProjection(40.0,aspect')
+          s=s.replace('viewer.getScene().setSkybox(null);','''viewer.getScene().setSkybox(null);
+                              if(ambient!=null){
+                                  viewer.getScene().setIndirectLight(null);
+                                  viewer.getEngine().destroyIndirectLight(ambient);
+                                  ambient=null;
+                              }''')
+          s=s.replace('private String currentModel="filament-test-cube.glb"','private String currentModel="anny-male-long-morph.glb"')
+          s=s.replace('if(viewer==null)return;\n        currentModel=file;','''if(viewer==null)return;
+                  file=file.replace("-long-","-sport-");
+                  if(outfitChoice==0)file=file.replace("-sport-","-long-");
+                  currentModel=file;''',1)
+          a=s.index('    private final float[][] skinPalette=')
+          z=s.index('    private final float[][] eyePalette=',a)
+          s=s[:a]+'''    private final float[][] skinPalette={
+                  {.78f,.57f,.45f,1f},{.94f,.79f,.69f,1f},{.71f,.50f,.35f,1f},
+                  {.54f,.34f,.23f,1f},{.38f,.22f,.15f,1f}
+              };
+          '''+s[z:]
+          a=s.index('    private void applyColors(){')
+          z=s.index('    private void refreshMorphLabel()',a)
+          s=s[:a]+'''    private void applyColors(){
+                  if(viewer==null||viewer.getAsset()==null)return;
+                  try{
+                      RenderableManager manager=viewer.getEngine().getRenderableManager();
+                      for(int entity:viewer.getAsset().getRenderableEntities()){
+                          int instance=manager.getInstance(entity);
+                          if(instance==0)continue;
+                          String name=viewer.getAsset().getName(entity);
+                          if(!"Anny".equals(name))continue;
+                          colorMaterial(manager.getMaterialInstanceAt(instance,0),skinPalette[skinChoice]);
+                          colorMaterial(manager.getMaterialInstanceAt(instance,3),hairPalette[hairChoice]);
+                          colorMaterial(manager.getMaterialInstanceAt(instance,5),eyeChoice==0?new float[]{.27f,.19f,.12f,1f}:eyePalette[eyeChoice]);
+                      }
+                  }catch(Throwable error){loadError="Couleurs : "+error.getMessage();}
+              }
+
+          '''+s[z:]
+          s=s.replace('root.addView(colorsRow);','''root.addView(colorsRow);
+                  LinearLayout outfitRow=new LinearLayout(this);
+                  Spinner outfit=new Spinner(this);
+                  ArrayAdapter<String> outfitAdapter=new ArrayAdapter<>(this,android.R.layout.simple_spinner_dropdown_item,
+                      new String[]{"Tenue classique · pantalon","Tenue sport · short"});
+                  outfit.setAdapter(outfitAdapter);
+                  outfitRow.addView(outfit,new LinearLayout.LayoutParams(-1,dp(this,42)));
+                  root.addView(outfitRow);
+                  outfit.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener(){
+                      @Override public void onItemSelected(android.widget.AdapterView<?> a,android.view.View v,int pos,long id){
+                          if(outfitChoice==pos)return;
+                          outfitChoice=pos;
+                          if(viewer!=null)switchModel(currentModel,currentLabel);
+                      }
+                      @Override public void onNothingSelected(android.widget.AdapterView<?> a){}
+                  });''',1)
+          # Selected dropdown labels must remain legible on dark background.
+          s=s.replace('spinner.setBackgroundColor(Color.rgb(36,60,71));','spinner.setBackgroundColor(Color.rgb(222,232,235));')
+          s=s.replace('morphSelector=new Spinner(this);','morphSelector=new Spinner(this);\n        morphSelector.setBackgroundColor(Color.rgb(222,232,235));')
+          s=s.replace('Spinner outfit=new Spinner(this);','Spinner outfit=new Spinner(this);\n        outfit.setBackgroundColor(Color.rgb(222,232,235));')
+          a=s.index('        if(viewer==null||viewer.getAsset()==null||',s.index('private void applyMorphWeights'))
+          z=s.index('        try {',a)
+          s=s[:a]+'''        if(viewer==null||viewer.getAsset()==null||!currentModel.startsWith("anny-"))return;
+          '''+s[z:]
+          a=s.index('            if((currentModel.equals(',s.index('private void applyMorphWeights'))
+          z=s.index('            weights[18]',a)
+          s=s[:a]+'''            if(globalMass>0f){
+                          for(int i=0;i<18;i+=2)weights[i]*=(1f-.35f*globalMass);
+                          weights[10]*=(1f-.55f*globalMass);
+                      }
+          '''+s[z:]
           s=s.replace('if(bodyFound>0&&faceFound>0)','if(bodyFound>0)')
-          s=s.replace('if((currentModel.equals("filament-male-morph.glb")||','if((currentModel.equals("anny-female-morph.glb")||currentModel.equals("filament-male-morph.glb")||')
-          s='\n'.join(l for l in s.split('\n') if 'eyeSpinner=addColorSpinner' not in l and 'hairSpinner=addColorSpinner' not in l)
-          a=s.index('        help.setText(')
-          z=s.index('\n',a)
-          s=s[:a]+'        help.setText("Morphologies natives Anny, sans profil. Tenue colorée provisoire, pas de vêtements 3D ni de pose animée. Indice visuel, non calibré en IMC. Fonctionne hors connexion.");'+s[z:]
-          s=s.replace('int index=progress<=40?Math.round(65+35f*progress/40):\n                Math.round(100+100f*(progress-40)/60);','int index=progress;')
-          s=s.replace(' (indice visuel 65–200, pas le poids en %)',' / 100 (indice visuel, pas un IMC)')
-          assert 'anny-female-morph.glb' in s and 'manager.setMorphWeights(instance,weights,0);' in s
+          a=s.index('        help.setText(');z=s.index('\n',a)
+          s=s[:a]+'        help.setText("Anny local · tenues ajustées et cheveux simplifiés. Couleurs peau / yeux / cheveux. Corpulence étendue expérimentale, non calibrée en IMC. Aucun profil nécessaire.");'+s[z:]
+          s=s.replace(' (indice visuel 65–200, pas le poids en %)',' (indice visuel, pas le poids ni un IMC)')
+          s=s.replace('Math.round(100+(morphValues[activeRegion]>=0?70:25)*morphValues[activeRegion])','Math.round(100+50*morphValues[activeRegion])')
+          assert 'anny-female-long-morph.glb' in s and 'manager.setMorphWeights(instance,weights,0);' in s
           p.write_text(s)
           PY
       - name: Installer SDK Android
@@ -1235,13 +1319,13 @@ jobs:
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" sign \
             --ks /tmp/mon-evolution.jks --ks-key-alias "$KEY_ALIAS" \
             --ks-pass env:KEYSTORE_PASS --key-pass env:KEY_PASS \
-            --out downloads/Mon_Evolution_IMC_Anny_TEST_SANS_PROFIL_v1.6.159.apk /tmp/mon-evolution-aligned.apk
-          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose downloads/Mon_Evolution_IMC_Anny_TEST_SANS_PROFIL_v1.6.159.apk
+            --out downloads/Mon_Evolution_IMC_Anny_TEST_SANS_PROFIL_v1.6.160.apk /tmp/mon-evolution-aligned.apk
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose downloads/Mon_Evolution_IMC_Anny_TEST_SANS_PROFIL_v1.6.160.apk
           rm -f /tmp/mon-evolution.jks
       - name: Conserver l APK de test comme artefact prive de compilation
         uses: actions/upload-artifact@v4
         with:
-          name: Mon_Evolution_IMC_Anny_TEST_SANS_PROFIL_v1.6.159
-          path: downloads/Mon_Evolution_IMC_Anny_TEST_SANS_PROFIL_v1.6.159.apk
+          name: Mon_Evolution_IMC_Anny_TEST_SANS_PROFIL_v1.6.160
+          path: downloads/Mon_Evolution_IMC_Anny_TEST_SANS_PROFIL_v1.6.160.apk
           retention-days: 7
           if-no-files-found: error
