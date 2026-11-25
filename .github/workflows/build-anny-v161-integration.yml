@@ -24,6 +24,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '9.3.1'
+          cache-read-only: false
       - name: Preparer la version 1.6.143 depuis les sources communes 1.6.31
         run: |
           set -euo pipefail
@@ -1311,7 +1312,20 @@ jobs:
           set -euo pipefail
           df -h .
           free -h
-          gradle --no-daemon --stacktrace --info --max-workers=2 '-Dorg.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=768m -Dfile.encoding=UTF-8' :app:assembleRelease
+          # Retry only transient repository/network errors, never hide build errors.
+          for attempt in 1 2 3 4; do
+            log="$RUNNER_TEMP/imc-gradle-attempt-$attempt.log"
+            if gradle --no-daemon --stacktrace --info --max-workers=2 '-Dorg.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=768m -Dfile.encoding=UTF-8' :app:assembleRelease 2>&1 | tee "$log"; then
+              break
+            fi
+            if [ "$attempt" -eq 4 ] || ! grep -Eiq '429 Too Many Requests|HTTP[^[:cntrl:]]* (502|503|504)( |:)|Read timed out|Connection reset|Connect timed out' "$log"; then
+              exit 1
+            fi
+            delay=$((30 * attempt))
+            echo "::warning::Temporary dependency repository failure; retrying in $delay seconds (attempt $attempt/4)"
+            sleep "$delay"
+          done
+          test -s app/build/outputs/apk/release/app-release-unsigned.apk
       - name: Signer l'APK avec la cle officielle existante
         env:
           KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
