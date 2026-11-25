@@ -16,6 +16,7 @@ import { hideMaskFor, coveredTriangle, behindOpaqueGarment } from './clothing-co
 import { maskIndexedTriangles, touchesExposedArm, touchesSleeveOpening } from './skin-triangle-mask.mjs';
 import {applyUniformBodySkin} from './skin-material.mjs';
 import { estimateVisualMeasurements, readVisualMode, writeVisualMode } from './visual-defaults.mjs';
+import {annySnapshot} from './anny-profile.mjs';
 
 (()=>{
 'use strict';
@@ -130,6 +131,7 @@ function ensureMounted(){
 }
 new MutationObserver(ensureMounted).observe(stage,{childList:true});
 function profileInfo(){
+ if(typeof unifiedCurrent==='string'&&unifiedCurrent.startsWith('received:'))return null;
  const p=typeof profile==='function'?profile():null;
  if(!p)return null;
  const weights=(p.entries||[]).filter(e=>Number.isFinite(+e.weight)&&+e.weight>0)
@@ -532,6 +534,7 @@ async function ensureAccessories(p){
 }
 async function startPreview(){
  if(busy||active)return;
+ if(profileInfo()&&!profileInfo().child&&typeof bridge.openAnnyProfile==='function')return;
  busy=true;btn.disabled=true;
  note.textContent='Préparation du modèle, des textures et des vêtements…';
  try{
@@ -578,6 +581,7 @@ function stopPreview(manual=false){
 function refreshScene(force){
  if(!active)return;
  const p=profileInfo();
+ if(p&&!p.child&&typeof bridge.openAnnyProfile==='function'){stopPreview(false);return;}
  if(!p){stopPreview();note.textContent='Profil incomplet ou sexe non précisé : tableau uniquement.';return;}
  if(profileId!==p.id && !visibilityEnabled(p.id)){
   autoTriedProfiles.delete(String(profileId));
@@ -601,6 +605,15 @@ function refreshScene(force){
 }
 function updateStatus(){
  if(busy)return;
+ const adult=profileInfo();
+ if(adult&&!adult.child&&typeof bridge.openAnnyProfile==='function'){
+  if(active)stopPreview(false);
+  oldStatus='anny';btn.disabled=false;btn.textContent='Ouvrir le mannequin 3D Anny';
+  controls.style.setProperty('display','none','important');
+  note.textContent='Anny intégré à l’application · disponible hors ligne, sans téléchargement supplémentaire';
+  syncVisualMode(adult);return;
+ }
+ if(oldStatus==='anny'){oldStatus='';controls.style.removeProperty('display');}
  const status=bridge.makeHumanStudioState();
  const changed=status!==oldStatus;
  oldStatus=status;
@@ -628,6 +641,12 @@ function updateStatus(){
  }
 }
 btn.addEventListener('click',()=>{
+ const p=profileInfo();
+ if(p&&!p.child&&typeof bridge.openAnnyProfile==='function'){
+  const snap=annySnapshot(p,visualMode(p),displayedMeasurements(p));
+  if(!snap){note.textContent='Profil incomplet : vérifie la taille et le poids.';return;}
+  bridge.openAnnyProfile(JSON.stringify(snap));return;
+ }
  const status=bridge.makeHumanStudioState();
  if(active){stopPreview(true);return;}
  if(status==='ready'){startPreview();return;}
@@ -662,6 +681,10 @@ window.addEventListener('mon-evolution-measurements-changed',event=>{
   recordVisualOverrides(p.id,detail.date,detail.changedKeys,visibilityStore());
  refreshScene(true);
 });
+window.annyFocusMeasurement=(id,key)=>{
+ const p=profileInfo();if(!p||String(p.id)!==id||!['neck','chest','arm','forearm','waist','belly','hips','thigh','calf'].includes(key))return;
+ const input=document.getElementById('bm-'+key);if(input&&!input.disabled){input.scrollIntoView({block:'center'});input.focus();}
+};
 window.addEventListener('mon-evolution-studio-ready',updateStatus);
 setInterval(()=>{if(section.hidden)return;updateStatus();},1400);
 updateStatus();
