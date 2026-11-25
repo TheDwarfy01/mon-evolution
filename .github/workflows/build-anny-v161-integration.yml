@@ -1,4 +1,4 @@
-name: Mon Evolution IMC v1.6.164 - Anny integre
+name: Mon Evolution IMC v1.6.165 - Anny integre
 on:
   workflow_dispatch:
   push:
@@ -1344,14 +1344,14 @@ jobs:
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" sign \
             --ks /tmp/mon-evolution.jks --ks-key-alias "$KEY_ALIAS" \
             --ks-pass env:KEYSTORE_PASS --key-pass env:KEY_PASS \
-            --out downloads/Mon_Evolution_IMC_v1.6.164.apk /tmp/mon-evolution-aligned.apk
-          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose downloads/Mon_Evolution_IMC_v1.6.164.apk
+            --out downloads/Mon_Evolution_IMC_v1.6.165.apk /tmp/mon-evolution-aligned.apk
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose downloads/Mon_Evolution_IMC_v1.6.165.apk
           rm -f /tmp/mon-evolution.jks
       - name: Conserver l APK signe de validation
         uses: actions/upload-artifact@v4
         with:
-          name: Mon_Evolution_IMC_v1.6.164
-          path: downloads/Mon_Evolution_IMC_v1.6.164.apk
+          name: Mon_Evolution_IMC_v1.6.165
+          path: downloads/Mon_Evolution_IMC_v1.6.165.apk
           retention-days: 7
           if-no-files-found: error
 
@@ -1360,9 +1360,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          if gh release view v1.6.164 >/dev/null 2>&1; then
-            gh release upload v1.6.164 downloads/Mon_Evolution_IMC_v1.6.164.apk --clobber
-            gh release edit v1.6.164 --prerelease=false --latest
+          if gh release view v1.6.165 >/dev/null 2>&1; then
+            gh release upload v1.6.165 downloads/Mon_Evolution_IMC_v1.6.165.apk --clobber
+            gh release edit v1.6.165 --prerelease=false --latest
           else
-            gh release create v1.6.164 downloads/Mon_Evolution_IMC_v1.6.164.apk --target "$GITHUB_SHA" --latest --title "Mon Évolution IMC 1.6.164 — Anny intégré" --notes "Anny : lissage contraint du tissu et des coutures, col arrondi, couverture du pantalon revue et contrôles des déformations extrêmes. Repères et mensurations conservés. Enfants et historique inchangés. Sauvegarde recommandée avant installation."
+            gh release create v1.6.165 downloads/Mon_Evolution_IMC_v1.6.165.apk --target "$GITHUB_SHA" --latest --title "Mon Évolution IMC 1.6.165 — Anny intégré" --notes "Anny : tissu avant du ventre lissé localement au niveau du nombril, pectoraux masculins moins saillants, poitrine féminine préservée. Repères, mesures et historique conservés. Sauvegarde recommandée avant installation."
           fi

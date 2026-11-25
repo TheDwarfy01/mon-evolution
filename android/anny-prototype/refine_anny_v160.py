@@ -6,7 +6,7 @@ import json,struct,sys
 from pathlib import Path
 import numpy as np
 from collections import defaultdict
-from garment_surface import fabric_solver
+from garment_surface import fabric_solver,torso_panel_solver
 
 def read(path):
     raw=path.read_bytes()
@@ -95,9 +95,16 @@ def build(src,dest,style,female):
     # Recompute relief at every morph endpoint so garment and hair follow body.
     solve,cloth_inside,seams=fabric_solver(f,group,len(v),h)
     assert np.any(cloth_inside) and np.any(seams)
+    shirt_inside=(incident[:,1]==totals)&(totals>0)&(~seams)
+    panel=torso_panel_solver(v,shirt_inside,h,female)
     def surface(q):
         fabric=solve(q)
-        return fabric+normals(fabric,f)*inset[:,None]
+        dressed=fabric+normals(fabric,f)*inset[:,None]
+        fixed=panel(dressed)
+        # Keep every non-depth coordinate and all non-shirt vertices unchanged.
+        assert np.array_equal(fixed[:,:2],dressed[:,:2])
+        assert np.array_equal(fixed[~shirt_inside],dressed[~shirt_inside])
+        return fixed
     base=surface(v)
     variants=[surface(v+d) for d in delta]
     # Validate numerical integrity and deformation amplitude, not clinical accuracy.
@@ -112,7 +119,7 @@ def build(src,dest,style,female):
         assert np.isfinite(lengths).all() and lengths.max()<h*.25
     # Normals updated for all morph targets. Shared vertex arrays and indices.
     buf=bytearray()
-    doc={'asset':{'version':'2.0','generator':'IMC Anny v164 constrained fabric and seams'},
+    doc={'asset':{'version':'2.0','generator':'IMC Anny v165 smooth front fabric panels'},
          'buffers':[{'byteLength':0}],'bufferViews':[],'accessors':[],'materials':[],
          'meshes':[],'nodes':[{'name':'Anny','mesh':0}],'scenes':[{'nodes':[0]}],'scene':0}
     def acc(arr,typ,ctype,target=None,bounds=False):

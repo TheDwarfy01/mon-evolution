@@ -11,8 +11,8 @@ def change(s,a,b):
     return s.replace(a,b,1)
 p=root/'build.gradle';s=p.read_text()
 s=change(s,"applicationId 'fr.monevolution.annytest'","applicationId 'fr.monevolution.app'")
-s=change(s,"versionName '1.6.160-anny-test'","versionName '1.6.164'")
-s=change(s,'versionCode 176','versionCode 180')
+s=change(s,"versionName '1.6.160-anny-test'","versionName '1.6.165'")
+s=change(s,'versionCode 176','versionCode 181')
 p.write_text(s)
 p=java/'CameraPhotoProvider.java'
 p.write_text(p.read_text().replace('fr.monevolution.annytest.camera','fr.monevolution.app.camera'))
@@ -28,12 +28,12 @@ s=change(s,'android:name=".FilamentPreviewActivity" android:exported="true"','an
 anchor=re.search(r'<activity\b[^>]*android:name="\.MainActivity"[^>]*>',s)
 assert anchor
 s=s[:anchor.end()]+'\n'+launcher+s[anchor.end():]
-s=re.sub(r'android:versionCode="\d+"','android:versionCode="180"',s,count=1)
-s=re.sub(r'android:versionName="[^"]+"','android:versionName="1.6.164"',s,count=1)
+s=re.sub(r'android:versionCode="\d+"','android:versionCode="181"',s,count=1)
+s=re.sub(r'android:versionName="[^"]+"','android:versionName="1.6.165"',s,count=1)
 p.write_text(s)
 p=assets/'index.html';s=p.read_text()
 s=change(s,'<script src="filament-test.js"></script>','')
-p.write_text(s.replace('1.6.143','1.6.164'))
+p.write_text(s.replace('1.6.143','1.6.165'))
 (assets/'filament-test.js').unlink()
 p=java/'MainActivity.java';s=p.read_text()
 a='''        @JavascriptInterface public void openFilamentPreview(){

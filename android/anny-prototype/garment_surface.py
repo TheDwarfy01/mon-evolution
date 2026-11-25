@@ -52,3 +52,59 @@ def fabric_solver(f,groups,n,h):
             out-= (.18*weights*(average(out,full)-out)).astype(out.dtype)
         return limit(out,seam_base,.032*h)
     return solve,interior,seam[2]>0
+
+def front_patch(reference,eligible,cx,cy,rx,ry,depth_limit,front_sign=1.,strength=1.):
+    """Fit a smooth curved fabric panel to its perimeter, only changing depth.
+    Reference-space selection keeps the same anatomical vertices for every morph.
+    """
+    x=(reference[:,0]-cx)/rx
+    y=(reference[:,1]-cy)/ry
+    r=np.sqrt(x*x+y*y)
+    ring=eligible&(r>=.72)&(r<=1.25)
+    core=eligible&(r<1.)
+    design=np.stack([np.ones(len(x)),x,y,x*x,x*y,y*y],axis=1)
+    if np.count_nonzero(ring)<12 or np.count_nonzero(core)<5:
+        return lambda q:q.copy(),int(np.count_nonzero(core))
+    A=design[ring]
+    w=np.sqrt(np.maximum(.15,1.-np.abs(r[ring]-.98)))
+    # Precompute the reference-space least-squares map, shared by all morphs.
+    projection=np.linalg.pinv(A*w[:,None])
+    # Smooth blend with zero displacement at the edge of the patch.
+    blend=np.clip((1.-r[core])/.45,0.,1.)
+    blend=blend*blend*(3.-2.*blend)*strength
+    def solve(q):
+        out=q.copy()
+        target=design[core]@(projection@(q[ring,2]*w))
+        diff=np.clip(target-q[core,2],-depth_limit,depth_limit)*blend
+        out[core,2]+=diff.astype(out.dtype)
+        return out
+    return solve,int(np.count_nonzero(core))
+
+def torso_panel_solver(reference,shirt,h,female):
+    # Existing front/back anatomical anchors from the Anny renderer.
+    chest,waist,belly=((1780,3910),(4142,4128),(10772,10797)) if female else ((1762,3911),(4141,4024),(10780,10975))
+    pairs=np.array([chest,waist,belly])
+    front=reference[pairs[:,0]]
+    back=reference[pairs[:,1]]
+    sign=1. if np.median(front[:,2]-back[:,2])>=0 else -1.
+    center_y=(front[:,1]+back[:,1])*.5
+    mid_z=(front[:,2]+back[:,2])*.5
+    order=np.argsort(center_y)
+    mid=np.interp(reference[:,1],center_y[order],mid_z[order])
+    eligible=shirt&((reference[:,2]-mid)*sign>.005*h)
+    cx=float((reference[:,0].min()+reference[:,0].max())*.5)
+    # Navel: local front patch, no reduction of the overall belly circumference.
+    belly_y=float(front[2,1])
+    navel,count=front_patch(reference,eligible,cx,belly_y,.066*h,.055*h,.023*h,sign)
+    print('Anny navel panel vertices',count)
+    assert count>=5,'Anny navel garment patch not found'
+    if female:
+        return navel
+    # Male pectoral panel is intentionally broader, preserving the chest envelope.
+    chest_y=float(front[0,1])
+    pecs,count=front_patch(reference,eligible,cx,chest_y,.135*h,.077*h,.045*h,sign,.94)
+    print('Anny male chest panel vertices',count)
+    assert count>=5,'Anny male chest garment patch not found'
+    def solve(q):
+        return navel(pecs(q))
+    return solve
