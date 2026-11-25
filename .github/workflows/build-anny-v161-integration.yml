@@ -1,4 +1,4 @@
-name: Mon Evolution IMC v1.6.168 - Anny integre
+name: Mon Evolution IMC v1.6.169 - Anny integre
 on:
   workflow_dispatch:
   push:
@@ -9,6 +9,8 @@ on:
       - 'android/body/studio/anny-inline*'
       - 'android/body/studio/measurement-markers.mjs'
       - 'android/body/studio/renderer.mjs'
+      - 'android/body/measurements-ui.js'
+      - 'android/body/color-slider.test.mjs'
       - 'android/body/studio/studio-zoom*'
       - 'android/anny-prototype/**'
 permissions:
@@ -684,6 +686,7 @@ jobs:
           grep -Fq "const oldSelectUnified=typeof selectUnified" android/source-1.6.143/app/src/main/assets/measurements-ui.js
           grep -Fq "if(!local())section.hidden=true" android/source-1.6.143/app/src/main/assets/measurements-ui.js
           node --check android/source-1.6.143/app/src/main/assets/measurements-ui.js
+          node --test android/body/color-slider.test.mjs
       - name: Déplacer Profil et Partagés en haut à droite et supprimer Bonjour
         run: |
           set -euo pipefail
@@ -1345,14 +1348,14 @@ jobs:
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" sign \
             --ks /tmp/mon-evolution.jks --ks-key-alias "$KEY_ALIAS" \
             --ks-pass env:KEYSTORE_PASS --key-pass env:KEY_PASS \
-            --out downloads/Mon_Evolution_IMC_v1.6.168.apk /tmp/mon-evolution-aligned.apk
-          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose downloads/Mon_Evolution_IMC_v1.6.168.apk
+            --out downloads/Mon_Evolution_IMC_v1.6.169.apk /tmp/mon-evolution-aligned.apk
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose downloads/Mon_Evolution_IMC_v1.6.169.apk
           rm -f /tmp/mon-evolution.jks
       - name: Conserver l APK signe de validation
         uses: actions/upload-artifact@v4
         with:
-          name: Mon_Evolution_IMC_v1.6.168
-          path: downloads/Mon_Evolution_IMC_v1.6.168.apk
+          name: Mon_Evolution_IMC_v1.6.169
+          path: downloads/Mon_Evolution_IMC_v1.6.169.apk
           retention-days: 7
           if-no-files-found: error
 
@@ -1361,9 +1364,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          if gh release view v1.6.168 >/dev/null 2>&1; then
-            gh release upload v1.6.168 downloads/Mon_Evolution_IMC_v1.6.168.apk --clobber
-            gh release edit v1.6.168 --prerelease=false --latest
+          if gh release view v1.6.169 >/dev/null 2>&1; then
+            gh release upload v1.6.169 downloads/Mon_Evolution_IMC_v1.6.169.apk --clobber
+            gh release edit v1.6.169 --prerelease=false --latest
           else
-            gh release create v1.6.168 downloads/Mon_Evolution_IMC_v1.6.168.apk --target "$GITHUB_SHA" --latest --title "Mon Évolution IMC 1.6.168 — Anny intégré" --notes "Anny 0.6.2 : morphologies et articulations natives, suppression des extrapolations et des retouches du torse, finition du tissu limitée. Bras rapprochés par le squelette Anny, zoom et repères conservés. Plage de corpulence à revalider. Sauvegarde recommandée avant installation."
+            gh release create v1.6.169 downloads/Mon_Evolution_IMC_v1.6.169.apk --target "$GITHUB_SHA" --latest --title "Mon Évolution IMC 1.6.169 — Anny intégré" --notes "Anny 0.6.2 : morphologies et articulations natives, suppression des extrapolations et des retouches du torse, finition du tissu limitée. Bras rapprochés par le squelette Anny, zoom et repères conservés. Curseurs de couleurs continus avec aperçu immédiat et sauvegarde par profil. Plage de corpulence à revalider. Sauvegarde recommandée avant installation."
           fi

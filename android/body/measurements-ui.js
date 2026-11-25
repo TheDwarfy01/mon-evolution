@@ -21,6 +21,30 @@
  const HAIRS=[['Noir','#201916'],['Brun','#4A2D22'],['Châtain','#7C5238'],['Auburn','#A64D2B'],['Roux','#C96E39'],['Blond','#CDA66A'],['Blond clair','#F0D8A2'],['Gris','#9FA7B0'],['Blanc','#EAE5DA']];
  const EYES=[['Marron','#593826'],['Noisette','#9A7844'],['Vert','#4B8B62'],['Bleu','#4B91C4'],['Gris','#8A9DA5'],['Ambre','#BE873D']];
  const DEFAULT={model:'male',skin:SKINS[2][1],hair:HAIRS[1][1],eyes:EYES[0][1]};
+ // COLOR_SLIDER_HELPERS_BEGIN
+ const validColor=v=>typeof v==='string'&&/^#[0-9a-f]{6}$/i.test(v);
+ const rgb=hex=>[1,3,5].map(i=>parseInt(hex.slice(i,i+2),16));
+ const maxColorStep=colors=>(colors.length-1)*100;
+ function gradientColor(colors,position){
+  const n=Math.max(0,Math.min(maxColorStep(colors),Number(position)||0))/100;
+  const i=Math.min(colors.length-2,Math.floor(n)),t=n-i;
+  const a=rgb(colors[i][1]),b=rgb(colors[i+1][1]);
+  return '#'+a.map((v,k)=>Math.round(v+(b[k]-v)*t).toString(16).padStart(2,'0')).join('').toUpperCase();
+ }
+ function gradientPosition(colors,color){
+  const exact=colors.findIndex(x=>x[1].toUpperCase()===String(color).toUpperCase());
+  if(exact>=0)return exact*100;
+  if(!validColor(color))return 0;
+  const c=rgb(color);let best=Infinity,position=0;
+  for(let i=0;i<colors.length-1;i++){
+   const a=rgb(colors[i][1]),b=rgb(colors[i+1][1]),d=b.map((v,k)=>v-a[k]);
+   const t=Math.max(0,Math.min(1,d.reduce((s,v,k)=>s+v*(c[k]-a[k]),0)/(d.reduce((s,v)=>s+v*v,0)||1)));
+   const error=a.reduce((s,v,k)=>s+(v+t*d[k]-c[k])**2,0);
+   if(error<best){best=error;position=Math.round(100*(i+t));}
+  }
+  return position;
+ }
+ // COLOR_SLIDER_HELPERS_END
  const APPEARANCE='bodyAppearance', RECORDS='bodyMeasurements';
  let selectedMetric='waist',editingDate=dateNow(),chartSet=new Set(['waist','belly','hips']);
  let draftDirty=false;
@@ -75,9 +99,9 @@
   const preferred=p?.sex==='female'?'female':'male';
   const a=p?.[APPEARANCE]||{};
   return {model:['male','female'].includes(a.model)?a.model:preferred,
-   skin:SKINS.some(x=>x[1]===a.skin)?a.skin:DEFAULT.skin,
-   hair:HAIRS.some(x=>x[1]===a.hair)?a.hair:DEFAULT.hair,
-   eyes:EYES.some(x=>x[1]===a.eyes)?a.eyes:DEFAULT.eyes};
+   skin:validColor(a.skin)?a.skin:DEFAULT.skin,
+   hair:validColor(a.hair)?a.hair:DEFAULT.hair,
+   eyes:validColor(a.eyes)?a.eyes:DEFAULT.eyes};
  };
  const safeUpdate=(p,key,value)=>{
   p[APPEARANCE]={...appearance(p),[key]:value};
@@ -110,6 +134,14 @@
   '.bm-point[data-side="left"]{left:1%}.bm-point[data-side="right"]{right:1%}',
   '.bm-palette{display:grid;grid-template-columns:1fr;gap:9px;border-top:1px solid #34566b;padding-top:13px}',
   '.bm-palette h4{font-size:12px;margin:0 0 4px;color:#d5edf1;font-weight:650}',
+  '.bm-color-slider-row{display:grid;grid-template-columns:minmax(0,1fr) 31px;gap:10px;align-items:center}',
+  '.bm-color-range{appearance:none;-webkit-appearance:none;width:100%;height:32px;margin:3px 0;background:transparent;cursor:pointer;touch-action:pan-y}',
+  '.bm-color-range::-webkit-slider-runnable-track{height:17px;border-radius:12px;background:var(--bm-gradient);border:1px solid #91aab5}',
+  '.bm-color-range::-webkit-slider-thumb{-webkit-appearance:none;width:27px;height:27px;margin-top:-6px;border-radius:50%;background:var(--bm-current);border:3px solid white;box-shadow:0 1px 5px #061725}',
+  '.bm-color-range::-moz-range-track{height:17px;border-radius:12px;background:var(--bm-gradient)}',
+  '.bm-color-range::-moz-range-thumb{width:24px;height:24px;border-radius:50%;background:var(--bm-current);border:3px solid white}',
+  '.bm-color-preview{width:30px;height:30px;border-radius:50%;border:2px solid #a3b7c2;box-sizing:border-box}',
+  '.bm-color-value{color:#bdd8df;font-size:11px;display:block;margin-top:2px}',
   '.bm-swatches{display:flex;gap:7px;flex-wrap:wrap}',
   '.bm-swatch{width:29px;height:29px;border-radius:50%;border:2px solid #7891a0;cursor:pointer;box-shadow:0 1px 4px #061725}',
   '.bm-swatch[aria-pressed="true"]{outline:2px solid #71f2d6;outline-offset:2px}',
@@ -258,20 +290,34 @@
  function paintColors(){
   const p=profile(),a=appearance(p);
   const box=get('bm-colors');box.replaceChildren();
-  for(const [property,label,colors] of [['skin','Carnation',SKINS],['hair','Couleur des cheveux',HAIRS],['eyes','Couleur des yeux',EYES]]){
+  for(const [property,label,colors] of [['skin','Carnation',SKINS],['hair','Couleur des cheveux',HAIRS],['eyes','Couleur des yeux',[EYES[0],EYES[5],EYES[1],EYES[2],EYES[3],EYES[4]]]]){
    const group=document.createElement('div');
-   const h=document.createElement('h4');h.textContent=label;group.append(h);
-   const row=document.createElement('div');row.className='bm-swatches';
-   for(const [name,color] of colors){
-    const button=document.createElement('button');button.type='button';button.className='bm-swatch';
-    button.style.backgroundColor=color;
-    button.setAttribute('aria-label',label+' : '+name);
-    button.title=name;
-    button.setAttribute('aria-pressed',String(a[property]===color));
-    button.onclick=()=>safeUpdate(p,property,color);
-    row.append(button);
+   const h=document.createElement('label');h.textContent=label;h.htmlFor='bm-color-'+property;
+   h.style.cssText='font-size:12px;font-weight:650;color:#d5edf1';group.append(h);
+   const row=document.createElement('div');row.className='bm-color-slider-row';
+   const range=document.createElement('input');range.type='range';range.className='bm-color-range';range.id=h.htmlFor;
+   range.min='0';range.max=String(maxColorStep(colors));range.step='1';
+   range.value=String(gradientPosition(colors,a[property]));range.disabled=!local();
+   range.style.setProperty('--bm-gradient','linear-gradient(to right,'+colors.map(c=>c[1]).join(',')+')');
+   const swatch=document.createElement('span');swatch.className='bm-color-preview';swatch.setAttribute('aria-hidden','true');
+   const value=document.createElement('span');value.className='bm-color-value';
+   function display(color){
+    const name=colors.find(c=>c[1].toUpperCase()===color.toUpperCase())?.[0]||'Nuance personnalisée';
+    range.style.setProperty('--bm-current',color);swatch.style.backgroundColor=color;
+    value.textContent=name;range.setAttribute('aria-valuetext',name+' '+color);
    }
-   group.append(row);box.append(group);
+   display(a[property]);let dirty=false;
+   function commit(){if(!dirty)return;dirty=false;save();}
+   range.addEventListener('input',()=>{
+    const current=profile();if(!local()||!current||String(current.id)!==String(p.id))return;
+    const color=gradientColor(colors,range.value);
+    current[APPEARANCE]={...appearance(current),[property]:color};dirty=true;display(color);
+    // Live preview without rebuilding the WebGL stage or the active slider.
+    if(!get('bm-model').classList.contains('bm-makehuman-active'))renderMannequin();
+    window.dispatchEvent(new Event('mon-evolution-appearance-changed'));
+   });
+   for(const event of ['change','blur','pointercancel'])range.addEventListener(event,commit);
+   row.append(range,swatch);group.append(row,value);box.append(group);
   }
  }
  function ensureRecord(p,date){
