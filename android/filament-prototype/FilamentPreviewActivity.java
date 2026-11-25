@@ -13,6 +13,8 @@ import android.widget.SeekBar;
 import android.widget.Spinner;
 import android.widget.ArrayAdapter;
 import com.google.android.filament.RenderableManager;
+import com.google.android.filament.MaterialInstance;
+import com.google.android.filament.Colors;
 import android.widget.TextView;
 import android.graphics.Color;
 import com.google.android.filament.Engine;
@@ -56,6 +58,20 @@ public final class FilamentPreviewActivity extends Activity {
     private int morphTargetCount=0;
     private int morphUpdates=0;
     private int activeRegion=5;
+    private Spinner skinSpinner,eyeSpinner,hairSpinner;
+    private int skinChoice=0,eyeChoice=0,hairChoice=0;
+    private final float[][] skinPalette={
+        {1f,1f,1f,1f},{.83f,.68f,.58f,1f},{.63f,.47f,.36f,1f},
+        {.49f,.34f,.25f,1f},{.33f,.21f,.16f,1f}
+    };
+    private final float[][] eyePalette={
+        {1f,1f,1f,1f},{.40f,.55f,.95f,1f},{.30f,.75f,.38f,1f},
+        {.48f,.30f,.17f,1f}
+    };
+    private final float[][] hairPalette={
+        {.22f,.15f,.10f,1f},{.06f,.055f,.05f,1f},{.47f,.31f,.16f,1f},
+        {.75f,.63f,.42f,1f},{.53f,.22f,.12f,1f},{.60f,.58f,.53f,1f}
+    };
     private static final String[] MORPH_LABELS={
         "Cou","Poitrine","Bras","Avant-bras","Taille",
         "Ventre","Hanches","Cuisse","Mollet"
@@ -94,11 +110,11 @@ public final class FilamentPreviewActivity extends Activity {
         LinearLayout modes=new LinearLayout(this);
         modes.setOrientation(LinearLayout.VERTICAL);
         modes.setPadding(dp(this,6),0,dp(this,6),dp(this,4));
-        String[] names={"Homme recalibré","Ancienne morphologie","Détails textures",
-                        "Corps simple","Cube test","Rig original"};
-        String[] files={"filament-male-morph.glb","filament-morph-global.glb",
-                        "filament-detail-textures.glb","filament-simple-body.glb",
-                        "filament-test-cube.glb","filament-base-body.glb"};
+        String[] names={"Homme habillé","Femme habillée","Homme sans vêtements",
+                        "Femme sans vêtements","Cube test","Ancien mannequin"};
+        String[] files={"filament-male-dressed.glb","filament-female-dressed.glb",
+                        "filament-male-morph.glb","filament-female-morph.glb",
+                        "filament-test-cube.glb","filament-morph-global.glb"};
         for(int rowIndex=0;rowIndex<3;rowIndex++){
             LinearLayout buttonRow=new LinearLayout(this);
             int end=Math.min(names.length,rowIndex*2+2);
@@ -167,6 +183,12 @@ public final class FilamentPreviewActivity extends Activity {
         morphPanel.addView(morphSlider,new LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,dp(this,40)));
         root.addView(morphPanel);
+        LinearLayout colorsRow=new LinearLayout(this);
+        colorsRow.setPadding(dp(this,8),dp(this,2),dp(this,8),dp(this,2));
+        skinSpinner=addColorSpinner(colorsRow,new String[]{"Peau naturelle","Peau claire","Peau mate","Peau brune","Peau foncée"},0);
+        eyeSpinner=addColorSpinner(colorsRow,new String[]{"Yeux naturels","Yeux bleus","Yeux verts","Yeux marron"},1);
+        hairSpinner=addColorSpinner(colorsRow,new String[]{"Cheveux bruns","Cheveux noirs","Châtains","Blonds","Roux","Gris"},2);
+        root.addView(colorsRow);
         morphSelector.setSelection(activeRegion);
         morphSelector.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener(){
             @Override public void onItemSelected(android.widget.AdapterView<?> parent,
@@ -197,7 +219,7 @@ public final class FilamentPreviewActivity extends Activity {
         });
         refreshMorphLabel();
         TextView help=new TextView(this);
-        help.setText("Homme recalibré : ventre arrondi sans effet ballon, fesses progressives reliées aux cuisses. La correction de ventre est limitée si la corpulence est déjà maximale. Comparaison avec l'ancienne morphologie disponible. Aucune donnée de profil modifiée.");
+        help.setText("Essai homme/femme : t-shirt, short et cheveux courts en maillage 3D déformable. Trois couleurs au choix : peau, yeux et cheveux. Visage MakeHuman texturé d'origine ; les portraits précédents sont des références, pas des maillages 3D. Aucune donnée personnelle enregistrée.");
         help.setTextSize(12);
         help.setTextColor(Color.WHITE);
         help.setPadding(dp(this,14),dp(this,10),dp(this,14),dp(this,12));
@@ -238,7 +260,7 @@ public final class FilamentPreviewActivity extends Activity {
                     // ModelViewer.render retrieves the camera pose from the manipulator.
                 }
             });
-            switchModel("filament-male-morph.glb","Homme recalibré");
+            switchModel("filament-male-dressed.glb","Homme habillé");
             surface.setOnTouchListener((view,event)->{
                 // Forward raw touches to ModelViewer's GestureDetector; it updates
                 // the orbit camera, pan and pinch-to-zoom on the next frame.
@@ -266,6 +288,61 @@ public final class FilamentPreviewActivity extends Activity {
                 (ex.getMessage()==null?"":(" · "+ex.getMessage())));
         }
     }
+    private Spinner addColorSpinner(LinearLayout row,String[] options,int type){
+        Spinner spinner=new Spinner(this);
+        spinner.setBackgroundColor(Color.rgb(36,60,71));
+        ArrayAdapter<String> adapter=new ArrayAdapter<>(this,
+            android.R.layout.simple_spinner_dropdown_item,options);
+        spinner.setAdapter(adapter);
+        row.addView(spinner,new LinearLayout.LayoutParams(0,dp(this,42),1f));
+        spinner.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener(){
+            @Override public void onItemSelected(android.widget.AdapterView<?> a,
+                android.view.View v,int pos,long id){
+                if(type==0)skinChoice=pos;
+                else if(type==1)eyeChoice=pos;
+                else hairChoice=pos;
+                applyColors();
+            }
+            @Override public void onNothingSelected(android.widget.AdapterView<?> a){}
+        });
+        return spinner;
+    }
+
+    private void colorMaterial(MaterialInstance instance,float[] rgba){
+        if(instance==null)return;
+        instance.setParameter("baseColorFactor",Colors.RgbaType.SRGB,
+            rgba[0],rgba[1],rgba[2],rgba[3]);
+    }
+
+    private void applyColors(){
+        if(viewer==null||viewer.getAsset()==null)return;
+        if(!currentModel.contains("dressed")&&!currentModel.contains("morph"))return;
+        try{
+            RenderableManager manager=viewer.getEngine().getRenderableManager();
+            for(int entity:viewer.getAsset().getRenderableEntities()){
+                int instance=manager.getInstance(entity);
+                if(instance==0)continue;
+                String name=viewer.getAsset().getName(entity);
+                if(name==null)continue;
+                if(name.equals("Corps")){
+                    colorMaterial(manager.getMaterialInstanceAt(instance,0),
+                        skinPalette[skinChoice]);
+                }else if(name.equals("Visage")){
+                    // Index 3 corresponds to the iris in the validated
+                    // MakeHuman compact facial mesh, not the sclera.
+                    colorMaterial(manager.getMaterialInstanceAt(instance,3),
+                        eyePalette[eyeChoice]);
+                }else if(name.equals("IMC_ClothesAndHair")){
+                    colorMaterial(manager.getMaterialInstanceAt(instance,2),
+                        hairPalette[hairChoice]);
+                }
+            }
+        }catch(Throwable error){
+            loadError="Couleurs : "+error.getClass().getSimpleName()+
+                " "+error.getMessage();
+        }
+    }
+
     private void refreshMorphLabel(){
         if(massLabel!=null){
             int progress=massSlider==null?40:massSlider.getProgress();
@@ -283,8 +360,11 @@ public final class FilamentPreviewActivity extends Activity {
 
     private void applyMorphWeights(){
         if(viewer==null||viewer.getAsset()==null||
-           !(currentModel.equals("filament-morph-global.glb")||
-            currentModel.equals("filament-male-morph.glb")))return;
+            !(currentModel.equals("filament-morph-global.glb")||
+              currentModel.equals("filament-male-morph.glb")||
+              currentModel.equals("filament-female-morph.glb")||
+              currentModel.equals("filament-male-dressed.glb")||
+              currentModel.equals("filament-female-dressed.glb")))return;
         try {
             // Body: first 18 weights preserve the proven independent 9-zone controls,
             // the last pair drives global body fullness.
@@ -296,7 +376,8 @@ public final class FilamentPreviewActivity extends Activity {
             // At severe global fullness, the abdomen is already enlarged.
             // Reduce additional LOCAL positive belly projection so both
             // sliders at maximum do not create an unnatural balloon.
-            if(currentModel.equals("filament-male-morph.glb")&&globalMass>0f){
+            if((currentModel.equals("filament-male-morph.glb")||
+                currentModel.equals("filament-male-dressed.glb"))&&globalMass>0f){
                 float complement=1f-0.60f*globalMass;
                 weights[10]*=complement; // region index 5: belly PLUS
             }
@@ -342,8 +423,7 @@ public final class FilamentPreviewActivity extends Activity {
             String message=currentLabel+" | GPU "+progress+"% | objets "+renderable+
                 " | scène "+sceneCount+" | frames "+renderedFrames+
                 " | gestes "+touchMoves+" | surface "+stage.getWidth()+"x"+stage.getHeight();
-            if(currentModel.equals("filament-morph-global.glb")||
-               currentModel.equals("filament-male-morph.glb"))
+            if(currentModel.contains("morph")||currentModel.contains("dressed"))
                 message+=" | corps "+morphTargetCount+" visage "+faceTargetCount+
                     " | réglages "+morphUpdates;
             if(!loadError.isEmpty())message+=" | CHARGEMENT : "+loadError;
@@ -365,8 +445,7 @@ public final class FilamentPreviewActivity extends Activity {
         faceTargetCount=0;
         if(morphPanel!=null)
             morphPanel.setVisibility(
-                (file.equals("filament-morph-global.glb")||
-                 file.equals("filament-male-morph.glb"))?
+                (file.contains("morph")||file.contains("dressed"))?
                 android.view.View.VISIBLE:android.view.View.GONE);
         try{
             byte[] bytes;
@@ -395,6 +474,7 @@ public final class FilamentPreviewActivity extends Activity {
             }
             viewer.transformToUnitCube(new com.google.android.filament.utils.Float3(0f,0f,-4f));
             applyMorphWeights();
+            applyColors();
             // Keep the touch-controlled camera instead of resetting it via lookAt.
             frameCount=0;
             renderedFrames=0;
