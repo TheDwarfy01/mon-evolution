@@ -1367,9 +1367,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          # Stable direct-download alias: same signed APK bytes, same name for every release.
+          cp downloads/Mon_Evolution_IMC_v1.6.171.apk downloads/Mon_Evolution_IMC.apk
+          cmp downloads/Mon_Evolution_IMC_v1.6.171.apk downloads/Mon_Evolution_IMC.apk
           if gh release view v1.6.171 >/dev/null 2>&1; then
-            gh release upload v1.6.171 downloads/Mon_Evolution_IMC_v1.6.171.apk --clobber
+            gh release upload v1.6.171 downloads/Mon_Evolution_IMC_v1.6.171.apk downloads/Mon_Evolution_IMC.apk --clobber
             gh release edit v1.6.171 --prerelease=false --latest
           else
-            gh release create v1.6.171 downloads/Mon_Evolution_IMC_v1.6.171.apk --target "$GITHUB_SHA" --latest --title "Mon Évolution IMC 1.6.171 — Anny intégré" --notes "Interface 1.6.170 conservée. Corpulence visuelle étendue sur les directions de poids natives Anny avec extension bornée si nécessaire, indice 65–300 et recalage selon poids. Lissage local masculin limité à 0,3 % de hauteur, poitrine féminine inchangée. Résultat visuel à valider sur appareil. Sauvegarde recommandée."
+            gh release create v1.6.171 downloads/Mon_Evolution_IMC_v1.6.171.apk downloads/Mon_Evolution_IMC.apk --target "$GITHUB_SHA" --latest --title "Mon Évolution IMC 1.6.171 — Anny intégré" --notes "Interface 1.6.170 conservée. Corpulence visuelle étendue sur les directions de poids natives Anny avec extension bornée si nécessaire, indice 65–300 et recalage selon poids. Lissage local masculin limité à 0,3 % de hauteur, poitrine féminine inchangée. Résultat visuel à valider sur appareil. Sauvegarde recommandée."
           fi
