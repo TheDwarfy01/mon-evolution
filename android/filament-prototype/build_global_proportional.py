@@ -130,7 +130,7 @@ def warp_global(x,y,z,lo,hi,w,change,male=False):
     # The face/eyes/teeth submeshes are free of the old skin. Head vertices
     # on the body and all separate face primitives use IDENTICAL transforms
     # above 1.44 m, preserving eyelid, mouth and eyeball registration.
-    head=smooth((y-(hi-.279))/.060)
+    head=smooth((y-(hi-(.34 if not male else .279)))/.060)
     x_gain=(1-head)*x_gain+head*(.21 if male else .20)
     z_gain=(1-head)*z_gain+head*(.20 if male else .19)
     axis=(1-head)*axis
@@ -182,7 +182,7 @@ def build(morph,original,destination,male=False):
             data,ac=access(doc,buf,prim['attributes']['POSITION'])
             assert ac['componentType']==5126
             points=list(struct.iter_unpack('<fff',data))
-            assert points and min(p[1] for p in points)>1.44
+            assert points and min(p[1] for p in points)>1.30
             neutral=[{'head':1.} for _ in points]
             prim.setdefault('targets',[]).append(
                 {'POSITION':append_target(doc,buf,points,lo,hi,neutral,sign,male)})
