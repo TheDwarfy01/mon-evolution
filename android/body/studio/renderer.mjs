@@ -245,7 +245,7 @@ function saveChoice(){
  refreshScene(true);
 }
 async function readGlb(name){
- const anny=/^anny-(?:male|female)-long-morph\\.glb$/.test(name);
+ const anny=/^anny-(?:male|female)-long-morph\.glb$/.test(name);
  if(!anny&&!/^(?:base_body_anim|hair_(?:short02|short04|bob02|long01|ponytail01|braid01|afro01)|clothing_(?:tshirt|jeans|shoes))\.glb$/.test(name)){
   throw Error('Fichier 3D non autorisé');
  }
@@ -534,7 +534,9 @@ function attachAnny(gltf,p){
   body=gltf.scene;figure.add(body);bodyKind=key;
   for(const g of [...clothing.values(),...hairObjects.values()])g.visible=false;
   body.position.set(0,0,0);body.scale.setScalar(1);body.updateMatrixWorld(true);
-  const bounds=new THREE.Box3().setFromObject(body);
+  let position=null;body.traverse(m=>{if(!position&&m.isMesh)position=m.geometry.attributes.position;});
+  if(!position)throw Error('Géométrie Anny absente');
+  const bounds=new THREE.Box3().setFromBufferAttribute(position);
   const size=bounds.getSize(new THREE.Vector3()),center=bounds.getCenter(new THREE.Vector3());
   if(!(size.y>.1))throw Error('Dimensions Anny incompatibles');
   const scale=1.75/size.y;
