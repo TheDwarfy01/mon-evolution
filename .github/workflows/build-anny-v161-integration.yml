@@ -1,4 +1,4 @@
-name: Mon Evolution IMC v1.6.163 - Anny integre
+name: Mon Evolution IMC v1.6.164 - Anny integre
 on:
   workflow_dispatch:
   push:
@@ -1175,7 +1175,8 @@ jobs:
           set -euo pipefail
           source /tmp/anny-venv/bin/activate
           assets=android/source-1.6.143/app/src/main/assets
-          python -m py_compile android/anny-prototype/refine_anny_v160.py
+          python -m py_compile android/anny-prototype/refine_anny_v160.py android/anny-prototype/garment_surface.py
+          python android/anny-prototype/test_garment_surface.py
           python android/anny-prototype/refine_anny_v160.py "$assets"
           for sex in male female; do
             for style in long sport; do
@@ -1343,14 +1344,14 @@ jobs:
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" sign \
             --ks /tmp/mon-evolution.jks --ks-key-alias "$KEY_ALIAS" \
             --ks-pass env:KEYSTORE_PASS --key-pass env:KEY_PASS \
-            --out downloads/Mon_Evolution_IMC_v1.6.163.apk /tmp/mon-evolution-aligned.apk
-          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose downloads/Mon_Evolution_IMC_v1.6.163.apk
+            --out downloads/Mon_Evolution_IMC_v1.6.164.apk /tmp/mon-evolution-aligned.apk
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose downloads/Mon_Evolution_IMC_v1.6.164.apk
           rm -f /tmp/mon-evolution.jks
       - name: Conserver l APK signe de validation
         uses: actions/upload-artifact@v4
         with:
-          name: Mon_Evolution_IMC_v1.6.163
-          path: downloads/Mon_Evolution_IMC_v1.6.163.apk
+          name: Mon_Evolution_IMC_v1.6.164
+          path: downloads/Mon_Evolution_IMC_v1.6.164.apk
           retention-days: 7
           if-no-files-found: error
 
@@ -1359,9 +1360,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          if gh release view v1.6.163 >/dev/null 2>&1; then
-            gh release upload v1.6.163 downloads/Mon_Evolution_IMC_v1.6.163.apk --clobber
-            gh release edit v1.6.163 --prerelease=false --latest
+          if gh release view v1.6.164 >/dev/null 2>&1; then
+            gh release upload v1.6.164 downloads/Mon_Evolution_IMC_v1.6.164.apk --clobber
+            gh release edit v1.6.164 --prerelease=false --latest
           else
-            gh release create v1.6.163 downloads/Mon_Evolution_IMC_v1.6.163.apk --target "$GITHUB_SHA" --latest --title "Mon Évolution IMC 1.6.163 — Anny intégré" --notes "Correction de la sélection explicite des fichiers Anny dans Mensurations, diagnostic de chargement détaillé, couverture des épaules revue et cadrage natif agrandi. Enfants et historique inchangés. Sauvegarde recommandée avant installation."
+            gh release create v1.6.164 downloads/Mon_Evolution_IMC_v1.6.164.apk --target "$GITHUB_SHA" --latest --title "Mon Évolution IMC 1.6.164 — Anny intégré" --notes "Anny : lissage contraint du tissu et des coutures, col arrondi, couverture du pantalon revue et contrôles des déformations extrêmes. Repères et mensurations conservés. Enfants et historique inchangés. Sauvegarde recommandée avant installation."
           fi

@@ -6,6 +6,7 @@ import json,struct,sys
 from pathlib import Path
 import numpy as np
 from collections import defaultdict
+from garment_surface import fabric_solver
 
 def read(path):
     raw=path.read_bytes()
@@ -51,12 +52,12 @@ def build(src,dest,style,female):
     cf=v[f].mean(axis=1); t=(v[:,1]-v[:,1].min())/np.ptp(v[:,1])
     h=float(np.ptp(v[:,1]));ft=t[f].mean(axis=1);x=np.abs(cf[:,0])/h
     body=lab[f[:,0]]==main
-    # Torso/sleeves follow the actual arm inclination; no open gaps in the pelvis.
-    # Raise shoulder coverage while keeping the actual neck uncovered.
-    upper=(ft<.81)|((ft<.845)&(x>.060))
-    sleeve=(ft>.60)&upper&(x<(.33 if style=='long' else .22))
-    shirt=body&(((ft>.49)&upper&(x<.15))|sleeve)
-    pants=body&(ft<=.51)&(ft>(.045 if style=='long' else .31))
+    # Rounded neckline and shoulder coverage based on a continuous profile.
+    u=np.clip((x-.035)/.055,0,1)
+    collar=.815+.043*u*u*(3-2*u)
+    sleeve=(ft>.57)&(ft<collar)&(x<(.335 if style=='long' else .22))
+    shirt=body&(((ft>.50)&(ft<collar)&(x<.18))|sleeve)
+    pants=body&(ft<=.515)&(ft>(.047 if style=='long' else .31))&(~shirt)
     group=np.zeros(len(f),dtype=np.int32)
     group[shirt]=1;group[pants]=2
     # Scalp cap: high forehead, lower at back, no material over the eyes.
@@ -81,7 +82,7 @@ def build(src,dest,style,female):
     for k in range(3):np.add.at(incident,(f[:,k],group),1)
     totals=incident.sum(1)
     inset=np.zeros(len(v),dtype=np.float32)
-    for g,amount in [(1,.0055),(2,.0065),(3,.009 if not female else .014)]:
+    for g,amount in [(1,.010),(2,.009),(3,.009 if not female else .014)]:
         inside=(incident[:,g]==totals)&(totals>0)
         inset[inside]=amount
     # Smooth the fitted shell relief over its interior, preserving the shared edges.
@@ -92,19 +93,26 @@ def build(src,dest,style,female):
         s=np.bincount(a,weights=inset[b],minlength=len(v))/np.maximum(degree,1)
         inset=np.where(inset>0,.55*inset+.45*s,0).astype(np.float32)
     # Recompute relief at every morph endpoint so garment and hair follow body.
-    def surface(q):return q+normals(q,f)*inset[:,None]
+    solve,cloth_inside,seams=fabric_solver(f,group,len(v),h)
+    assert np.any(cloth_inside) and np.any(seams)
+    def surface(q):
+        fabric=solve(q)
+        return fabric+normals(fabric,f)*inset[:,None]
     base=surface(v)
     variants=[surface(v+d) for d in delta]
     # Validate numerical integrity and deformation amplitude, not clinical accuracy.
     assert all(np.isfinite(q).all() for q in [base]+variants)
     assert np.abs(delta[18]).max()>.09
     assert np.abs(delta[18]).max()<.45
-    for q in variants:
+    # Test the extreme combined shape as well as each isolated morph.
+    combined=base+(variants[18]-base)+.29*(variants[10]-base)+.65*(variants[12]-base)+.65*(variants[14]-base)
+    assert np.isfinite(combined).all()
+    for q in [base]+variants+[combined]:
         lengths=np.linalg.norm(q[edge[:,0]]-q[edge[:,1]],axis=1)
         assert np.isfinite(lengths).all() and lengths.max()<h*.25
     # Normals updated for all morph targets. Shared vertex arrays and indices.
     buf=bytearray()
-    doc={'asset':{'version':'2.0','generator':'IMC Anny v160 local fitted surface'},
+    doc={'asset':{'version':'2.0','generator':'IMC Anny v164 constrained fabric and seams'},
          'buffers':[{'byteLength':0}],'bufferViews':[],'accessors':[],'materials':[],
          'meshes':[],'nodes':[{'name':'Anny','mesh':0}],'scenes':[{'nodes':[0]}],'scene':0}
     def acc(arr,typ,ctype,target=None,bounds=False):
