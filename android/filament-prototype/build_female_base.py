@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bake native MakeHuman gender_fefefemale morph into the compact CC0 Filament body.
+"""Bake native MakeHuman gender_female morph into the compact CC0 Filament body.
 Keeps all eight textured primitives, removes the source rig and other morphs.
 This creates a genuinely fefemale base before local/global fullness is applied.
 """
@@ -35,8 +35,8 @@ def bake(original,compact,out):
     body_shift=0
     face_shift=0
     for i,((mesh,source_prim),dest_prim) in enumerate(zip(source_prims,target_prims)):
-        assert 'gender_fefefemale' in mesh['extras']['targetNames']
-        gender=mesh['extras']['targetNames'].index('gender_fefefemale')
+        assert 'gender_female' in mesh['extras']['targetNames']
+        gender=mesh['extras']['targetNames'].index('gender_female')
         target=source_prim['targets'][gender]
         displacement=read_morph(source,raw,target['POSITION'])
         a=doc['accessors'][dest_prim['attributes']['POSITION']]
