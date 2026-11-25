@@ -1253,13 +1253,13 @@ jobs:
           grep -Fq 'manager.setMorphWeights(instance,weights,0);' android/source-1.6.143/app/src/main/java/fr/monevolution/app/FilamentPreviewActivity.java
           grep -Fq 'filament-morph-global.glb' android/source-1.6.143/app/src/main/java/fr/monevolution/app/FilamentPreviewActivity.java
           grep -Fq 'filament-male-morph.glb' android/source-1.6.143/app/src/main/java/fr/monevolution/app/FilamentPreviewActivity.java
-          grep -Fq 'filament-detail-textures.glb' android/source-1.6.143/app/src/main/java/fr/monevolution/app/FilamentPreviewActivity.java
+          test -s android/source-1.6.143/app/src/main/assets/filament-detail-textures.glb
           grep -Fq 'viewer.onTouchEvent(event);' android/source-1.6.143/app/src/main/java/fr/monevolution/app/FilamentPreviewActivity.java
           grep -Fq 'filament-male-morph.glb' android/source-1.6.143/app/src/main/java/fr/monevolution/app/FilamentPreviewActivity.java
           grep -Fq 'android.intent.category.LAUNCHER' android/source-1.6.143/app/src/main/AndroidManifest.xml
-          grep -Fq 'filament-base-body.glb' android/source-1.6.143/app/src/main/java/fr/monevolution/app/FilamentPreviewActivity.java
+          test -s android/source-1.6.143/app/src/main/assets/filament-base-body.glb
           grep -Fq 'viewer.getAnimator().updateBoneMatrices();' android/source-1.6.143/app/src/main/java/fr/monevolution/app/FilamentPreviewActivity.java
-          grep -Fq 'filament-simple-body.glb' android/source-1.6.143/app/src/main/java/fr/monevolution/app/FilamentPreviewActivity.java
+          test -s android/source-1.6.143/app/src/main/assets/filament-simple-body.glb
           grep -Fq 'filament-test-cube.glb' android/source-1.6.143/app/src/main/java/fr/monevolution/app/FilamentPreviewActivity.java
           grep -Fq 'viewer.setAutoPlayAnimations(true);' android/source-1.6.143/app/src/main/java/fr/monevolution/app/FilamentPreviewActivity.java
           grep -Fq 'viewer.setAutoPlayAnimations(false);' android/source-1.6.143/app/src/main/java/fr/monevolution/app/FilamentPreviewActivity.java
