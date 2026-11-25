@@ -1310,7 +1310,8 @@ jobs:
         run: |
           set -euo pipefail
           df -h .
-          gradle --no-daemon --stacktrace --info --max-workers=2 :app:assembleRelease
+          free -h
+          gradle --no-daemon --stacktrace --info --max-workers=2 '-Dorg.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=768m -Dfile.encoding=UTF-8' :app:assembleRelease
       - name: Signer l'APK avec la cle officielle existante
         env:
           KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
