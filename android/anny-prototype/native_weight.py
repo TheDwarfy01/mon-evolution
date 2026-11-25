@@ -24,3 +24,40 @@ def extend_native(base,old_heavy,native_heavy):
     assert np.isfinite(out).all()
     print('Native weight extension: old',before,'native',current,'factor',factor,'ratio',ratio)
     return out.astype(base.dtype),factor
+
+
+def boost_native_thighs(base,extended,native_endpoint,without_thigh):
+    """Increase thigh fullness using only the native thigh circumference direction.
+    The smooth height envelope excludes hips, calves and feet, and protects the
+    centre seam from any additional cross-leg overlap.
+    """
+    h=float(np.ptp(base[:,1]))
+    t=(base[:,1]-base[:,1].min())/h
+    cx=float(np.median(base[:,0]))
+    # The lower thigh receives more emphasis than the upper thigh. Blend
+    # smoothly to zero near the knee/calf and pelvic region.
+    def smooth(v):
+        v=np.clip(v,0.,1.)
+        return v*v*(3.-2.*v)
+    envelope=smooth((t-.25)/.075)*smooth((.51-t)/.075)
+    lower=smooth((.43-t)/.10)
+    gain=(1.10+.65*lower)*envelope
+    extra=(native_endpoint-without_thigh)*gain[:,None]
+    extra[:,1]=0.  # no change to leg length or joint height
+    length=np.linalg.norm(extra,axis=1,keepdims=True)
+    extra*=np.minimum(1.,(.030*h)/np.maximum(length,1e-9))
+    side=np.where(base[:,0]>=cx,1.,-1.)
+    old_gap=(extended[:,0]-cx)*side
+    # Do not push an inner thigh farther through the central plane. Preserve
+    # existing contact, and let the native outward volume increase elsewhere.
+    extra[:,0]=side*np.maximum(extra[:,0]*side,-np.maximum(old_gap-.001*h,0.))
+    out=extended+extra
+    assert np.isfinite(out).all()
+    assert np.array_equal(out[:,1],extended[:,1])
+    assert np.array_equal(out[envelope==0],extended[envelope==0])
+    for lo,hi in ((.31,.39),(.39,.47)):
+        mask=(t>=lo)&(t<hi)
+        assert np.count_nonzero(mask)>15
+        print('Thigh native boost',lo,hi,'p90 horizontal',float(np.quantile(np.linalg.norm(extra[mask][:,[0,2]],axis=1),.90)))
+        assert np.quantile(np.linalg.norm(extra[mask][:,[0,2]],axis=1),.90)>1e-5
+    return out.astype(base.dtype)

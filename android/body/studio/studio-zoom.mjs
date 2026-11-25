@@ -18,3 +18,12 @@ export function pinchView(view,oldPair,newPair,width,height){
  return boundedView(zoom,view.x+(a.x-width/2)*oldScale-(b.x-width/2)*newScale,
   view.y-(a.y-height/2)*oldScale+(b.y-height/2)*newScale,width/height);
 }
+
+// A single finger locks to one axis; diagonal gestures favour vertical page scroll.
+export function gestureDirection(dx,dy,threshold=7){
+ if(Math.hypot(dx,dy)<threshold)return 'pending';
+ return Math.abs(dx)>Math.abs(dy)*1.15?'rotate':'scroll';
+}
+export function needsRecenter(view){
+ return view.zoom>1.001||Math.abs(view.x)>.001||Math.abs(view.y)>.001;
+}

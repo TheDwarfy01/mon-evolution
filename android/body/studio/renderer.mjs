@@ -19,7 +19,7 @@ import { estimateVisualMeasurements, readVisualMode, writeVisualMode } from './v
 import {annySnapshot} from './anny-profile.mjs';
 import {ANNY_ANCHORS,annyWeights,visualIndex,annyFile,isAnnyFile} from './anny-inline.mjs';
 import {REGIONS} from './measurement-morph.mjs';
-import {initialView,boundedView,pinchView} from './studio-zoom.mjs';
+import {initialView,boundedView,pinchView,gestureDirection,needsRecenter} from './studio-zoom.mjs';
 
 (()=>{
 'use strict';
@@ -41,7 +41,7 @@ const css=document.createElement('style');
 css.id='makehuman-studio-style';
 css.textContent=[
  '#body-measurements #bm-model.bm-makehuman-active{position:relative!important;isolation:isolate!important;background:radial-gradient(ellipse at 55% 35%,#28536b,#0f263b 78%)!important;}',
- '#body-measurements #bm-model canvas.bm-makehuman-canvas{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;display:block!important;z-index:2!important;touch-action:none;border-radius:12px;}',
+ '#body-measurements #bm-model canvas.bm-makehuman-canvas{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;display:block!important;z-index:2!important;touch-action:pan-y;border-radius:12px;}',
  '#body-measurements .bm-mh-panel{display:flex!important;align-items:center;justify-content:center;gap:9px;flex-wrap:wrap;margin:10px 0 14px!important;padding:11px;border:1px solid #2d6279;border-radius:13px;background:#12354c;}',
  '#body-measurements .bm-mh-panel button{cursor:pointer;border:1px solid #6fcfb9;border-radius:11px;padding:10px 14px;background:#185f68;color:#effffb;min-height:43px;font-weight:650;}',
  '#body-measurements .bm-mh-panel span{font-size:11px;color:#b9d7df;text-align:center;line-height:1.35;width:100%;}',
@@ -151,14 +151,15 @@ const canvas=document.createElement('canvas');canvas.className='bm-makehuman-can
 canvas.setAttribute('aria-label','Mannequin 3D MakeHuman habillé');canvas.setAttribute('role','img');
 stage.append(canvas);
 const zoomTools=document.createElement('div');zoomTools.className='bm-zoom-tools';zoomTools.hidden=true;zoomTools.setAttribute('aria-label','Zoom du mannequin');
-const zoomMinus=document.createElement('button'),zoomReset=document.createElement('button'),zoomPlus=document.createElement('button');
-for(const [button,label,title] of [[zoomMinus,'−','Dézoomer'],[zoomReset,'100 %','Rétablir la vue entière'],[zoomPlus,'+','Zoomer']]){button.type='button';button.textContent=label;button.title=title;button.setAttribute('aria-label',title);zoomTools.append(button);}
+const zoomReset=document.createElement('button');
+zoomReset.type='button';zoomReset.textContent='⤢ Recentrer';zoomReset.title='Rétablir le cadrage initial du mannequin';
+zoomReset.setAttribute('aria-label',zoomReset.title);zoomTools.append(zoomReset);
 stage.append(zoomTools);
 const parser=new GLTFLoader();
 let renderer=null,scene=null,camera=null,mixer=null,figure=null,body=null,lighting=null;
 let active=false,busy=false,disposed=false,autoShowAfterInstall=false,currentKey='',oldStatus='',firstRun=true;
 let lastY=0,yaw=0,raf=0,profileId='',lastProfileCheck=0;
-let cameraView=initialView();const pointers=new Map();
+let cameraView=initialView();const pointers=new Map();let touchGesture=null;
 let studioBounds=null,studioMarkers=null,markerProfile=null,studioBones=[];
 let bodyKind='',annyMesh=null,annyCurrent=null;
 const visualDrafts=new Map();
@@ -703,7 +704,7 @@ async function startPreview(){
   raf=requestAnimationFrame(frame);
  }catch(e){
   console.error('MakeHuman Studio:',e);
-  active=false;zoomTools.hidden=true;pointers.clear();stage.classList.remove('bm-makehuman-active','bm-anny-active');gauges.hidden=true;
+  active=false;zoomTools.hidden=true;pointers.clear();touchGesture=null;stage.classList.remove('bm-makehuman-active','bm-anny-active');gauges.hidden=true;
   if(isAnny(profileInfo())){fallback.hidden=false;fallback.style.display='';}
   btn.textContent='Réessayer le modèle 3D';
   note.textContent='Visualisation indisponible : '+String(e.message||e);
@@ -714,7 +715,7 @@ function stopPreview(manual=false){
   const current=profileInfo();
   if(current)rememberVisibility(current.id,false);
  }
- active=false;zoomTools.hidden=true;pointers.clear();if(raf)cancelAnimationFrame(raf);raf=0;lastY=0;
+ active=false;zoomTools.hidden=true;pointers.clear();touchGesture=null;if(raf)cancelAnimationFrame(raf);raf=0;lastY=0;
  studioMarkers?.update();
  stage.classList.remove('bm-makehuman-active','bm-anny-active');gauges.hidden=true;
  btn.textContent='Afficher le mannequin 3D';
@@ -813,32 +814,71 @@ canvas.addEventListener('webglcontextlost',e=>{
  note.textContent='Rendu graphique interrompu. Le tableau des mensurations reste accessible.';
 });
 function syncZoom(){
- zoomTools.hidden=!active;
- zoomReset.textContent=Math.round(cameraView.zoom*100)+' %';
- zoomMinus.disabled=cameraView.zoom<=1.001;zoomPlus.disabled=cameraView.zoom>=2.999;
+ zoomTools.hidden=!active||!needsRecenter(cameraView);
 }
 function stepZoom(factor){
  if(!active)return;
  cameraView=boundedView(cameraView.zoom*factor,cameraView.x,cameraView.y,canvas.clientWidth/Math.max(1,canvas.clientHeight));
  syncZoom();renderOnce();
 }
-zoomPlus.onclick=()=>stepZoom(1.25);zoomMinus.onclick=()=>stepZoom(.8);
 zoomReset.onclick=()=>{cameraView=initialView();syncZoom();renderOnce();};
 function localPoint(e){const r=canvas.getBoundingClientRect();return {x:e.clientX-r.left,y:e.clientY-r.top};}
+// Native vertical scrolling remains enabled (pan-y). Touch events consume only
+// horizontal rotation and two-finger gestures; pointer events handle mouse/pen.
+const touchPoints=e=>Array.from(e.targetTouches).slice(0,2).map(t=>({...localPoint(t),id:t.identifier}));
+canvas.addEventListener('touchstart',e=>{
+ if(!active)return;
+ const pts=touchPoints(e);
+ if(pts.length===2){
+  if(e.cancelable)e.preventDefault();
+  touchGesture={mode:'pinch',points:pts};
+ }else if(pts.length===1&&!touchGesture){
+  touchGesture={mode:'pending',start:pts[0],points:pts};
+ }
+},{passive:false});
+canvas.addEventListener('touchmove',e=>{
+ if(!active||!touchGesture)return;
+ const pts=touchPoints(e),g=touchGesture;
+ if(pts.length===2){
+  if(!e.cancelable){touchGesture=null;return;}
+  e.preventDefault();
+  if(g.mode==='pinch'&&g.points.length===2){
+   const ordered=g.points.map(p=>pts.find(n=>n.id===p.id));
+   if(ordered.every(Boolean)){
+    cameraView=pinchView(cameraView,g.points,ordered,canvas.clientWidth,canvas.clientHeight);
+    syncZoom();renderOnce();
+   }
+  }
+  touchGesture={mode:'pinch',points:pts};return;
+ }
+ if(pts.length!==1||g.mode==='pinch'||g.mode==='scroll'||g.mode==='after-pinch')return;
+ const p=pts[0];
+ if(g.mode==='pending'){
+  g.mode=gestureDirection(p.x-g.start.x,p.y-g.start.y);
+  if(g.mode==='pending')return;
+ }
+ if(g.mode==='rotate'&&e.cancelable){
+  e.preventDefault();
+  yaw+=(p.x-g.points[0].x)*.008;renderOnce();
+ }
+ g.points=pts;
+},{passive:false});
+canvas.addEventListener('touchend',e=>{
+ const pts=touchPoints(e);
+ touchGesture=pts.length?{mode:'after-pinch',points:pts}:null;
+},{passive:true});
+canvas.addEventListener('touchcancel',()=>{touchGesture=null;},{passive:true});
 canvas.addEventListener('pointerdown',e=>{
- if(!active||pointers.size>=2)return;
- if(e.pointerType==='mouse'&&e.button!==0)return;
- pointers.set(e.pointerId,localPoint(e));canvas.setPointerCapture(e.pointerId);
+ if(!active||e.pointerType==='touch'||e.button!==0)return;
+ pointers.set(e.pointerId,{start:localPoint(e),last:localPoint(e),mode:'pending'});
+ canvas.setPointerCapture(e.pointerId);
 });
 canvas.addEventListener('pointermove',e=>{
  if(!active||!pointers.has(e.pointerId))return;
- const before=[...pointers.values()],point=localPoint(e),prev=pointers.get(e.pointerId);
- pointers.set(e.pointerId,point);
- if(pointers.size===2){
-  cameraView=pinchView(cameraView,before,[...pointers.values()],canvas.clientWidth,canvas.clientHeight);
-  syncZoom();
- }else yaw+=(point.x-prev.x)*.008;
- renderOnce();
+ const p=localPoint(e),g=pointers.get(e.pointerId);
+ if(g.mode==='pending')g.mode=gestureDirection(p.x-g.start.x,p.y-g.start.y);
+ if(g.mode==='rotate'){yaw+=(p.x-g.last.x)*.008;renderOnce();}
+ if(g.mode!=='pending')g.last=p;
 });
 for(const event of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(event,e=>pointers.delete(e.pointerId));
 canvas.addEventListener('wheel',e=>{if(!active||!e.ctrlKey)return;e.preventDefault();stepZoom(Math.exp(-e.deltaY*.002));},{passive:false});
