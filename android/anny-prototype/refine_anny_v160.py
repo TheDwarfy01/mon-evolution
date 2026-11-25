@@ -52,8 +52,10 @@ def build(src,dest,style,female):
     h=float(np.ptp(v[:,1]));ft=t[f].mean(axis=1);x=np.abs(cf[:,0])/h
     body=lab[f[:,0]]==main
     # Torso/sleeves follow the actual arm inclination; no open gaps in the pelvis.
-    sleeve=(ft>.60)&(ft<.81)&(x<(.33 if style=='long' else .22))
-    shirt=body&(((ft>.49)&(ft<.81)&(x<.15))|sleeve)
+    # Raise shoulder coverage while keeping the actual neck uncovered.
+    upper=(ft<.81)|((ft<.845)&(x>.060))
+    sleeve=(ft>.60)&upper&(x<(.33 if style=='long' else .22))
+    shirt=body&(((ft>.49)&upper&(x<.15))|sleeve)
     pants=body&(ft<=.51)&(ft>(.045 if style=='long' else .31))
     group=np.zeros(len(f),dtype=np.int32)
     group[shirt]=1;group[pants]=2

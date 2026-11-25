@@ -17,7 +17,7 @@ import { maskIndexedTriangles, touchesExposedArm, touchesSleeveOpening } from '.
 import {applyUniformBodySkin} from './skin-material.mjs';
 import { estimateVisualMeasurements, readVisualMode, writeVisualMode } from './visual-defaults.mjs';
 import {annySnapshot} from './anny-profile.mjs';
-import {ANNY_ANCHORS,annyWeights,visualIndex} from './anny-inline.mjs';
+import {ANNY_ANCHORS,annyWeights,visualIndex,annyFile,isAnnyFile} from './anny-inline.mjs';
 import {REGIONS} from './measurement-morph.mjs';
 
 (()=>{
@@ -245,9 +245,9 @@ function saveChoice(){
  refreshScene(true);
 }
 async function readGlb(name){
- const anny=/^anny-(?:male|female)-long-morph\.glb$/.test(name);
+ const anny=isAnnyFile(name);
  if(!anny&&!/^(?:base_body_anim|hair_(?:short02|short04|bob02|long01|ponytail01|braid01|afro01)|clothing_(?:tshirt|jeans|shoes))\.glb$/.test(name)){
-  throw Error('Fichier 3D non autorisé');
+  throw Error('Fichier 3D non autorisé : '+String(name));
  }
  const size=anny?bridge.annyAssetBytes(name):bridge.makeHumanStudioBytes(name);
  if(!(size>10000&&size<14000000))throw Error('Ressource absente : '+name);
@@ -657,7 +657,9 @@ async function startPreview(){
   if(!p)throw Error('Complète le sexe, la naissance, la taille et le poids du profil. Seul le tableau est affiché.');
   init();
   const adult=isAnny(p);
-  const gltf=await asset(adult?'anny-'+p.sex+'-long-morph.glb':'base_body_anim.glb');
+  const model=adult?annyFile(p.sex):'base_body_anim.glb';
+  if(!model)throw Error('Profil sans modèle 3D autorisé');
+  const gltf=await asset(model);
   const now=profileInfo();if(!now||now.id!==p.id||now.sex!==p.sex||now.child!==p.child)throw Error('Profil changé pendant le chargement');
   if(adult){attachAnny(gltf,p);}else{
   if(bodyKind!=='studio'){

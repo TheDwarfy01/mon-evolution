@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {ANNY_ANCHORS,annyWeights,visualIndex} from './anny-inline.mjs';
+import {ANNY_ANCHORS,annyWeights,visualIndex,annyFile,isAnnyFile} from './anny-inline.mjs';
 import {REGIONS} from './measurement-morph.mjs';
 const snap={mass:.8,regions:REGIONS.map(r=>({local:r.key==='belly'?1:r.key==='arm'?-.5:0}))};
 test('same 20 target formula as validated native Anny viewer',()=>{
@@ -18,4 +18,12 @@ test('both meshes have all nine real front/back anchors',()=>{
   const ids=ANNY_ANCHORS[sex][r.key];assert.equal(ids.length,2);
   assert.ok(ids.every(i=>Number.isInteger(i)&&i>=0&&i<13718));
  }
+});
+
+test('the adult model names are exactly those accepted by the local Android bridge',()=>{
+ for(const sex of ['male','female'])assert.ok(isAnnyFile(annyFile(sex)));
+ assert.equal(annyFile('male'),'anny-male-long-morph.glb');
+ assert.equal(annyFile('female'),'anny-female-long-morph.glb');
+ assert.equal(annyFile('other'),null);
+ for(const name of ['anny-undefined-long-morph.glb','../anny-male-long-morph.glb','anny-male-long-morph.glb.txt',null])assert.equal(isAnnyFile(name),false);
 });
