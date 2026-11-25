@@ -17,6 +17,8 @@ import { maskIndexedTriangles, touchesExposedArm, touchesSleeveOpening } from '.
 import {applyUniformBodySkin} from './skin-material.mjs';
 import { estimateVisualMeasurements, readVisualMode, writeVisualMode } from './visual-defaults.mjs';
 import {annySnapshot} from './anny-profile.mjs';
+import {ANNY_ANCHORS,annyWeights,visualIndex} from './anny-inline.mjs';
+import {REGIONS} from './measurement-morph.mjs';
 
 (()=>{
 'use strict';
@@ -86,6 +88,60 @@ for(const [mode,label] of [['measured','Mes mesures'],['neutral','↺ Réinitial
 const shapeWarning=document.createElement('p');shapeWarning.className='bm-shape-warning';
 shapeWarning.textContent='Le rendu est indicatif. Rien ne sera effacé ni ajouté à ton historique.';
 shapeControls.append(shapeWarning);controls.insertAdjacentElement('afterend',shapeControls);
+
+const gauges=document.createElement('div');gauges.className='bm-anny-gauges';gauges.hidden=true;
+const gaugeCss=document.createElement('style');
+gaugeCss.textContent='#body-measurements .bm-anny-gauges{padding:10px;border:1px solid #315f77;border-radius:12px;background:#102e41;margin:8px 0;color:#d9f8f2;display:grid;gap:7px}#body-measurements .bm-anny-gauges[hidden]{display:none!important}#body-measurements .bm-anny-gauges label{font-size:12px}#body-measurements .bm-anny-gauges input[type=range]{width:100%;accent-color:#75e8d0;min-height:28px}#body-measurements .bm-anny-gauges select{width:100%;padding:8px;border-radius:8px;color:#e8f9ff;background:#153b52;border:1px solid #47788b}#body-measurements .bm-anny-gauges p{font-size:11px;margin:0;color:#b9d7df}#body-measurements #bm-model.bm-anny-active>.bm-man,#body-measurements #bm-model.bm-anny-active>.bm-point,#body-measurements #bm-model.bm-anny-active>.bm-measure-lines,#body-measurements #bm-model.bm-anny-active>.bm-photo-canvas,#body-measurements #bm-model.bm-anny-active>.bm-photo-fallback{display:none!important}';
+document.head.append(gaugeCss);
+const gaugeTitle=document.createElement('strong');gaugeTitle.textContent='Ajustement de la silhouette';
+const massLabel=document.createElement('label'),massRange=document.createElement('input');
+const regionLabel=document.createElement('label'),regionRange=document.createElement('input');
+const regionSelect=document.createElement('select');regionSelect.setAttribute('aria-label','Zone à ajuster');
+for(const item of REGIONS){const opt=document.createElement('option');opt.value=item.key;opt.textContent=item.label;regionSelect.append(opt);}
+regionSelect.value='belly';
+for(const [range,label] of [[massRange,massLabel],[regionRange,regionLabel]]){
+ range.type='range';range.min='-100';range.max='100';range.step='1';range.id=range===massRange?'anny-mass':'anny-region';label.htmlFor=range.id;
+}
+const gaugeHelp=document.createElement('p');gaugeHelp.textContent='Jauges visuelles uniquement : aucune mesure ni pesée enregistrée n’est modifiée. « Selon mon poids » recale les jauges.';
+gauges.append(gaugeTitle,massLabel,massRange,regionSelect,regionLabel,regionRange,gaugeHelp);
+shapeControls.after(gauges);
+const fallback=document.createElement('button');fallback.type='button';fallback.textContent='Ouvrir en rendu natif';fallback.hidden=true;fallback.style.display='none';
+fallback.onclick=()=>{const p=profileInfo();if(!isAnny(p))return;const snap=annyVisual(p);if(snap)bridge.openAnnyProfile(JSON.stringify(snap));};panel.append(fallback);
+function annyVisual(p){
+ const snap=annySnapshot(p,visualMode(p),displayedMeasurements(p));if(!snap)return null;
+ const sig=JSON.stringify([p.sex,p.height,p.weight,p.lastDate,p.measurements,p.measurementDate,visualMode(p)]);
+ let d=visualDrafts.get(String(p.id));if(d?.sig!==sig){d={sig,local:{}};visualDrafts.set(String(p.id),d);}
+ if(Number.isFinite(d.mass))snap.mass=d.mass;
+ for(const region of snap.regions)if(Number.isFinite(d.local[region.key]))region.local=d.local[region.key];
+ return snap;
+}
+function updateGauges(p,snap){
+ if(!snap)return;
+ const selected=snap.regions.find(x=>x.key===regionSelect.value)||snap.regions[5];
+ massRange.value=String(Math.round(snap.mass*100));
+ massLabel.textContent='Corpulence · poids actuel '+p.weight.toLocaleString('fr-FR')+' kg · indice visuel '+visualIndex(snap.mass);
+ regionRange.value=String(Math.round(selected.local*100));
+ regionLabel.textContent=selected.label+' · '+Math.round(100+50*selected.local)+' % (visuel)';
+}
+function setGauge(kind,value){
+ const p=profileInfo();if(!active||!isAnny(p)||!annyVisual(p))return;
+ const d=visualDrafts.get(String(p.id));
+ if(kind==='mass')d.mass=value;else d.local[regionSelect.value]=value;
+ configure();renderOnce();
+}
+massRange.oninput=()=>setGauge('mass',Number(massRange.value)/100);
+regionRange.oninput=()=>setGauge('region',Number(regionRange.value)/100);
+regionSelect.onchange=()=>{const p=profileInfo();if(isAnny(p))updateGauges(p,annyVisual(p));};
+function selectAnnyGauge(key){if(!gauges.hidden){regionSelect.value=key;regionSelect.onchange();}}
+function setAnnyLayout(enabled){
+ controls.style.setProperty('display',enabled?'none':'','important');
+ if(!enabled)controls.style.removeProperty('display');
+ if(enabled&&shapeControls.previousElementSibling!==stage)stage.after(shapeControls);
+ if(!enabled&&shapeControls.previousElementSibling!==controls)controls.after(shapeControls);
+ if(gauges.previousElementSibling!==shapeControls)shapeControls.after(gauges);
+ gauges.hidden=!enabled||!active;
+}
+
 const canvas=document.createElement('canvas');canvas.className='bm-makehuman-canvas';
 canvas.setAttribute('aria-label','Mannequin 3D MakeHuman habillé');canvas.setAttribute('role','img');
 stage.append(canvas);
@@ -94,9 +150,12 @@ let renderer=null,scene=null,camera=null,mixer=null,figure=null,body=null,lighti
 let active=false,busy=false,disposed=false,autoShowAfterInstall=false,currentKey='',oldStatus='',firstRun=true;
 let lastY=0,yaw=0,pointer=null,raf=0,profileId='',lastProfileCheck=0;
 let studioBounds=null,studioMarkers=null,markerProfile=null,studioBones=[];
+let bodyKind='',annyMesh=null,annyCurrent=null;
+const visualDrafts=new Map();
 const basePositions=new WeakMap();
 const loaded=new Map(),pending=new Map(),clothing=new Map(),hairObjects=new Map();
 const autoTriedProfiles=new Set();
+function isAnny(p){return !!(p&&!p.child&&typeof bridge.annyAssetBytes==='function');}
 function visibilityStore(){try{return window.localStorage;}catch{return null;}}
 function visibilityEnabled(id){return isStudioEnabled(String(id||''),visibilityStore());}
 function rememberVisibility(id,enabled){return setStudioEnabled(String(id||''),enabled,visibilityStore());}
@@ -112,13 +171,14 @@ function syncVisualMode(p){
   mode==='estimated'?
   (p.child?'Enfant : forme illustrative uniquement, sans référence médicale ni norme de croissance.':
     'Silhouette indicative ajustée au poids et à la taille ; une mesure enregistrée remplace l’estimation correspondante.'):
-  'Silhouette fondée sur les tours réellement enregistrés dans ton historique.';
+  (isAnny(p)?'Corpulence indicative selon ton poids ; les tours enregistrés ajustent chaque zone.':'Silhouette fondée sur les tours réellement enregistrés dans ton historique.');
 }
 function setVisualMode(mode){
  const p=profileInfo();if(!p)return;
  if(!writeVisualMode(p.id,mode,visibilityStore())){
   note.textContent='Préférence indisponible : stockage local inaccessible.';return;
  }
+ visualDrafts.delete(String(p.id));
  syncVisualMode(p);
  currentKey='';refreshScene(true);
 }
@@ -127,7 +187,8 @@ function ensureMounted(){
  if(!stage.contains(canvas))stage.append(canvas);
  if(!panel.isConnected)stage.before(panel);
  if(!controls.isConnected)panel.after(controls);
- if(!shapeControls.isConnected)controls.after(shapeControls);
+ if(!shapeControls.isConnected){if(isAnny(profileInfo()))stage.after(shapeControls);else controls.after(shapeControls);}
+ if(!gauges.isConnected)shapeControls.after(gauges);
 }
 new MutationObserver(ensureMounted).observe(stage,{childList:true});
 function profileInfo(){
@@ -184,14 +245,15 @@ function saveChoice(){
  refreshScene(true);
 }
 async function readGlb(name){
- if(!/^(?:base_body_anim|hair_(?:short02|short04|bob02|long01|ponytail01|braid01|afro01)|clothing_(?:tshirt|jeans|shoes))\.glb$/.test(name)){
+ const anny=/^anny-(?:male|female)-long-morph\\.glb$/.test(name);
+ if(!anny&&!/^(?:base_body_anim|hair_(?:short02|short04|bob02|long01|ponytail01|braid01|afro01)|clothing_(?:tshirt|jeans|shoes))\.glb$/.test(name)){
   throw Error('Fichier 3D non autorisé');
  }
- const size=bridge.makeHumanStudioBytes(name);
+ const size=anny?bridge.annyAssetBytes(name):bridge.makeHumanStudioBytes(name);
  if(!(size>10000&&size<14000000))throw Error('Ressource absente : '+name);
  const bytes=new Uint8Array(size);
  for(let start=0;start<size;start+=49152){
-  const part=bridge.makeHumanStudioReadChunk(name,start);
+  const part=anny?bridge.annyAssetReadChunk(name,start):bridge.makeHumanStudioReadChunk(name,start);
   if(!part)throw Error('Lecture impossible : '+name);
   const raw=atob(part);
   if(raw.length>size-start)throw Error('Lecture 3D invalide');
@@ -230,7 +292,8 @@ function init(){
  window.addEventListener('resize',renderOnce);
  studioMarkers=createStudioMarkers({
   stage,figure,camera,getBounds:getBodyBounds,
-  getProfile:()=>markerProfile,getBones:()=>studioBones,isActive:()=>active
+  getProfile:()=>markerProfile,getBones:()=>studioBones,isActive:()=>active,
+  getSurfaceAnchor:annyAnchor,onSelectRegion:selectAnnyGauge
  });
 }
 function registerMaterials(group,type,p){
@@ -451,11 +514,62 @@ function frame(t){
   if(active)raf=requestAnimationFrame(frame);
  }catch(err){
   stopPreview();
+  if(isAnny(profileInfo())){fallback.hidden=false;fallback.style.display='';}
   note.textContent='Erreur 3D : le tableau est conservé ('+String(err.message||err)+').';
  }
 }
+
+function annyAnchor(region,turn){
+ if(!annyMesh||!annyCurrent)return null;
+ const ids=ANNY_ANCHORS[annyCurrent.sex]?.[region.key];if(!ids)return null;
+ const index=ids[Math.cos(turn)<0?1:0];
+ const v=new THREE.Vector3();annyMesh.getVertexPosition(index,v);
+ return annyMesh.localToWorld(v);
+}
+function attachAnny(gltf,p){
+ const key='anny-'+p.sex;
+ if(bodyKind!==key){
+  if(body)figure.remove(body);
+  if(mixer)mixer.stopAllAction();mixer=null;
+  body=gltf.scene;figure.add(body);bodyKind=key;
+  for(const g of [...clothing.values(),...hairObjects.values()])g.visible=false;
+  body.position.set(0,0,0);body.scale.setScalar(1);body.updateMatrixWorld(true);
+  const bounds=new THREE.Box3().setFromObject(body);
+  const size=bounds.getSize(new THREE.Vector3()),center=bounds.getCenter(new THREE.Vector3());
+  if(!(size.y>.1))throw Error('Dimensions Anny incompatibles');
+  const scale=1.75/size.y;
+  body.scale.setScalar(scale);body.position.set(-center.x*scale,-bounds.min.y*scale,-center.z*scale);
+  annyMesh=null;
+  body.traverse(m=>{if(m.isMesh){
+   if(m.geometry.attributes.position.count!==13718||m.morphTargetInfluences?.length!==20)throw Error('Topologie Anny incompatible');
+   if(!annyMesh)annyMesh=m;
+   m.frustumCulled=false;
+  }});
+  if(!annyMesh)throw Error('Maillage Anny absent');
+ }
+ studioBounds={minY:0,height:1.75};studioBones=[];
+}
+function configureAnny(p){
+ const snap=annyVisual(p);if(!snap||!body)return;
+ annyCurrent=snap;profileId=p.id;syncVisualMode(p);
+ const weights=annyWeights(snap);
+ const palette={skin:snap.skin,hair:snap.hair,iris:snap.eyes};
+ body.traverse(m=>{
+  if(!m.isMesh)return;
+  for(let i=0;i<weights.length;i++)m.morphTargetInfluences[i]=weights[i];
+  for(const mat of (Array.isArray(m.material)?m.material:[m.material])){
+   const color=palette[String(mat?.name||'').toLowerCase()];if(color&&mat.color)mat.color.set(color);
+  }
+ });
+ const display=displayedMeasurements(p);
+ markerProfile={...p,visualMeasurements:display.values,estimatedKeys:display.estimatedKeys,measurementMode:visualMode(p),anny:true};
+ camera.position.set(0,1.05,4.5);camera.lookAt(0,.875,0);
+ updateGauges(p,snap);body.updateMatrixWorld(true);
+}
+
 function configure(){
  const p=profileInfo();if(!p||!body)return;
+ if(isAnny(p)){configureAnny(p);return;}
  syncOutfitControl(p);
  syncVisualMode(p);
  const opts=choices(p);
@@ -534,14 +648,20 @@ async function ensureAccessories(p){
 }
 async function startPreview(){
  if(busy||active)return;
- if(profileInfo()&&!profileInfo().child&&typeof bridge.openAnnyProfile==='function')return;
  busy=true;btn.disabled=true;
  note.textContent='Préparation du modèle, des textures et des vêtements…';
  try{
   const p=profileInfo();
   if(!p)throw Error('Complète le sexe, la naissance, la taille et le poids du profil. Seul le tableau est affiché.');
   init();
-  const gltf=await asset('base_body_anim.glb');
+  const adult=isAnny(p);
+  const gltf=await asset(adult?'anny-'+p.sex+'-long-morph.glb':'base_body_anim.glb');
+  const now=profileInfo();if(!now||now.id!==p.id||now.sex!==p.sex||now.child!==p.child)throw Error('Profil changé pendant le chargement');
+  if(adult){attachAnny(gltf,p);}else{
+  if(bodyKind!=='studio'){
+   if(body)figure.remove(body);if(mixer)mixer.stopAllAction();
+   body=null;annyMesh=null;annyCurrent=null;studioBounds=null;bodyKind='studio';
+  }
   if(!body){
    body=gltf.scene;figure.add(body);
    mixer=new THREE.AnimationMixer(body);
@@ -553,16 +673,19 @@ async function startPreview(){
   profileId=p.id;
   autoTriedProfiles.add(String(p.id));
   await ensureAccessories(p);
+  }
   configure();
   stage.classList.add('bm-makehuman-active');
-  active=true;currentKey='';btn.textContent='Masquer le mannequin 3D';
+  active=true;profileId=p.id;autoTriedProfiles.add(String(p.id));currentKey='';btn.textContent='Masquer le mannequin 3D';
+  stage.classList.toggle('bm-anny-active',adult);setAnnyLayout(adult);fallback.hidden=true;fallback.style.display='none';
   rememberVisibility(p.id,true);
-  note.textContent='3D Studio • rendu indicatif, sans valeur médicale • pivoter avec le doigt';
+  note.textContent=(adult?'Anny intégré hors ligne':'3D Studio')+' • rendu indicatif • pivoter avec le doigt';
   refreshScene(true);
   raf=requestAnimationFrame(frame);
  }catch(e){
   console.error('MakeHuman Studio:',e);
-  active=false;stage.classList.remove('bm-makehuman-active');
+  active=false;stage.classList.remove('bm-makehuman-active','bm-anny-active');gauges.hidden=true;
+  if(isAnny(profileInfo())){fallback.hidden=false;fallback.style.display='';}
   btn.textContent='Réessayer le modèle 3D';
   note.textContent='Visualisation indisponible : '+String(e.message||e);
  }finally{busy=false;btn.disabled=false;}
@@ -574,14 +697,13 @@ function stopPreview(manual=false){
  }
  active=false;if(raf)cancelAnimationFrame(raf);raf=0;lastY=0;
  studioMarkers?.update();
- stage.classList.remove('bm-makehuman-active');
+ stage.classList.remove('bm-makehuman-active','bm-anny-active');gauges.hidden=true;
  btn.textContent='Afficher le mannequin 3D';
  note.textContent='Masqué. Le module reste installé pour les prochaines ouvertures.';
 }
 function refreshScene(force){
  if(!active)return;
  const p=profileInfo();
- if(p&&!p.child&&typeof bridge.openAnnyProfile==='function'){stopPreview(false);return;}
  if(!p){stopPreview();note.textContent='Profil incomplet ou sexe non précisé : tableau uniquement.';return;}
  if(profileId!==p.id && !visibilityEnabled(p.id)){
   autoTriedProfiles.delete(String(profileId));
@@ -589,12 +711,15 @@ function refreshScene(force){
   note.textContent='Mannequin désactivé pour ce profil. Active-le pour le conserver aux prochains démarrages.';
   return;
  }
+ const desired=isAnny(p)?'anny-'+p.sex:'studio';
+ if(desired!==bodyKind){stopPreview(false);autoTriedProfiles.delete(String(p.id));if(visibilityEnabled(p.id))startPreview();return;}
  const k=[p.id,p.sex,p.age.toFixed(2),p.height,p.weight,p.initial,
   JSON.stringify(p.measurements),p.measurementDate,visualMode(p),p.skin,p.hair,p.eyes,p.lastDate,
   hairSel.value,faceSel.value,clothSel.value].join('|');
  if(force||k!==currentKey){
   currentKey=k;
   configure();
+  if(isAnny(p))return;
   const wantHair='hair_'+hairSel.value+'.glb';
   const clothes=CLOTHES[clothSel.value]?.files||[];
   if([...clothes,wantHair].some(n=>!(clothing.has(n)||hairObjects.has(n)))){
@@ -606,14 +731,22 @@ function refreshScene(force){
 function updateStatus(){
  if(busy)return;
  const adult=profileInfo();
- if(adult&&!adult.child&&typeof bridge.openAnnyProfile==='function'){
-  if(active)stopPreview(false);
-  oldStatus='anny';btn.disabled=false;btn.textContent='Ouvrir le mannequin 3D Anny';
-  controls.style.setProperty('display','none','important');
-  note.textContent='Anny intégré à l’application · disponible hors ligne, sans téléchargement supplémentaire';
-  syncVisualMode(adult);return;
+ if(isAnny(adult)){
+  if(active&&bodyKind!=='anny-'+adult.sex){stopPreview(false);autoTriedProfiles.delete(String(adult.id));}
+  const changed=oldStatus!=='anny';oldStatus='anny';btn.disabled=false;
+  btn.textContent=active?'Masquer le mannequin 3D':'Afficher le mannequin 3D';
+  setAnnyLayout(true);
+  if(changed)note.textContent='Anny intégré à l’application · sans téléchargement supplémentaire';
+  syncVisualMode(adult);
+  if(!active&&!section.hidden&&visibilityEnabled(adult.id)&&!autoTriedProfiles.has(String(adult.id))){
+   autoTriedProfiles.add(String(adult.id));startPreview();
+  }
+  return;
  }
- if(oldStatus==='anny'){oldStatus='';controls.style.removeProperty('display');}
+ if(oldStatus==='anny'){
+  if(active&&bodyKind.startsWith('anny-'))stopPreview(false);
+  oldStatus='';setAnnyLayout(false);fallback.hidden=true;fallback.style.display='none';
+ }
  const status=bridge.makeHumanStudioState();
  const changed=status!==oldStatus;
  oldStatus=status;
@@ -642,11 +775,7 @@ function updateStatus(){
 }
 btn.addEventListener('click',()=>{
  const p=profileInfo();
- if(p&&!p.child&&typeof bridge.openAnnyProfile==='function'){
-  const snap=annySnapshot(p,visualMode(p),displayedMeasurements(p));
-  if(!snap){note.textContent='Profil incomplet : vérifie la taille et le poids.';return;}
-  bridge.openAnnyProfile(JSON.stringify(snap));return;
- }
+ if(isAnny(p)){if(active)stopPreview(true);else startPreview();return;}
  const status=bridge.makeHumanStudioState();
  if(active){stopPreview(true);return;}
  if(status==='ready'){startPreview();return;}
@@ -661,6 +790,7 @@ clothSel.addEventListener('change',saveChoice);
 canvas.addEventListener('webglcontextlost',e=>{
  e.preventDefault();
  stopPreview();
+ if(isAnny(profileInfo())){fallback.hidden=false;fallback.style.display='';}
  note.textContent='Rendu graphique interrompu. Le tableau des mensurations reste accessible.';
 });
 canvas.addEventListener('pointerdown',e=>{
@@ -676,6 +806,7 @@ window.addEventListener('mon-evolution-appearance-changed',()=>refreshScene(true
 window.addEventListener('mon-evolution-measurements-changed',event=>{
  const detail=event?.detail||{};
  const p=profileInfo();
+ if(p&&String(p.id)===String(detail.profileId))visualDrafts.delete(String(p.id));
  if(p&&String(p.id)===String(detail.profileId)&&visualMode(p)==='estimated'&&
     Array.isArray(detail.changedKeys)&&detail.changedKeys.length)
   recordVisualOverrides(p.id,detail.date,detail.changedKeys,visibilityStore());

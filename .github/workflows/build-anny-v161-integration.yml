@@ -1,4 +1,4 @@
-name: Mon Evolution IMC v1.6.161 - Anny integre
+name: Mon Evolution IMC v1.6.162 - Anny integre
 on:
   workflow_dispatch:
   push:
@@ -6,6 +6,8 @@ on:
     paths:
       - '.github/workflows/build-anny-v161-integration.yml'
       - 'android/body/studio/anny-profile*'
+      - 'android/body/studio/anny-inline*'
+      - 'android/body/studio/measurement-markers.mjs'
       - 'android/body/studio/renderer.mjs'
       - 'android/anny-prototype/**'
 permissions:
@@ -1043,7 +1045,7 @@ jobs:
       - name: Preparer le moteur 3D Studio offline (Three.js MIT)
         run: |
           set -euo pipefail
-          node --test android/body/studio/anny-profile.test.mjs
+          node --test android/body/studio/anny-profile.test.mjs android/body/studio/anny-inline.test.mjs
           npm install --prefix android/body/studio --no-audit --no-fund
           android/body/studio/node_modules/.bin/esbuild android/body/studio/renderer.mjs --bundle --format=iife --target=chrome112 --minify --legal-comments=inline --outfile=android/body/makehuman-studio-bundle.js
           test -s android/body/makehuman-studio-bundle.js
@@ -1326,14 +1328,14 @@ jobs:
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" sign \
             --ks /tmp/mon-evolution.jks --ks-key-alias "$KEY_ALIAS" \
             --ks-pass env:KEYSTORE_PASS --key-pass env:KEY_PASS \
-            --out downloads/Mon_Evolution_IMC_v1.6.161.apk /tmp/mon-evolution-aligned.apk
-          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose downloads/Mon_Evolution_IMC_v1.6.161.apk
+            --out downloads/Mon_Evolution_IMC_v1.6.162.apk /tmp/mon-evolution-aligned.apk
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose downloads/Mon_Evolution_IMC_v1.6.162.apk
           rm -f /tmp/mon-evolution.jks
       - name: Conserver l APK signe de validation
         uses: actions/upload-artifact@v4
         with:
-          name: Mon_Evolution_IMC_v1.6.161
-          path: downloads/Mon_Evolution_IMC_v1.6.161.apk
+          name: Mon_Evolution_IMC_v1.6.162
+          path: downloads/Mon_Evolution_IMC_v1.6.162.apk
           retention-days: 7
           if-no-files-found: error
 
@@ -1342,8 +1344,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          if gh release view v1.6.161 >/dev/null 2>&1; then
-            gh release upload v1.6.161 downloads/Mon_Evolution_IMC_v1.6.161.apk --clobber
+          if gh release view v1.6.162 >/dev/null 2>&1; then
+            gh release upload v1.6.162 downloads/Mon_Evolution_IMC_v1.6.162.apk --clobber
           else
-            gh release create v1.6.161 downloads/Mon_Evolution_IMC_v1.6.161.apk --target "$GITHUB_SHA" --prerelease --latest=false --title "Mon Évolution IMC 1.6.161 — Anny intégré" --notes "Mise à jour de validation avec mannequins adultes Anny intégrés hors ligne, moteur Filament, profil et mensurations existants. Enfants inchangés. Sauvegarde recommandée avant installation."
+            gh release create v1.6.162 downloads/Mon_Evolution_IMC_v1.6.162.apk --target "$GITHUB_SHA" --prerelease --latest=false --title "Mon Évolution IMC 1.6.162 — Anny intégré" --notes "Mannequins adultes Anny dans la page Mensurations, repères liés aux sommets des deux maillages, modes de forme et jauges locales. Rendu natif Filament en secours. Enfants et historique inchangés. Sauvegarde recommandée avant installation."
           fi

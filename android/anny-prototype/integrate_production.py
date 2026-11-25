@@ -11,8 +11,8 @@ def change(s,a,b):
     return s.replace(a,b,1)
 p=root/'build.gradle';s=p.read_text()
 s=change(s,"applicationId 'fr.monevolution.annytest'","applicationId 'fr.monevolution.app'")
-s=change(s,"versionName '1.6.160-anny-test'","versionName '1.6.161'")
-s=change(s,'versionCode 176','versionCode 177')
+s=change(s,"versionName '1.6.160-anny-test'","versionName '1.6.162'")
+s=change(s,'versionCode 176','versionCode 178')
 p.write_text(s)
 p=java/'CameraPhotoProvider.java'
 p.write_text(p.read_text().replace('fr.monevolution.annytest.camera','fr.monevolution.app.camera'))
@@ -28,19 +28,38 @@ s=change(s,'android:name=".FilamentPreviewActivity" android:exported="true"','an
 anchor=re.search(r'<activity\b[^>]*android:name="\.MainActivity"[^>]*>',s)
 assert anchor
 s=s[:anchor.end()]+'\n'+launcher+s[anchor.end():]
-s=re.sub(r'android:versionCode="\d+"','android:versionCode="177"',s,count=1)
-s=re.sub(r'android:versionName="[^"]+"','android:versionName="1.6.161"',s,count=1)
+s=re.sub(r'android:versionCode="\d+"','android:versionCode="178"',s,count=1)
+s=re.sub(r'android:versionName="[^"]+"','android:versionName="1.6.162"',s,count=1)
 p.write_text(s)
 p=assets/'index.html';s=p.read_text()
 s=change(s,'<script src="filament-test.js"></script>','')
-p.write_text(s.replace('1.6.143','1.6.161'))
+p.write_text(s.replace('1.6.143','1.6.162'))
 (assets/'filament-test.js').unlink()
 p=java/'MainActivity.java';s=p.read_text()
 a='''        @JavascriptInterface public void openFilamentPreview(){
             runOnUiThread(()->startActivity(new android.content.Intent(
                 MainActivity.this,FilamentPreviewActivity.class)));
         }'''
-b='''        @JavascriptInterface public void openAnnyProfile(String snapshot){
+b='''        private boolean allowedAnnyAsset(String name){
+            return "anny-male-long-morph.glb".equals(name)||"anny-female-long-morph.glb".equals(name);
+        }
+        @JavascriptInterface public int annyAssetBytes(String name){
+            if(!allowedAnnyAsset(name))return 0;
+            try(java.io.InputStream in=getAssets().open(name)){
+                return in.available();
+            }catch(Exception ex){return 0;}
+        }
+        @JavascriptInterface public String annyAssetReadChunk(String name,int offset){
+            if(!allowedAnnyAsset(name)||offset<0||offset>=14000000)return "";
+            try(java.io.InputStream in=getAssets().open(name)){
+                long skipped=0;
+                while(skipped<offset){long n=in.skip(offset-skipped);if(n<=0)return "";skipped+=n;}
+                byte[] bytes=new byte[49152];int read=0;
+                while(read<bytes.length){int n=in.read(bytes,read,bytes.length-read);if(n<=0)break;read+=n;}
+                return read==0?"":android.util.Base64.encodeToString(bytes,0,read,android.util.Base64.NO_WRAP);
+            }catch(Exception ex){return "";}
+        }
+        @JavascriptInterface public void openAnnyProfile(String snapshot){
             if(snapshot==null||snapshot.length()>12000)return;
             try {
                 org.json.JSONObject data=new org.json.JSONObject(snapshot);

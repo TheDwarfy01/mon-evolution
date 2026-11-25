@@ -8,7 +8,7 @@ import { layoutLandmarkCallouts } from './landmark-layout.mjs';
 import {visibleLandmark} from './landmark-visibility.mjs';
 import {anatomicalAnchor,requiredAnatomicalBones,anatomicalSurfaceOffset} from './landmark-bones.mjs';
 
-export function createStudioMarkers({stage,figure,camera,getBounds,getProfile,getBones,isActive}){
+export function createStudioMarkers({stage,figure,camera,getBounds,getProfile,getBones,isActive,getSurfaceAnchor,onSelectRegion}){
  const style=document.createElement('style');
  style.id='bm-studio-landmark-style';
  style.textContent=[
@@ -78,7 +78,7 @@ export function createStudioMarkers({stage,figure,camera,getBounds,getProfile,ge
    help.textContent='Pour modifier ce profil, ouvre sa fiche de mensurations.';
    return;
   }
-  select(r.key);
+  select(r.key);onSelectRegion?.(r.key);
   heading.textContent=r.label+' · '+editDate.value;
   const value=target.value||p?.measurements?.[r.key];
   input.value=value!==undefined&&value!==null?String(value):'';
@@ -145,7 +145,7 @@ export function createStudioMarkers({stage,figure,camera,getBounds,getProfile,ge
    for(const tag of tags.values())tag.hidden=true;
    leaders.style.display='none';density.hidden=true;close();return;
   }
-  keepMounted();leaders.style.display='';density.hidden=false;
+  keepMounted();leaders.style.display='';density.hidden=!!p.anny;
   const bounds=getBounds(),width=stage.clientWidth,height=stage.clientHeight;
   if(width<120||height<120)return;
   leaders.setAttribute('viewBox','0 0 '+width+' '+height);
@@ -159,7 +159,7 @@ export function createStudioMarkers({stage,figure,camera,getBounds,getProfile,ge
   }
   const items=[];
   for(const r of REGIONS){
-   if(!visibleLandmark(r.key,figure.rotation.y,expanded)){
+   if(!visibleLandmark(r.key,figure.rotation.y,expanded||p.anny)){
     buttons.get(r.key).hidden=true;
     tags.get(r.key).hidden=true;
     paths.get(r.key).setAttribute('points','');
@@ -167,10 +167,10 @@ export function createStudioMarkers({stage,figure,camera,getBounds,getProfile,ge
    }
    const anchor=anatomicalAnchor(r.key,joints);
    const factor=bounds.height/1.75;
-   const pos=anchor?new THREE.Vector3(...anchor)
+   const pos=getSurfaceAnchor?.(r,figure.rotation.y)|| (anchor?new THREE.Vector3(...anchor)
     .add(new THREE.Vector3(...anatomicalSurfaceOffset(r.key,figure.rotation.y,p.height))):
     new THREE.Vector3(r.x*factor,bounds.minY+bounds.height*r.y,
-     (showingBack?-r.z:r.z)*factor).applyMatrix4(figure.matrixWorld);
+     (showingBack?-r.z:r.z)*factor).applyMatrix4(figure.matrixWorld));
    pos.project(camera);
    const x=(pos.x*.5+.5)*width,y=(-pos.y*.5+.5)*height;
    const dot=buttons.get(r.key),tag=tags.get(r.key);
