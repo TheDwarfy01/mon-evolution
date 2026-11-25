@@ -35,7 +35,10 @@ export function estimateVisualMeasurements({height,weight,age,sex,child}={}){
  // The former cube-root formula cancelled height out and left a 116 kg
  // adult visually almost unchanged. Use weight *relative to height*
  // instead, with more expansion at belly/waist than at the extremities.
- const adultExcess=clamp(bmi-23,-11,30);
+ // Keep existing estimates through BMI 53, then extend them gently rather
+ // than freezing all regions at the old upper boundary. These are artwork
+ // references only, not measured or population-predicted circumferences.
+ const adultExcess=clamp(bmi-23,-11,30)+.30*clamp(bmi-53,0,30);
  const childDensity=clamp(17.5-age*.38,11.2,17.5);
  const baselineWeight=Math.pow(metres,3)*childDensity;
  const childBulk=Math.pow(clamp(weight/baselineWeight,.58,2.35),1/3);
@@ -61,8 +64,9 @@ export function estimateVisualMeasurements({height,weight,age,sex,child}={}){
  for(const r of REGIONS){
   const childOrAdultBulk=child?childBulk:clamp(
    1+adultExcess*artisticFactors[r.key]+
-   (r.key==='belly'?.0006*Math.max(0,bmi-30)**2:0),
-   .72,r.key==='belly'?1.98:1.84
+   (r.key==='belly'?.0006*Math.max(0,Math.min(bmi,83)-30)**2:0)+
+   (r.key==='thigh'?.006*clamp(bmi-40,0,43):0),
+   .72,r.key==='belly'?2.25:r.key==='thigh'?2.15:1.96
   );
   const expected=height*r.base*childOrAdultBulk*coefficients[r.key];
   // Avoid illogical inputs and excessive mesh deformation at both extremes.

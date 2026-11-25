@@ -124,7 +124,7 @@ function updateGauges(p,snap){
  if(!snap)return;
  const selected=snap.regions.find(x=>x.key===regionSelect.value)||snap.regions[5];
  massRange.value=String(Math.round(snap.mass*100));
- massLabel.textContent='Corpulence · poids actuel '+p.weight.toLocaleString('fr-FR')+' kg · indice visuel '+visualIndex(snap.mass);
+ massLabel.textContent='Corpulence · '+p.weight.toLocaleString('fr-FR')+' kg · IMC '+(p.weight/(p.height/100)**2).toLocaleString('fr-FR',{maximumFractionDigits:1})+' · indice visuel '+visualIndex(snap.mass);
  regionRange.value=String(Math.round(selected.local*100));
  regionLabel.textContent=selected.label+' · '+Math.round(100+50*selected.local)+' % (visuel)';
 }

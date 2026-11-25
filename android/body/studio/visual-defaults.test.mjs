@@ -96,3 +96,15 @@ test('upper arm and forearm scale moderately with weight for female and male',()
   assert.ok(heavy.forearm<heavy.arm);
  }
 });
+
+test('adult extreme BMI reference estimates remain bounded and thigh volume grows',()=>{
+ const at=(bmi,sex)=>estimateVisualMeasurements({height:170,weight:bmi*1.7**2,age:40,sex,child:false});
+ for(const sex of ['male','female']){
+  const a=at(40,sex),b=at(50,sex),c=at(60,sex),d=at(83,sex);
+  assert.ok(a.thigh<b.thigh&&b.thigh<c.thigh&&c.thigh<=d.thigh);
+  for(const r of REGIONS){
+   assert.ok(validMeasure(r.key,d[r.key]));
+   assert.ok(b[r.key]>=a[r.key]&&c[r.key]>=b[r.key]&&d[r.key]>=c[r.key]);
+  }
+ }
+});
