@@ -71,16 +71,15 @@ export function createStudioMarkers({stage,figure,camera,getBounds,getProfile,ge
  }
  function openEditor(r,event){
   event?.preventDefault();event?.stopPropagation();
-  if(!isActive()||stage.classList.contains('bm-color-mode'))return;
+  if(!isActive()||(stage.classList.contains('bm-color-mode')||stage.classList.contains('bm-labels-hidden')))return;
   const p=getProfile(),target=document.getElementById('bm-'+r.key);
-  const editDate=document.getElementById('bm-date');
-  if(!target||!editDate||target.disabled){
+  if(!p||!target||target.disabled||typeof window.bmSaveSingleMeasurement!=='function'){
    help.textContent='Pour modifier ce profil, ouvre sa fiche de mensurations.';
    return;
   }
   select(r.key);onSelectRegion?.(r.key);
-  heading.textContent=r.label+' · '+editDate.value;
-  const value=target.value||p?.measurements?.[r.key];
+  heading.textContent=r.label+' · Aujourd’hui';
+  const value=p?.measurements?.[r.key];
   input.value=value!==undefined&&value!==null?String(value):'';
   input.min=String(r.min);input.max=String(r.max);
   input.setAttribute('aria-label',r.label+' en centimètres');
@@ -120,16 +119,9 @@ export function createStudioMarkers({stage,figure,camera,getBounds,getProfile,ge
    help.textContent='Entre une valeur entre '+r.min+' et '+r.max+' cm.';
    input.focus();return;
   }
-  const target=document.getElementById('bm-'+selected),submit=document.getElementById('bm-save');
-  if(!target||!submit||target.disabled||submit.disabled){
-   help.textContent='Saisie indisponible pour ce profil en lecture seule.';return;
-  }
-  target.value=String(Math.round(number*10)/10);
-  target.dispatchEvent(new Event('input',{bubbles:true}));
-  submit.click();
-  const status=document.getElementById('bm-status')?.textContent||'';
-  if(status.startsWith('✓'))close();
-  else help.textContent=status||'Vérifie les valeurs et la date de la mesure.';
+  const p=getProfile();
+  if(p&&window.bmSaveSingleMeasurement?.(selected,number,p.id))close();
+  else help.textContent='Saisie non enregistrée. Vérifie le profil ou la saisie historique.';
  };
  const keepMounted=()=>{
   if(!leaders.isConnected)stage.append(leaders);
@@ -140,7 +132,7 @@ export function createStudioMarkers({stage,figure,camera,getBounds,getProfile,ge
  new MutationObserver(keepMounted).observe(stage,{childList:true});
  function update(){
   const p=getProfile();
-  if(!isActive()||!p||!camera||!figure||stage.classList.contains('bm-color-mode')){
+  if(!isActive()||!p||!camera||!figure||(stage.classList.contains('bm-color-mode')||stage.classList.contains('bm-labels-hidden'))){
    for(const btn of buttons.values())btn.hidden=true;
    for(const tag of tags.values())tag.hidden=true;
    leaders.style.display='none';density.hidden=true;close();return;

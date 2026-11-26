@@ -52,6 +52,9 @@
   '#body-measurements #bm-model > #bm-colors .bm-color-value{font-size:10px;line-height:1.15;overflow-wrap:anywhere}',
   '#body-measurements #bm-model .bm-colors-toggle{position:absolute;right:8px;top:8px;z-index:14;min-height:34px;min-width:38px;padding:5px 8px;border:1px solid #639ba3;border-radius:8px;background:#103e52ef;color:#e3fffb;font-size:17px;touch-action:manipulation}',
   '#body-measurements #bm-model .bm-colors-toggle[aria-expanded="true"]{background:#226e70;border-color:#91efdc}',
+  '#body-measurements #bm-model .bm-labels-toggle{position:absolute;right:8px;bottom:8px;z-index:14;min-height:34px;min-width:38px;padding:5px 8px;border:1px solid #639ba3;border-radius:8px;background:#103e52ef;color:#e3fffb;font-size:17px;touch-action:manipulation}',
+  '#body-measurements #bm-model.bm-color-mode .bm-labels-toggle{display:none!important}',
+  '#body-measurements #bm-model.bm-labels-hidden .bm-point,#body-measurements #bm-model.bm-labels-hidden .bm-measure-lines,#body-measurements #bm-model.bm-labels-hidden .bm-studio-landmarks,#body-measurements #bm-model.bm-labels-hidden .bm-studio-leaders,#body-measurements #bm-model.bm-labels-hidden .bm-studio-entry,#body-measurements #bm-model.bm-labels-hidden .bm-studio-density{display:none!important}',
   '#body-measurements #bm-model.bm-color-mode .bm-point,#body-measurements #bm-model.bm-color-mode .bm-measure-lines,#body-measurements #bm-model.bm-color-mode .bm-studio-landmarks,#body-measurements #bm-model.bm-color-mode .bm-studio-leaders,#body-measurements #bm-model.bm-color-mode .bm-studio-entry,#body-measurements #bm-model.bm-color-mode .bm-studio-density{display:none!important}',
   '#body-measurements #bm-model .bm-studio-density{top:auto!important;bottom:8px!important}',
   '#body-measurements #bm-main.bm-table-only .bm-colors-toggle,#body-measurements #bm-main.bm-table-only #bm-colors{display:none!important}',
@@ -210,19 +213,33 @@
  nav.append(customize);
  stage.insertAdjacentElement('afterend',nav);
  palette.hidden=true;
- stage.append(palette,colorToggle);
+ const labelsToggle=document.createElement('button');labelsToggle.type='button';labelsToggle.className='bm-labels-toggle';
+ let labelsHidden=false;try{labelsHidden=localStorage.getItem('bm-mannequin-labels-hidden')==='1';}catch{}
+ function syncLabels(){
+  stage.classList.toggle('bm-labels-hidden',labelsHidden);
+  labelsToggle.textContent=labelsHidden?'👁':'◉';
+  labelsToggle.title=labelsHidden?'Afficher les repères':'Masquer les repères';
+  labelsToggle.setAttribute('aria-label',labelsToggle.title);
+  labelsToggle.setAttribute('aria-pressed',String(!labelsHidden));
+  window.dispatchEvent(new Event('mon-evolution-color-mode-changed'));
+ }
+ labelsToggle.onclick=()=>{labelsHidden=!labelsHidden;try{localStorage.setItem('bm-mannequin-labels-hidden',labelsHidden?'1':'0');}catch{}syncLabels();};
+ stage.append(palette,colorToggle,labelsToggle);syncLabels();
  // Stage may be rebuilt after profile changes, so reattach the existing controls.
  new MutationObserver(()=>{
   if(!stage.contains(palette))stage.append(palette);
   if(!stage.contains(colorToggle))stage.append(colorToggle);
+  if(!stage.contains(labelsToggle))stage.append(labelsToggle);
  }).observe(stage,{childList:true});
  syncColorMode();
  // Keep date, all saved measurements, chart and history intact.
- const form=right.querySelector('.bm-card');
+ const form=document.getElementById('bm-history-editor');
  if(form){
   const save=form.querySelector('#bm-save');
   if(save)save.textContent='✓ Enregistrer';
   const title=form.querySelector('h3');
-  if(title)title.textContent='▣ Enregistrer les mensurations';
+  if(title)title.textContent='▣ Saisie datée';
+  const history=document.getElementById('bm-history-card');
+  if(history)history.append(form);
  }
 })();

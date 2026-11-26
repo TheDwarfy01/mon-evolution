@@ -47,7 +47,8 @@
  // COLOR_SLIDER_HELPERS_END
  const APPEARANCE='bodyAppearance', RECORDS='bodyMeasurements';
  let selectedMetric='waist',editingDate=dateNow(),chartSet=new Set(['waist','belly','hips']);
- let draftDirty=false;
+ let draftDirty=false,showGraphLabels=false;
+ try{showGraphLabels=localStorage.getItem('bm-graph-value-labels')==='1';}catch{}
  const dirtyMetricKeys=new Set();
  const get=id=>document.getElementById(id);
  const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -145,6 +146,11 @@
   '.bm-swatches{display:flex;gap:7px;flex-wrap:wrap}',
   '.bm-swatch{width:29px;height:29px;border-radius:50%;border:2px solid #7891a0;cursor:pointer;box-shadow:0 1px 4px #061725}',
   '.bm-swatch[aria-pressed="true"]{outline:2px solid #71f2d6;outline-offset:2px}',
+  '#bm-history-editor[hidden]{display:none!important}',
+  '.bm-history-tools,.bm-graph-tools{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:8px 0}',
+  '.bm-graph-tools button,.bm-history-tools button{min-height:36px;font-size:12px}',
+  '#bm-graph .bm-graph-value{pointer-events:none;font-size:11px;paint-order:stroke;stroke:#092b3e;stroke-width:3px;stroke-linejoin:round}',
+  '#bm-graph .bm-graph-hit{cursor:pointer;touch-action:manipulation}',
   '.bm-form-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}',
   '.bm-form-grid label{font-size:12px;color:#c9e2eb;display:block;min-width:0}',
   '.bm-form-grid input,.bm-date,#bm-chart-select{width:100%;border:1px solid #466a7d;border-radius:11px;color:#f6fdff;background:#0b2535;padding:11px 8px;font-size:15px;min-width:0}',
@@ -230,17 +236,18 @@
     '<div class="bm-last" id="bm-latest"></div>'+
    '</div>'+
    '<div style="display:grid;gap:13px;align-content:start">'+
-    '<div class="bm-card"><h3>▣ Enregistrer les mensurations</h3>'+
+    '<div class="bm-card" id="bm-history-editor" hidden><h3>▣ Enregistrer les mensurations</h3>'+
       '<label class="bm-hint" for="bm-date">Date de mesure</label>'+
       '<input id="bm-date" class="bm-date" type="date" style="margin:6px 0 12px"/>'+
       '<div id="bm-fields" class="bm-form-grid"></div>'+
       '<button id="bm-save" class="bm-save" type="button">✓ Enregistrer les mensurations</button>'+
-      '<small id="bm-status" class="bm-status" role="status"></small>'+
+      '<small id="bm-status" class="bm-status" role="status"></small>'+ 
+      '<button type="button" class="bm-button" id="bm-history-close">Fermer la saisie</button>'+
       '<div class="bm-photo-actions"><button type="button" class="bm-button" id="bm-pick-photo">📷 Photo de progression</button><button type="button" class="bm-button" id="bm-remove-photo" hidden>Supprimer la photo</button></div>'+
       '<div id="bm-photo-box"></div>'+
     '</div>'+
-    '<div class="bm-card"><h3>☷ Historique des mensurations</h3><div class="bm-history" id="bm-history"></div></div>'+
-    '<div class="bm-card"><h3>↗ Évolution des mensurations</h3><p class="bm-hint">Sélectionne les courbes à comparer.</p><div id="bm-legend" class="bm-key"></div><svg id="bm-graph" class="bm-progress" viewBox="0 0 500 265" role="img" aria-label="Graphique des mensurations"></svg><p class="bm-hint">Mesures renseignées uniquement — pas d’interpolation médicale.</p></div>'+
+    '<div class="bm-card" id="bm-history-card"><h3>☷ Historique des mensurations</h3><div class="bm-history-tools"><button type="button" class="bm-button" id="bm-history-add">＋ Ajouter des mensurations</button></div><div class="bm-history" id="bm-history"></div></div>'+
+    '<div class="bm-card"><h3>↗ Évolution des mensurations</h3><p class="bm-hint">Sélectionne les courbes à comparer.</p><div class="bm-graph-tools"><button type="button" class="bm-button" id="bm-graph-add">＋ Ajouter</button><button type="button" class="bm-button" id="bm-graph-labels" aria-pressed="false">Afficher les étiquettes</button></div><div id="bm-legend" class="bm-key"></div><svg id="bm-graph" class="bm-progress" viewBox="0 0 500 265" role="img" aria-label="Graphique des mensurations"></svg><p class="bm-hint">Mesures renseignées uniquement — pas d’interpolation médicale.</p></div>'+
    '</div>'+
   '</div>';
  const coords={
@@ -282,8 +289,7 @@
    name.append(strong,small);b.append(name);
    b.onclick=()=>{
     selectedMetric=m.key;
-    const input=get('bm-'+m.key);
-    if(input){input.focus();input.scrollIntoView({behavior:'smooth',block:'center'})}
+    openHistoryEditor(dateNow(),m.key);
     [...stage.querySelectorAll('.bm-point')].forEach(e=>e.dataset.active=String(e===b));
    };
    stage.append(b);
@@ -347,6 +353,29 @@
   draftDirty=false;dirtyMetricKeys.clear();
   get('bm-status').textContent=r?'Mesures du '+day(editingDate)+' chargées.':'Nouvelle saisie.';
  }
+ function openHistoryEditor(date=dateNow(),key=null){
+  if(!local()||adult(profile())!==true)return false;
+  if(!validBirth(date))return false;
+  if(draftDirty&&date!==editingDate&&!confirm('Modifications non enregistrées. Changer de date ?'))return false;
+  get('bm-history-editor').hidden=false;
+  if(date!==editingDate||!draftDirty){get('bm-date').value=date;dateChosen();}
+  const field=key?get('bm-'+key):null;
+  (field||get('bm-history-editor')).scrollIntoView({behavior:'smooth',block:'center'});
+  field?.focus({preventScroll:true});return true;
+ }
+ window.bmOpenHistoryEditor=openHistoryEditor;
+ // Today's individual observation: merge ONE field only, preserving other
+ // measurements and photos on this date as well as any dated history draft.
+ window.bmSaveSingleMeasurement=function(key,value,profileId){
+  const p=profile(),m=metricByKey[key],date=dateNow();
+  if(!local()||adult(p)!==true||String(p.id)!==String(profileId)||!m||!Number.isFinite(value)||value<m.min||value>m.max)return false;
+  if(draftDirty&&!confirm('Une saisie historique est en cours. L’enregistrer avant de saisir une mesure actuelle ?'))return false;
+  if(draftDirty){saveMeasurements();if(draftDirty)return false;}
+  const rec=ensureRecord(p,date);rec[key]=Math.round(value*10)/10;rec.updatedAt=new Date().toISOString();
+  save();renderData();
+  window.dispatchEvent(new CustomEvent('mon-evolution-measurements-changed',{detail:{profileId:p.id,date,changedKeys:[key]}}));
+  return true;
+ };
  function drawFields(){
   const fields=get('bm-fields');fields.replaceChildren();
   for(const m of METRICS){
@@ -409,8 +438,7 @@
    const edit=document.createElement('button');edit.className='bm-button';edit.type='button';edit.title='Modifier';
    edit.setAttribute('aria-label','Modifier les mensurations du '+day(r.date));edit.textContent='✎';
    edit.onclick=()=>{
-    if(draftDirty&&!confirm('Des modifications ne sont pas enregistrées. Ouvrir une autre date ?'))return;
-    get('bm-date').value=r.date;dateChosen();get('bm-date').scrollIntoView({behavior:'smooth',block:'center'});
+    openHistoryEditor(r.date);
    };
    const del=document.createElement('button');del.className='bm-button';del.type='button';del.title='Supprimer';
    del.setAttribute('aria-label','Supprimer les mensurations du '+day(r.date));del.textContent='🗑';
@@ -426,6 +454,7 @@
   }
  }
  function renderGraph(){
+  const toggle=get('bm-graph-labels');toggle.setAttribute('aria-pressed',String(showGraphLabels));toggle.textContent=showGraphLabels?'Masquer les étiquettes':'Afficher les étiquettes';
   const key=get('bm-legend');key.replaceChildren();
   for(const m of METRICS){
    const label=document.createElement('label');
@@ -468,6 +497,10 @@
    for(const pt of pts){
     const circ=el('circle',{cx:pt.x,cy:pt.y,r:4.3,fill:m.color,stroke:'#17394a','stroke-width':1.5});
     const title=document.createElementNS(NS,'title');title.textContent=m.label+' · '+day(pt.date)+' : '+format(pt.value)+' cm';circ.append(title);
+    const hit=el('circle',{cx:pt.x,cy:pt.y,r:11,fill:'transparent',class:'bm-graph-hit',role:'button',tabindex:0,'aria-label':title.textContent+' · Modifier'});
+    hit.addEventListener('click',()=>openHistoryEditor(pt.date,m.key));
+    hit.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openHistoryEditor(pt.date,m.key);}});
+    if(showGraphLabels)el('text',{x:pt.x,y:pt.y-10,fill:m.color,'text-anchor':'middle',class:'bm-graph-value'},format(pt.value));
    }
   }
  }
@@ -560,6 +593,16 @@
   dateChosen();
  });
  get('bm-save').onclick=saveMeasurements;
+ get('bm-history-add').onclick=get('bm-graph-add').onclick=()=>openHistoryEditor();
+ get('bm-history-close').onclick=()=>{
+  if(draftDirty&&!confirm('Fermer sans enregistrer les modifications ?'))return;
+  dateChosen();get('bm-history-editor').hidden=true;
+ };
+ get('bm-graph-labels').onclick=()=>{
+  showGraphLabels=!showGraphLabels;
+  try{localStorage.setItem('bm-graph-value-labels',showGraphLabels?'1':'0');}catch{}
+  renderGraph();
+ };
  get('bm-pick-photo').onclick=()=>{
   if(adult(profile())!==true)return;
   if(draftDirty){

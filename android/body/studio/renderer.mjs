@@ -895,7 +895,7 @@ window.addEventListener('mon-evolution-measurements-changed',event=>{
 });
 window.annyFocusMeasurement=(id,key)=>{
  const p=profileInfo();if(!p||String(p.id)!==id||!['neck','chest','arm','forearm','waist','belly','hips','thigh','calf'].includes(key))return;
- const input=document.getElementById('bm-'+key);if(input&&!input.disabled){input.scrollIntoView({block:'center'});input.focus();}
+ window.bmOpenHistoryEditor?.(undefined,key);
 };
 window.addEventListener('mon-evolution-studio-ready',updateStatus);
 setInterval(()=>{if(section.hidden)return;updateStatus();},1400);
