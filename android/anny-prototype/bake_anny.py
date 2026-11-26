@@ -8,7 +8,7 @@ import numpy as np
 import torch
 import anny
 import socket
-from native_weight import extend_native,boost_native_thighs
+from native_weight import extend_native,boost_native_thighs,boost_native_belly
 
 # Fail rather than silently fetching external body assets.
 def no_network(*a, **kw):
@@ -85,6 +85,9 @@ def export(gender,path):
     # Compare two native heavy samples differing only by thigh circumference.
     without_thigh={**heavy,'measure-thigh-circ-incr':0.}
     extended=boost_native_thighs(base,extended,native_endpoint,sample(gender,1.,without_thigh))
+    extended=boost_native_belly(base,extended,native_endpoint,
+        sample(gender,1.,{**heavy,'torso-scale-depth-incr':0.}),
+        sample(gender,1.,{**heavy,'measure-waist-circ-incr':0.}),bool(gender))
     variants += [extended,sample(gender,0.)]
     # Keep the original garment classification, then apply the rig displacement
     # after fabric smoothing. Heavy endpoint uses a smaller angle for clearance.

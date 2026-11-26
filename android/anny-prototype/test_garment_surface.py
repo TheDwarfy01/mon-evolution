@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 from garment_surface import fabric_solver,front_patch,gentle_chest_solver,adjacency,peak_relief
-from native_weight import native_excursion,extend_native,boost_native_thighs
+from native_weight import native_excursion,extend_native,boost_native_thighs,boost_native_belly
 
 class GarmentTests(unittest.TestCase):
     def test_smoothing_preserves_exposed_skin_and_vertex_count(self):
@@ -107,4 +107,16 @@ class GarmentTests(unittest.TestCase):
         lower=(base[:,1]>.32)&(base[:,1]<.38)
         self.assertGreater(float(np.mean(out[lower,2])),.015)
         self.assertLessEqual(float(np.linalg.norm(out-extended,axis=1).max()),.030001)
+    def test_belly_native_projection_excludes_chest_and_legs(self):
+        base=np.zeros((13718,3),dtype=np.float32)
+        base[:,1]=np.linspace(0.,1.,len(base))
+        base[:,2]=.1
+        base[10780,2]=.15; base[10975,2]=-.15
+        native=base.copy();native[:,2]+=.025
+        out=boost_native_belly(base,base,native,base,native,False)
+        outside=(base[:,1]<=.49)|(base[:,1]>=.72)
+        np.testing.assert_array_equal(out[outside],base[outside])
+        np.testing.assert_array_equal(out[:,1],base[:,1])
+        self.assertGreater(float(np.max(out[:,2]-base[:,2])),.025)
+        self.assertLessEqual(float(np.max(out[:,2]-base[:,2])),.045001)
 if __name__=='__main__':unittest.main()

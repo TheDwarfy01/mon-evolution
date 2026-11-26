@@ -127,7 +127,7 @@ def build(src,dest,style,female):
         assert np.isfinite(lengths).all() and lengths.max()<h*.25
     # Normals updated for all morph targets. Shared vertex arrays and indices.
     buf=bytearray()
-    doc={'asset':{'version':'2.0','generator':'IMC Anny v172 native thigh fullness and local male fabric finish'},
+    doc={'asset':{'version':'2.0','generator':'IMC Anny v175 native abdominal projection and thigh fullness'},
          'buffers':[{'byteLength':0}],'bufferViews':[],'accessors':[],'materials':[],
          'meshes':[],'nodes':[{'name':'Anny','mesh':0}],'scenes':[{'nodes':[0]}],'scene':0}
     def acc(arr,typ,ctype,target=None,bounds=False):

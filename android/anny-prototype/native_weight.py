@@ -61,3 +61,31 @@ def boost_native_thighs(base,extended,native_endpoint,without_thigh):
         print('Thigh native boost',lo,hi,'p90 horizontal',float(np.quantile(np.linalg.norm(extra[mask][:,[0,2]],axis=1),.90)))
         assert np.quantile(np.linalg.norm(extra[mask][:,[0,2]],axis=1),.90)>1e-5
     return out.astype(base.dtype)
+
+def boost_native_belly(base,extended,native_endpoint,without_depth,without_waist,female):
+    """Amplify native abdominal directions only, tapering before chest and hips."""
+    h=float(np.ptp(base[:,1]))
+    t=(base[:,1]-base[:,1].min())/h
+    front,back=((10772,10797) if female else (10780,10975))
+    sign=1. if base[front,2]>=base[back,2] else -1.
+    mid=(base[front,2]+base[back,2])*.5
+    def smooth(x):
+        x=np.clip(x,0.,1.)
+        return x*x*(3.-2.*x)
+    envelope=smooth((t-.49)/.065)*smooth((.72-t)/.075)
+    lower=1.+.35*smooth((.65-t)/.08)
+    facing=smooth((base[:,2]-mid)*sign/(.055*h))
+    depth=native_endpoint-without_depth
+    waist=native_endpoint-without_waist
+    extra=np.zeros_like(base)
+    extra[:,2]=sign*np.maximum(sign*depth[:,2],0.)*envelope*lower*facing*2.2
+    extra[:,0]=waist[:,0]*envelope*lower*.65
+    length=np.linalg.norm(extra,axis=1,keepdims=True)
+    extra*=np.minimum(1.,(.045*h)/np.maximum(length,1e-9))
+    out=extended+extra
+    assert np.isfinite(out).all()
+    assert np.array_equal(out[envelope==0],extended[envelope==0])
+    assert np.array_equal(out[:,1],extended[:,1])
+    assert np.max(extra[:,2]*sign)>1e-4,'Native abdominal projection missing'
+    print('Native belly reinforcement: maximum forward displacement',float(np.max(extra[:,2]*sign)))
+    return out.astype(base.dtype)
