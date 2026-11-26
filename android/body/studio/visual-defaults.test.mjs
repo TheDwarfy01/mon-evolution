@@ -108,3 +108,7 @@ test('adult extreme BMI reference estimates remain bounded and thigh volume grow
   }
  }
 });
+
+test('manual mode persists independently from automatic weight mode',()=>{
+ const s=store();assert.equal(writeVisualMode('a','manual',s),true);assert.equal(readVisualMode('a',s),'manual');assert.equal(writeVisualMode('a','estimated',s),true);assert.equal(readVisualMode('a',s),'estimated');
+});

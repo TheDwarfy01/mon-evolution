@@ -4,7 +4,7 @@
  * Children's values are especially approximate and are NOT growth norms.
  */
 import { REGIONS,validMeasure } from './measurement-morph.mjs';
-export const VISUAL_MODES=Object.freeze(['measured','neutral','estimated']);
+export const VISUAL_MODES=Object.freeze(['measured','neutral','estimated','manual']);
 const clamp=(v,min,max)=>Math.min(max,Math.max(min,v));
 const round1=v=>Math.round(v*10)/10;
 export function visualModeKey(profileId){

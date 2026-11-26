@@ -1,4 +1,4 @@
-name: Mon Evolution IMC v1.6.176 - Anny integre
+name: Mon Evolution IMC v1.6.177 - Anny integre
 on:
   workflow_dispatch:
   push:
@@ -1125,7 +1125,7 @@ jobs:
           node --check android/body/studio/measurement-markers.mjs
           grep -Fq 'resolveVisualMeasurements(p,visualMode(p)' android/body/studio/renderer.mjs
           grep -Fq 'layoutLandmarkCallouts(items,width,height' android/body/studio/measurement-markers.mjs
-          grep -Fq "[['measured','Mes mesures'],['neutral','↺ Réinitialiser'],['estimated','≈ Selon mon poids']]" android/body/studio/renderer.mjs
+          grep -Fq "[['measured','Mes mesures'],['neutral','↺ Réinitialiser'],['estimated','≈ Selon mon poids'],['manual','Manuel']]" android/body/studio/renderer.mjs
           grep -Fq 'maskIndexedTriangles(initial' android/body/studio/renderer.mjs
           ! grep -Fq 'const kept=[]' android/body/studio/renderer.mjs
           node --check android/body/studio/renderer.mjs
@@ -1355,14 +1355,14 @@ jobs:
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" sign \
             --ks /tmp/mon-evolution.jks --ks-key-alias "$KEY_ALIAS" \
             --ks-pass env:KEYSTORE_PASS --key-pass env:KEY_PASS \
-            --out downloads/Mon_Evolution_IMC_v1.6.176.apk /tmp/mon-evolution-aligned.apk
-          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose downloads/Mon_Evolution_IMC_v1.6.176.apk
+            --out downloads/Mon_Evolution_IMC_v1.6.177.apk /tmp/mon-evolution-aligned.apk
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose downloads/Mon_Evolution_IMC_v1.6.177.apk
           rm -f /tmp/mon-evolution.jks
       - name: Conserver l APK signe de validation
         uses: actions/upload-artifact@v4
         with:
-          name: Mon_Evolution_IMC_v1.6.176
-          path: downloads/Mon_Evolution_IMC_v1.6.176.apk
+          name: Mon_Evolution_IMC_v1.6.177
+          path: downloads/Mon_Evolution_IMC_v1.6.177.apk
           retention-days: 7
           if-no-files-found: error
 
@@ -1372,11 +1372,11 @@ jobs:
         run: |
           set -euo pipefail
           # Stable direct-download alias: same signed APK bytes, same name for every release.
-          cp downloads/Mon_Evolution_IMC_v1.6.176.apk downloads/Mon_Evolution_IMC.apk
-          cmp downloads/Mon_Evolution_IMC_v1.6.176.apk downloads/Mon_Evolution_IMC.apk
-          if gh release view v1.6.176 >/dev/null 2>&1; then
-            gh release upload v1.6.176 downloads/Mon_Evolution_IMC_v1.6.176.apk downloads/Mon_Evolution_IMC.apk --clobber
-            gh release edit v1.6.176 --prerelease=false --latest
+          cp downloads/Mon_Evolution_IMC_v1.6.177.apk downloads/Mon_Evolution_IMC.apk
+          cmp downloads/Mon_Evolution_IMC_v1.6.177.apk downloads/Mon_Evolution_IMC.apk
+          if gh release view v1.6.177 >/dev/null 2>&1; then
+            gh release upload v1.6.177 downloads/Mon_Evolution_IMC_v1.6.177.apk downloads/Mon_Evolution_IMC.apk --clobber
+            gh release edit v1.6.177 --prerelease=false --latest
           else
-            gh release create v1.6.176 downloads/Mon_Evolution_IMC_v1.6.176.apk downloads/Mon_Evolution_IMC.apk --target "$GITHUB_SHA" --latest --title "Mon Évolution IMC 1.6.176 — Anny intégré" --notes "Ventre arrondi sur une zone plus large jusque vers le bassin, lissage global borné de la surface adulte sans suppression des volumes, jauge Ventre retirée du réglage visuel principal. Mesure réelle du ventre, corpulence IMC, interface et lien permanent conservés. Rendu à valider sur appareil."
+            gh release create v1.6.177 downloads/Mon_Evolution_IMC_v1.6.177.apk downloads/Mon_Evolution_IMC.apk --target "$GITHUB_SHA" --latest --title "Mon Évolution IMC 1.6.177 — Anny intégré" --notes "Ventre arrondi vers le bassin, finition de surface globale bornée, jauge Ventre retirée. Nouveau mode Manuel seul à afficher et activer les jauges de corpulence et de zones. Selon mon poids reste automatique, Mes mesures conserve les valeurs réelles, Réinitialiser conserve les données. Lien APK permanent. Rendu à vérifier sur appareil."
           fi

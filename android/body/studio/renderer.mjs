@@ -50,6 +50,7 @@ css.textContent=[
  '#body-measurements .bm-studio-controls select{background:#103448;color:#e8f9ff;border:1px solid #457e8d;border-radius:8px;min-height:40px;margin-top:4px;padding:7px;width:100%;}',
  '#body-measurements .bm-shape-controls{display:flex;gap:6px;align-items:stretch;flex-wrap:wrap;margin:5px 0 8px}',
  '#body-measurements .bm-shape-controls button{flex:1 1 90px;min-width:0;cursor:pointer;border:1px solid #47788b;border-radius:9px;background:#153b52;color:#e8fbff;padding:8px 6px;min-height:41px;font-size:11px}',
+ '#body-measurements .bm-shape-controls button[hidden]{display:none!important}',
  '#body-measurements .bm-shape-controls button[aria-pressed="true"]{background:#1b706e;border-color:#8feeda;color:#fff;font-weight:800}',
  '#body-measurements .bm-zoom-tools{position:absolute;left:8px;top:8px;z-index:11;display:flex;gap:4px;align-items:center;background:#0b2c40df;border:1px solid #47788b;padding:3px;border-radius:9px;touch-action:manipulation}',
  '#body-measurements .bm-zoom-tools[hidden]{display:none!important}',
@@ -84,7 +85,7 @@ panel.insertAdjacentElement('afterend',controls);
 // Display modes only change the artistic 3D body; not the records or growth data.
 const shapeControls=document.createElement('div');shapeControls.className='bm-shape-controls';
 const modeButtons=new Map();
-for(const [mode,label] of [['measured','Mes mesures'],['neutral','↺ Réinitialiser'],['estimated','≈ Selon mon poids']]){
+for(const [mode,label] of [['measured','Mes mesures'],['neutral','↺ Réinitialiser'],['estimated','≈ Selon mon poids'],['manual','Manuel']]){
  const button=document.createElement('button');button.type='button';button.textContent=label;
  button.setAttribute('aria-pressed','false');button.title=label;
  button.addEventListener('click',()=>setVisualMode(mode));
@@ -107,7 +108,7 @@ regionSelect.value='waist';
 for(const [range,label] of [[massRange,massLabel],[regionRange,regionLabel]]){
  range.type='range';range.min='-100';range.max='100';range.step='1';range.id=range===massRange?'anny-mass':'anny-region';label.htmlFor=range.id;
 }
-const gaugeHelp=document.createElement('p');gaugeHelp.textContent='Jauges visuelles uniquement : aucune mesure ni pesée enregistrée n’est modifiée. « Selon mon poids » recale les jauges.';
+const gaugeHelp=document.createElement('p');gaugeHelp.textContent='Mode manuel : aucune mesure ni pesée enregistrée n’est modifiée. « Selon mon poids » rétablit le calcul automatique.';
 gauges.append(gaugeTitle,massLabel,massRange,regionSelect,regionLabel,regionRange,gaugeHelp);
 shapeControls.after(gauges);
 const fallback=document.createElement('button');fallback.type='button';fallback.textContent='Ouvrir en rendu natif';fallback.hidden=true;fallback.style.display='none';
@@ -116,8 +117,10 @@ function annyVisual(p){
  const snap=annySnapshot(p,visualMode(p),displayedMeasurements(p));if(!snap)return null;
  const sig=JSON.stringify([p.sex,p.height,p.weight,p.lastDate,p.measurements,p.measurementDate,visualMode(p)]);
  let d=visualDrafts.get(String(p.id));if(d?.sig!==sig){d={sig,local:{}};visualDrafts.set(String(p.id),d);}
- if(Number.isFinite(d.mass))snap.mass=d.mass;
- for(const region of snap.regions)if(Number.isFinite(d.local[region.key]))region.local=d.local[region.key];
+ if(visualMode(p)==='manual'){
+  if(Number.isFinite(d.mass))snap.mass=d.mass;
+  for(const region of snap.regions)if(region.key!=='belly'&&Number.isFinite(d.local[region.key]))region.local=d.local[region.key];
+ }
  return snap;
 }
 function updateGauges(p,snap){
@@ -129,7 +132,7 @@ function updateGauges(p,snap){
  regionLabel.textContent=selected.label+' · '+Math.round(100+50*selected.local)+' % (visuel)';
 }
 function setGauge(kind,value){
- const p=profileInfo();if(!active||!isAnny(p)||!annyVisual(p))return;
+ const p=profileInfo();if(!active||!isAnny(p)||visualMode(p)!=='manual'||!annyVisual(p))return;
  const d=visualDrafts.get(String(p.id));
  if(kind==='mass')d.mass=value;else if(regionSelect.value!=='belly'&&regionSelect.value)d.local[regionSelect.value]=value;
  configure();renderOnce();
@@ -144,7 +147,7 @@ function setAnnyLayout(enabled){
  if(enabled&&shapeControls.previousElementSibling!==stage)stage.after(shapeControls);
  if(!enabled&&shapeControls.previousElementSibling!==controls)controls.after(shapeControls);
  if(gauges.previousElementSibling!==shapeControls)shapeControls.after(gauges);
- gauges.hidden=!enabled||!active;
+ gauges.hidden=!enabled||!active||visualMode(profileInfo())!=='manual';
 }
 
 const canvas=document.createElement('canvas');canvas.className='bm-makehuman-canvas';
@@ -176,8 +179,9 @@ function displayedMeasurements(p){
 }
 function syncVisualMode(p){
  const mode=visualMode(p);
- for(const [value,button] of modeButtons)button.setAttribute('aria-pressed',String(value===mode));
- shapeWarning.textContent=mode==='neutral'?
+ for(const [value,button] of modeButtons){button.setAttribute('aria-pressed',String(value===mode));if(value==='manual')button.hidden=!isAnny(p);}
+ gauges.hidden=!active||!isAnny(p)||mode!=='manual';
+ shapeWarning.textContent=mode==='manual'?'Ajustement visuel manuel uniquement : aucune pesée ni mesure enregistrée ne change.':mode==='neutral'?
   'Silhouette neutre : historique conservé, aucune mensuration supprimée.':
   mode==='estimated'?
   (p.child?'Enfant : forme illustrative uniquement, sans référence médicale ni norme de croissance.':
@@ -186,6 +190,7 @@ function syncVisualMode(p){
 }
 function setVisualMode(mode){
  const p=profileInfo();if(!p)return;
+ if(mode==='manual'&&!isAnny(p))return;
  if(!writeVisualMode(p.id,mode,visibilityStore())){
   note.textContent='Préférence indisponible : stockage local inaccessible.';return;
  }
