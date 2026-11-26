@@ -114,9 +114,24 @@ class GarmentTests(unittest.TestCase):
         base[10780,2]=.15; base[10975,2]=-.15
         native=base.copy();native[:,2]+=.025
         out=boost_native_belly(base,base,native,base,native,False)
-        outside=(base[:,1]<=.49)|(base[:,1]>=.72)
+        outside=(base[:,1]<=.44)|(base[:,1]>=.75)
         np.testing.assert_array_equal(out[outside],base[outside])
         np.testing.assert_array_equal(out[:,1],base[:,1])
         self.assertGreater(float(np.max(out[:,2]-base[:,2])),.025)
         self.assertLessEqual(float(np.max(out[:,2]-base[:,2])),.045001)
+    def test_natural_finish_preserves_excluded_vertices_and_limits_displacement(self):
+        from garment_surface import natural_surface_solver
+        x,y=np.meshgrid(np.linspace(-.15,.15,41),np.linspace(0.,1.,61))
+        v=np.stack([x.ravel(),y.ravel(),np.zeros(x.size)],axis=1).astype(np.float32)
+        f=[]
+        for row in range(60):
+            for col in range(40):
+                i=row*41+col;f.extend([[i,i+1,i+41],[i+1,i+42,i+41]])
+        body=np.ones(len(v),dtype=bool)
+        q=v.copy();q[:,2]+=.025*np.exp(-((q[:,0])**2+(q[:,1]-.6)**2)/.0001)
+        solve=natural_surface_solver(v,np.array(f),body,1.)
+        out=solve(q)
+        self.assertLess(float(out[:,2].max()),float(q[:,2].max()))
+        self.assertLessEqual(float(np.linalg.norm(out-q,axis=1).max()),.009001)
+        np.testing.assert_array_equal(out[(v[:,1]<=.06)|(v[:,1]>=.87)],q[(v[:,1]<=.06)|(v[:,1]>=.87)])
 if __name__=='__main__':unittest.main()

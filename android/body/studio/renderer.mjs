@@ -102,8 +102,8 @@ const gaugeTitle=document.createElement('strong');gaugeTitle.textContent='Ajuste
 const massLabel=document.createElement('label'),massRange=document.createElement('input');
 const regionLabel=document.createElement('label'),regionRange=document.createElement('input');
 const regionSelect=document.createElement('select');regionSelect.setAttribute('aria-label','Zone à ajuster');
-for(const item of REGIONS){const opt=document.createElement('option');opt.value=item.key;opt.textContent=item.label;regionSelect.append(opt);}
-regionSelect.value='belly';
+for(const item of REGIONS.filter(r=>r.key!=='belly')){const opt=document.createElement('option');opt.value=item.key;opt.textContent=item.label;regionSelect.append(opt);}
+regionSelect.value='waist';
 for(const [range,label] of [[massRange,massLabel],[regionRange,regionLabel]]){
  range.type='range';range.min='-100';range.max='100';range.step='1';range.id=range===massRange?'anny-mass':'anny-region';label.htmlFor=range.id;
 }
@@ -122,7 +122,7 @@ function annyVisual(p){
 }
 function updateGauges(p,snap){
  if(!snap)return;
- const selected=snap.regions.find(x=>x.key===regionSelect.value)||snap.regions[5];
+ const selected=snap.regions.find(x=>x.key===regionSelect.value)||snap.regions.find(x=>x.key==='waist');
  massRange.value=String(Math.round(snap.mass*100));
  massLabel.textContent='Corpulence · '+p.weight.toLocaleString('fr-FR')+' kg · IMC '+(p.weight/(p.height/100)**2).toLocaleString('fr-FR',{maximumFractionDigits:1})+' · indice visuel '+visualIndex(snap.mass);
  regionRange.value=String(Math.round(selected.local*100));
@@ -131,13 +131,13 @@ function updateGauges(p,snap){
 function setGauge(kind,value){
  const p=profileInfo();if(!active||!isAnny(p)||!annyVisual(p))return;
  const d=visualDrafts.get(String(p.id));
- if(kind==='mass')d.mass=value;else d.local[regionSelect.value]=value;
+ if(kind==='mass')d.mass=value;else if(regionSelect.value!=='belly'&&regionSelect.value)d.local[regionSelect.value]=value;
  configure();renderOnce();
 }
 massRange.oninput=()=>setGauge('mass',Number(massRange.value)/100);
 regionRange.oninput=()=>setGauge('region',Number(regionRange.value)/100);
 regionSelect.onchange=()=>{const p=profileInfo();if(isAnny(p))updateGauges(p,annyVisual(p));};
-function selectAnnyGauge(key){if(!gauges.hidden){regionSelect.value=key;regionSelect.onchange();}}
+function selectAnnyGauge(key){if(!gauges.hidden&&key!=='belly'){regionSelect.value=key;regionSelect.onchange();}}
 function setAnnyLayout(enabled){
  controls.style.setProperty('display',enabled?'none':'','important');
  if(!enabled)controls.style.removeProperty('display');

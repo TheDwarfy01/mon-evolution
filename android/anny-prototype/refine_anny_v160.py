@@ -6,7 +6,7 @@ import json,struct,sys
 from pathlib import Path
 import numpy as np
 from collections import defaultdict
-from garment_surface import fabric_solver,male_pec_finish
+from garment_surface import fabric_solver,male_pec_finish,natural_surface_solver
 
 def read(path):
     raw=path.read_bytes()
@@ -92,6 +92,7 @@ def build(src,dest,style,female):
     assert np.any(cloth_inside) and np.any(seams)
     shirt_inside=(incident[:,1]==totals)&(totals>0)&(~seams)
     pec_finish=(lambda q:q) if female else male_pec_finish(v,shirt_inside,f,h)
+    natural=natural_surface_solver(v,f,lab==main,h)
     offsets=np.load(src.with_suffix('.pose.npy'))
     assert offsets.shape==(21,len(v),3) and np.isfinite(offsets).all()
     def surface(q):
@@ -108,8 +109,8 @@ def build(src,dest,style,female):
         assert np.array_equal(finished[~shirt_inside],dressed[~shirt_inside])
         assert np.max(np.abs(finished[:,2]-dressed[:,2]))<=.00301*h
         return finished
-    base=surface(v)+offsets[0]
-    variants=[surface(v+d)+offsets[i+1] for i,d in enumerate(delta)]
+    base=natural(surface(v)+offsets[0])
+    variants=[natural(surface(v+d)+offsets[i+1]) for i,d in enumerate(delta)]
     # Arm motion is conservative on the native heavy endpoint.
     assert np.ptp(base[:,0])<np.ptp(v[:,0]),'Posed arms did not narrow the base'
     print('Posed base width',float(np.ptp(base[:,0])),'heavy width',float(np.ptp(variants[18][:,0])))
@@ -127,7 +128,7 @@ def build(src,dest,style,female):
         assert np.isfinite(lengths).all() and lengths.max()<h*.25
     # Normals updated for all morph targets. Shared vertex arrays and indices.
     buf=bytearray()
-    doc={'asset':{'version':'2.0','generator':'IMC Anny v175 native abdominal projection and thigh fullness'},
+    doc={'asset':{'version':'2.0','generator':'IMC Anny v176 continuous abdomen and volume preserving surface finish'},
          'buffers':[{'byteLength':0}],'bufferViews':[],'accessors':[],'materials':[],
          'meshes':[],'nodes':[{'name':'Anny','mesh':0}],'scenes':[{'nodes':[0]}],'scene':0}
     def acc(arr,typ,ctype,target=None,bounds=False):

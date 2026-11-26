@@ -159,3 +159,25 @@ def peak_relief(graph,weight,sign,cap):
         out[:,2]=z-sign*moved
         return out
     return solve
+
+def natural_surface_solver(reference,faces,body,h):
+    """Smooth connected body surfaces, preserving broad volume and facial detail."""
+    t=(reference[:,1]-reference[:,1].min())/h
+    def smooth(x):
+        x=np.clip(x,0.,1.)
+        return x*x*(3.-2.*x)
+    # Protect face, hair, fingers and feet. Stronger finish around trunk and thighs.
+    x=np.abs(reference[:,0]-np.median(reference[:,0]))/h
+    weight=(smooth((t-.06)/.10)*smooth((.87-t)/.09)*smooth((.33-x)/.12)*body)
+    trunk=smooth((t-.25)/.12)*smooth((.81-t)/.10)
+    weight=(weight*(.45+.55*trunk)).astype(np.float32)[:,None]
+    graph=adjacency(np.concatenate([faces[:,[0,1]],faces[:,[1,2]],faces[:,[2,0]]]),len(reference))
+    def solve(q):
+        out=q.copy()
+        # Paired positive/negative passes suppress local bumps with less shrinkage.
+        for _ in range(18):
+            out+=(.46*weight*(average(out,graph)-out)).astype(out.dtype)
+            out-=(.39*weight*(average(out,graph)-out)).astype(out.dtype)
+        # Bound the total displacement, preserving the native broad silhouette.
+        return limit(out,q,.009*h)
+    return solve

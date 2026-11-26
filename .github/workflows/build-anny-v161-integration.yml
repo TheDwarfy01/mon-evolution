@@ -1,4 +1,4 @@
-name: Mon Evolution IMC v1.6.175 - Anny integre
+name: Mon Evolution IMC v1.6.176 - Anny integre
 on:
   workflow_dispatch:
   push:
@@ -1355,14 +1355,14 @@ jobs:
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" sign \
             --ks /tmp/mon-evolution.jks --ks-key-alias "$KEY_ALIAS" \
             --ks-pass env:KEYSTORE_PASS --key-pass env:KEY_PASS \
-            --out downloads/Mon_Evolution_IMC_v1.6.175.apk /tmp/mon-evolution-aligned.apk
-          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose downloads/Mon_Evolution_IMC_v1.6.175.apk
+            --out downloads/Mon_Evolution_IMC_v1.6.176.apk /tmp/mon-evolution-aligned.apk
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose downloads/Mon_Evolution_IMC_v1.6.176.apk
           rm -f /tmp/mon-evolution.jks
       - name: Conserver l APK signe de validation
         uses: actions/upload-artifact@v4
         with:
-          name: Mon_Evolution_IMC_v1.6.175
-          path: downloads/Mon_Evolution_IMC_v1.6.175.apk
+          name: Mon_Evolution_IMC_v1.6.176
+          path: downloads/Mon_Evolution_IMC_v1.6.176.apk
           retention-days: 7
           if-no-files-found: error
 
@@ -1372,11 +1372,11 @@ jobs:
         run: |
           set -euo pipefail
           # Stable direct-download alias: same signed APK bytes, same name for every release.
-          cp downloads/Mon_Evolution_IMC_v1.6.175.apk downloads/Mon_Evolution_IMC.apk
-          cmp downloads/Mon_Evolution_IMC_v1.6.175.apk downloads/Mon_Evolution_IMC.apk
-          if gh release view v1.6.175 >/dev/null 2>&1; then
-            gh release upload v1.6.175 downloads/Mon_Evolution_IMC_v1.6.175.apk downloads/Mon_Evolution_IMC.apk --clobber
-            gh release edit v1.6.175 --prerelease=false --latest
+          cp downloads/Mon_Evolution_IMC_v1.6.176.apk downloads/Mon_Evolution_IMC.apk
+          cmp downloads/Mon_Evolution_IMC_v1.6.176.apk downloads/Mon_Evolution_IMC.apk
+          if gh release view v1.6.176 >/dev/null 2>&1; then
+            gh release upload v1.6.176 downloads/Mon_Evolution_IMC_v1.6.176.apk downloads/Mon_Evolution_IMC.apk --clobber
+            gh release edit v1.6.176 --prerelease=false --latest
           else
-            gh release create v1.6.175 downloads/Mon_Evolution_IMC_v1.6.175.apk downloads/Mon_Evolution_IMC.apk --target "$GITHUB_SHA" --latest --title "Mon Évolution IMC 1.6.175 — Anny intégré" --notes "Renforcement progressif du ventre adulte selon la corpulence IMC : projection avant et bas-ventre via les directions natives Anny, extension bornée, sans modification de la poitrine ni des cuisses. Mensurations locales et interface conservées. Rendu à valider sur smartphone. Lien APK permanent."
+            gh release create v1.6.176 downloads/Mon_Evolution_IMC_v1.6.176.apk downloads/Mon_Evolution_IMC.apk --target "$GITHUB_SHA" --latest --title "Mon Évolution IMC 1.6.176 — Anny intégré" --notes "Ventre arrondi sur une zone plus large jusque vers le bassin, lissage global borné de la surface adulte sans suppression des volumes, jauge Ventre retirée du réglage visuel principal. Mesure réelle du ventre, corpulence IMC, interface et lien permanent conservés. Rendu à valider sur appareil."
           fi

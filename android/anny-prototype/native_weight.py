@@ -72,13 +72,14 @@ def boost_native_belly(base,extended,native_endpoint,without_depth,without_waist
     def smooth(x):
         x=np.clip(x,0.,1.)
         return x*x*(3.-2.*x)
-    envelope=smooth((t-.49)/.065)*smooth((.72-t)/.075)
-    lower=1.+.35*smooth((.65-t)/.08)
+    envelope=smooth((t-.44)/.12)*smooth((.75-t)/.13)
+    lower=1.+.45*smooth((.65-t)/.14)
     facing=smooth((base[:,2]-mid)*sign/(.055*h))
     depth=native_endpoint-without_depth
     waist=native_endpoint-without_waist
     extra=np.zeros_like(base)
-    extra[:,2]=sign*np.maximum(sign*depth[:,2],0.)*envelope*lower*facing*2.2
+    # Softer, wider native projection extending toward the lower abdomen.
+    extra[:,2]=sign*np.maximum(sign*depth[:,2],0.)*envelope*lower*facing*1.65
     extra[:,0]=waist[:,0]*envelope*lower*.65
     length=np.linalg.norm(extra,axis=1,keepdims=True)
     extra*=np.minimum(1.,(.045*h)/np.maximum(length,1e-9))
