@@ -93,6 +93,24 @@ class GarmentTests(unittest.TestCase):
         self.assertLessEqual(float(np.max(bumped[:,2]-out[:,2])),.003001)
         self.assertTrue(np.all(out[:,2]<=bumped[:,2]+1e-8))
         self.assertLess(float(np.max(np.abs(solve(q)-q))),.0002)
+    def test_peak_relief_extended_passes_preserve_broad_volume(self):
+        x,y=np.meshgrid(np.linspace(-.1,.1,41),np.linspace(-.06,.06,25))
+        q=np.stack([x.ravel(),y.ravel(),(.2+.03*np.exp(-((np.abs(x)-.05)**2+y*y)/.001)).ravel()],axis=1).astype(np.float32)
+        f=[]
+        for row in range(24):
+            for col in range(40):
+                i=row*41+col;f.extend([[i,i+1,i+41],[i+1,i+42,i+41]])
+        f=np.array(f);graph=adjacency(np.concatenate([f[:,[0,1]],f[:,[1,2]],f[:,[2,0]]]),len(q))
+        weight=((np.abs(q[:,0])>.025)&(np.abs(q[:,0])<.09)).astype(np.float32)
+        for sign in (-1.,1.):
+            for size in (.7,1.,1.5):
+                shape=q.copy();shape[:,2]*=sign*size
+                out=peak_relief(graph,weight,sign,.0045,passes=9)(shape)
+                np.testing.assert_array_equal(out[weight==0],shape[weight==0])
+                np.testing.assert_array_equal(out[:,:2],shape[:,:2])
+                self.assertTrue(np.all((shape[:,2]-out[:,2])*sign>=-1e-8))
+                self.assertLessEqual(float(np.max(np.abs(out[:,2]-shape[:,2]))),.004501)
+                self.assertGreater(float(np.max(np.abs(out[:,2]))),.97*float(np.max(np.abs(shape[:,2]))))
     def test_thigh_boost_preserves_calf_hips_length_and_midline(self):
         x,y=np.meshgrid(np.linspace(-.16,.16,41),np.linspace(0.,1.,101))
         base=np.stack([x.ravel(),y.ravel(),np.zeros(x.size)],axis=1).astype(np.float32)

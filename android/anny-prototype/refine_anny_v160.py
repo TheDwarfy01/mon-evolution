@@ -6,7 +6,7 @@ import json,struct,sys
 from pathlib import Path
 import numpy as np
 from collections import defaultdict
-from garment_surface import fabric_solver,male_pec_finish,natural_surface_solver
+from garment_surface import fabric_solver,chest_peak_finish,natural_surface_solver
 
 def read(path):
     raw=path.read_bytes()
@@ -91,7 +91,7 @@ def build(src,dest,style,female):
     solve,cloth_inside,seams=fabric_solver(f,group,len(v),h)
     assert np.any(cloth_inside) and np.any(seams)
     shirt_inside=(incident[:,1]==totals)&(totals>0)&(~seams)
-    pec_finish=(lambda q:q) if female else male_pec_finish(v,shirt_inside,f,h)
+    pec_finish=chest_peak_finish(v,shirt_inside,f,h,female)
     natural=natural_surface_solver(v,f,lab==main,h)
     offsets=np.load(src.with_suffix('.pose.npy'))
     assert offsets.shape==(21,len(v),3) and np.isfinite(offsets).all()
@@ -107,7 +107,7 @@ def build(src,dest,style,female):
         finished=pec_finish(dressed)
         assert np.array_equal(finished[:,:2],dressed[:,:2])
         assert np.array_equal(finished[~shirt_inside],dressed[~shirt_inside])
-        assert np.max(np.abs(finished[:,2]-dressed[:,2]))<=.00301*h
+        assert np.max(np.abs(finished[:,2]-dressed[:,2]))<=.00451*h
         return finished
     base=natural(surface(v)+offsets[0])
     variants=[natural(surface(v+d)+offsets[i+1]) for i,d in enumerate(delta)]

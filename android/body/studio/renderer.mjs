@@ -153,6 +153,16 @@ function setAnnyLayout(enabled){
 const canvas=document.createElement('canvas');canvas.className='bm-makehuman-canvas';
 canvas.setAttribute('aria-label','Mannequin 3D MakeHuman habillé');canvas.setAttribute('role','img');
 stage.append(canvas);
+const loadingStyle=document.createElement('style');
+loadingStyle.textContent='#bm-model.bm-3d-loading{position:relative!important;min-height:220px}#bm-model>.bm-3d-loading-overlay{position:absolute;inset:0;z-index:30;display:grid;place-items:center;background:rgba(12,32,46,.70);border-radius:12px;padding:12px}#bm-model>.bm-3d-loading-overlay[hidden]{display:none!important}.bm-3d-loading-card{display:grid;justify-items:center;gap:10px;text-align:center;padding:20px 16px;background:#12354c;color:#effffb;border:1px solid #47788b;border-radius:14px;box-shadow:0 4px 16px #0004;max-width:95%}.bm-3d-loading-card small{color:#c7e9ef}.bm-3d-spinner{width:36px;height:36px;border:4px solid #47788b;border-top-color:#75e8d0;border-radius:50%;animation:bm-3d-spin .85s linear infinite}@keyframes bm-3d-spin{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){.bm-3d-spinner{animation:none}}';
+document.head.append(loadingStyle);
+const loadingOverlay=document.createElement('div');loadingOverlay.className='bm-3d-loading-overlay';loadingOverlay.hidden=true;loadingOverlay.setAttribute('role','status');loadingOverlay.setAttribute('aria-live','polite');
+const loadingCard=document.createElement('div');loadingCard.className='bm-3d-loading-card';
+const spinner=document.createElement('div');spinner.className='bm-3d-spinner';spinner.setAttribute('aria-hidden','true');
+const loadingTitle=document.createElement('strong');loadingTitle.textContent='Chargement en cours…';
+const loadingDetail=document.createElement('small');loadingDetail.textContent='Préparation de votre mannequin 3D';
+loadingCard.append(spinner,loadingTitle,loadingDetail);loadingOverlay.append(loadingCard);stage.append(loadingOverlay);
+function setLoading(on){loadingOverlay.hidden=!on;stage.classList.toggle('bm-3d-loading',on);stage.setAttribute('aria-busy',String(on));}
 const zoomTools=document.createElement('div');zoomTools.className='bm-zoom-tools';zoomTools.hidden=true;zoomTools.setAttribute('aria-label','Zoom du mannequin');
 const zoomReset=document.createElement('button');
 zoomReset.type='button';zoomReset.textContent='⤢ Recentrer';zoomReset.title='Rétablir le cadrage initial du mannequin';
@@ -202,6 +212,7 @@ const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 function ensureMounted(){
  if(!stage.contains(canvas))stage.append(canvas);
  if(!stage.contains(zoomTools))stage.append(zoomTools);
+ if(!stage.contains(loadingOverlay))stage.append(loadingOverlay);
  if(!panel.isConnected)stage.before(panel);
  if(!controls.isConnected)panel.after(controls);
  if(!shapeControls.isConnected){if(isAnny(profileInfo()))stage.after(shapeControls);else controls.after(shapeControls);}
@@ -671,9 +682,11 @@ async function ensureAccessories(p){
 }
 async function startPreview(){
  if(busy||active)return;
- busy=true;btn.disabled=true;
+ busy=true;btn.disabled=true;setLoading(true);
  note.textContent='Préparation du modèle, des textures et des vêtements…';
  try{
+  // Let the browser paint the status before GLB decoding / GPU setup.
+  await new Promise(done=>requestAnimationFrame(()=>requestAnimationFrame(done)));
   const p=profileInfo();
   if(!p)throw Error('Complète le sexe, la naissance, la taille et le poids du profil. Seul le tableau est affiché.');
   init();
@@ -706,6 +719,7 @@ async function startPreview(){
   rememberVisibility(p.id,true);
   note.textContent=(adult?'Anny intégré hors ligne':'3D Studio')+' • rendu indicatif • pivoter avec le doigt';
   refreshScene(true);
+  renderOnce();
   raf=requestAnimationFrame(frame);
  }catch(e){
   console.error('MakeHuman Studio:',e);
@@ -713,7 +727,7 @@ async function startPreview(){
   if(isAnny(profileInfo())){fallback.hidden=false;fallback.style.display='';}
   btn.textContent='Réessayer le modèle 3D';
   note.textContent='Visualisation indisponible : '+String(e.message||e);
- }finally{busy=false;btn.disabled=false;}
+ }finally{setLoading(false);busy=false;btn.disabled=false;}
 }
 function stopPreview(manual=false){
  if(manual){
